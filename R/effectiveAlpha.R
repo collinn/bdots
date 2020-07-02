@@ -47,20 +47,14 @@ effectiveAlpha_f <- function(rho, n = 10, df = NULL, method = "norm") {
                       delta = rep(0, n), df = df, corr = sigma)[1]
       out
     }
-  } else if (method != "norm") {
-    warning("invalid method supplied, using normal approximation")
-    method <- "norm"
-    f <- function(k) {
-      out <- 1 - pmvnorm(lower = -k, upper = k,
-                         mean = rep(0, n), corr = sigma)[1]
-    }
   } else {
+    if (method != "norm") warning("invalid method supplied, using normal approximation")
     f <- function(k) {
       out <- 1 - pmvnorm(lower = -k, upper = k,
                          mean = rep(0, n), corr = sigma)[1]
-      out
     }
   }
+
   f
 }
 
