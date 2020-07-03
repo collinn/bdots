@@ -10,7 +10,9 @@ library(magrittr)
 ## it will make dropping subjects easier too!
 ## Definitely going to be using data table for this
 
+# pair verbose with message
 
+## If rho null but cor = TRUE, couldn't we guess at rho?
 
 bdotsFit <- function(data, # dataset
                      subject, # subjects
@@ -20,7 +22,7 @@ bdotsFit <- function(data, # dataset
                      curveType = c("doubleGauss"), # logistic, doubleGauss, etc. maybe have length match responseGroup length?
                      concave = NULL, # doubleGauss only concavity
                      cor = TRUE, # autocorrelation?
-                     rho.0 = 0.9, # autocor value
+                     rho = 0.9, # autocor value
                      cores = 1, # cores to use, 0 == use all available
                      verbose = FALSE) {
 
@@ -31,6 +33,18 @@ bdotsFit <- function(data, # dataset
   ## Also kill all factors ##
 
 
+  ## Possibility to clean up nonsense below and remove
+  ## magrittr
+  # ## Set group variables in data.table
+  # vn <- c("y", "time", "subject", group)
+  # on <-c(y, time, subject, group)
+  #
+  # dat <- data.table(matrix(NA, ncol = length(vn)))
+  # setNames(dat) <- vn
+  # for(nm in seq_along(vn)) {
+  #   set(dat, j = vn[nm], value = data[[on[nm]]])
+  # }
+
   ## Cheat around DT reference, conditionally set key for subset
   ## Can possibly avoid this set, as was done below
   dat <- data.table()
@@ -38,7 +52,7 @@ bdotsFit <- function(data, # dataset
   dat$time <- data[[time]] %>% as.numeric()
   dat$y <- data[[y]] %>% as.numeric()
 
-  ## Set group variables in data.table
+  ## Set group variables in data.tableb+
   for(gg in seq_along(group)) {
     set(dat, j = group[gg], value = data[[group[gg]]])
   }
@@ -55,7 +69,9 @@ bdotsFit <- function(data, # dataset
   ## DOUBLE HOLY SHIT, USING SD PASSES ENTIRE DATA TABLE SUBSET !!
   ## just replace f with bdotsFitter, once finished, goddamn, doing my job for me
   ## .SD going in only contains exactly what is needed to fit function
-  rr <- dat[, list(f(.SD, curveType, concave, cor, rho.0, verbose)), by = group,
+  ## dude,  fuck. Make by = c(group, "subject"), and do every thing at once
+  ## and in super duper parallel
+  rr <- dat[, list(f(.SD, curveType, concave, cor, rho, verbose)), keyby = group,
             .SDcols = c("subject", "time", "y")]
 
 
@@ -65,23 +81,10 @@ bdotsFit <- function(data, # dataset
 }
 
 #### LIVE TESTING ####
-load("~/bdots/demo.RData")
-data <- cohort_unrelated
-group = c("Group", "LookType")
-time <- "Time"
-subject <- "Subject"
-y <- "Fixations"
-concave <-  TRUE
-rho.0 <-  0.9
-cor <-  TRUE
-cores <-  1
-verbose <-  FALSE
-curveType <- c("doubleGauss")
+## values in R/testing_environment.R
+load(file = "~/packages/bdots/data/test_env.RData")
 
-## made within function above (at one points)
-tdat <- rr$V1[1][[1]][[1]]
-
-test <- bdots(cohort_unrelated,
+test <- bdotsFit(cohort_unrelated,
               subject = "Subject",
               time = "Time",
               group = c("Group", "LookType"),
