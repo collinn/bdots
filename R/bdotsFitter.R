@@ -16,7 +16,7 @@ dat <- tdat[subject == "2", ]
 # failed, they can inspect it OR they can take names from that list and just pass
 # their own subset portion of the dataset to do it themselves.
 # The modularity of this is coming along nicely, I think
-bdotsFitter <- function(dat, curveType, concave, cor, rho, verbose, params) {
+bdotsFitter <- function(dat, curveType, concave, cor, rho, verbose, params = NULL) {
 
 
   time <- sort(unique(dat$time))
@@ -27,11 +27,12 @@ bdotsFitter <- function(dat, curveType, concave, cor, rho, verbose, params) {
     dat[, y := mean(y), by = .(time)]
     dat <- unique(dat, by = c("time"))
   }
+  #dat <- unique(dat, by = "time")
 
   ## Well, determine what curveType, but for now, just  gauss
   # which means I need to make estLogistic
   # also the order of these variables (and in curveFitter and elsewhere) is fucked
-  fit <- estDgaussCurve(dat, rho = 0.9, get.cov.only = FALSE, cor = TRUE, jitter = 10, conc = TRUE)
+  fit <- estDgaussCurve(dat, rho = 0.9, get.cov.only = FALSE, cor = TRUE, jitter = 0, conc = TRUE)
   #str(fit)
 
   #fit <- estLogisticCurve(dat, rho, cor = FALSE, jitter = 5)
@@ -57,6 +58,8 @@ bdotsFitter <- function(dat, curveType, concave, cor, rho, verbose, params) {
   SSY <- sum((dat$y - mean(dat$y))^2)
   R2 <- 1 - SSE/SSY
 
+  ## possibly move this to bdotsFit, as the simpler this function return value is,
+  # the easier it is for user to update themselves.
   ## Fail Code ==
   # + 1 - 0.8 < R2 < 0.95
   # + 2 - R2 < 0.8
@@ -68,10 +71,14 @@ bdotsFitter <- function(dat, curveType, concave, cor, rho, verbose, params) {
   # 3 - AR1 FALSE and R2 > .95
   # 4 (3 + 1) - AR1 FALSE and 0.8 < R2 < 0.85
   # 5 (3 + 2) - AR1 FALSE and R2 < 0.8
-  failCode <- 3*fit[["cor"]] + 1*(R2 < 0.95)*(R2 > 0.8) + 2*(R2 < 0.8)
+  fitCode <- 3*(!fit[["cor"]]) + 1*(R2 < 0.95)*(R2 > 0.8) + 2*(R2 < 0.8)
 
+  ## Practice verbose
+  if(TRUE)
+
+  ## Don't actually need fit[[2]], since we can check if failCode > 3
   ## Returns list(model_fit, AR1cor (boolean), R2, failCode)
-  c(fit, R2 = R2, failCode = failCode)
+  list(fit = fit[[1]], R2 = R2, fitCode = fitCode)
 }
 
 

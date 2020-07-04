@@ -6,7 +6,7 @@
 ## all of these arguments must be filled in
 ## If this isn't working for them, in bdotsFit, there can be a (...) argument
 # where they can copy this function out, change it, then pass it back in (functional shit is so cool)
-curveFitter <- function(dat, rho, cor, get.cov.only = NULL, jitter, ff, params) {
+curveFitter <- function(dat, rho, cor, get.cov.only = NULL, jitter = 0, ff, params) {
 
   ## Here's the thing - everything below is going to be used in dgauss, logistic,
   # poly, literally whatever else. That is the benefit of establish ff above, because

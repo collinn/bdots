@@ -18,6 +18,9 @@ breakupExpression <- function(ee) {
 
 ## Parse formula passed to bdotsBoot
 ## Can probably make something similar for bdotsFit?
+
+## Also possible that there are no RHS groups (shit)
+# or no, we wouldn't have diffs(y, g1(n1, n2)) ~ 1, it would be y ~ g1(n1, n2))
 bdotsParser <- function(ff) {
   print(class(ff))
   if(length(ff) != 3) stop("need y ~ x")
@@ -57,7 +60,7 @@ bdotsParser <- function(ff) {
     return(list(y = y, diffGroup = diffGroup, fitGroups = fitGroups, diffs = TRUE))
   } else {
     y <- as.character(lhs)
-    return(list(y = y, fitGroups = fitGroups, diffs = FALSE))
+    return(list(y = y, diffGroup = NULL, fitGroups = fitGroups, diffs = FALSE))
   }
 
 }

@@ -7,8 +7,9 @@ time <- "Time"
 subject <- "Subject"
 y <- "Fixations"
 concave <-  TRUE
-rho.0 <-  0.9
+rho <-  0.9
 cor <-  TRUE
+jitter <- 0
 cores <-  1
 verbose <-  FALSE
 curveType <- c("doubleGauss")
@@ -35,7 +36,7 @@ setkeyv(dat, c("subject", group))
 ## DOUBLE HOLY SHIT, USING SD PASSES ENTIRE DATA TABLE SUBSET !!
 ## just replace f with bdotsFitter, once finished, goddamn, doing my job for me
 ## .SD going in only contains exactly what is needed to fit function
-rr <- dat[, list(fakefunctionwithlongname(.SD, curveType, concave, cor, rho.0, verbose)), by = group,
+rr <- dat[, list(fakefunctionwithlongname(.SD, curveType, concave, cor, rh0, verbose)), by = group,
           .SDcols = c("subject", "time", "y")]
 
 ## test dataset - only contains subject, time, and y
