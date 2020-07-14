@@ -2,9 +2,28 @@
 # pdf for logistic function
 # logistic_f()
 
+logisticPars <- function(dat) {
+  time <- dat$time
+  y <- dat$y
+
+  mini <- min(y)
+  peak <- max(y)
+  r <- (peak - mini)
+  cross <- time[which.min(abs(.5 * r - y))]
+
+  # slope
+  q75 <- .75 * r + mini
+  q25 <- .25 * r + mini
+  time75 <- time[which.min(abs(q75 - y))]
+  time25 <- time[which.min(abs(q25 - y))]
+  slope <- (q75 - q25) / (time75 - time25)
+
+  return(c(mini = mini, peak = peak, slope = slope, cross = cross))
+}
+
 estLogisticCurve <- function(dat, rho, params = NULL,
-                             cor = TRUE, get.cov.only = FALSE, jitter = FALSE) {
-  
+                             cor = TRUE, get.cov.only = FALSE, refits = FALSE) {
+
   if (is.null(params)) {
     params <- logisticPars(dat)
   } else {
@@ -15,29 +34,13 @@ estLogisticCurve <- function(dat, rho, params = NULL,
       stop("logistic parameters for refitting must be correctly labeled")
     }
   }
-  
+
   ff <- quote(y ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (time)) / (peak - mini))))
-  
+
   ## Need to move this argument (for all of these calls nulls at end)
-  fit <- curveFitter(dat, rho, cor, jitter = jitter, ff =ff, params =params)
+  fit <- curveFitter(dat, rho, cor, refits = refits, ff = ff, params = params)
+  return(fit)
 }
 
-logisticPars <- function(dat) {
-  time <- dat$time
-  y <- dat$y
-  
-  mini <- min(y)
-  peak <- max(y)
-  r <- (peak - mini)
-  cross <- time[which.min(abs(.5 * r - y))]
-  
-  # slope
-  q75 <- .75 * r + mini
-  q25 <- .25 * r + mini
-  time75 <- time[which.min(abs(q75 - y))]
-  time25 <- time[which.min(abs(q25 - y))]
-  slope <- (q75 - q25) / (time75 - time25)
-  
-  return(c(mini = mini, peak = peak, slope = slope, cross = cross))
-}
+
 

@@ -7,9 +7,10 @@ time <- "Time"
 subject <- "Subject"
 y <- "Fixations"
 concave <-  TRUE
+conc <- TRUE
 rho <-  0.9
 cor <-  TRUE
-jitter <- 0
+refits <- 0
 cores <-  1
 verbose <-  FALSE
 curveType <- c("doubleGauss")

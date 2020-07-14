@@ -6,7 +6,7 @@
 ## all of these arguments must be filled in
 ## If this isn't working for them, in bdotsFit, there can be a (...) argument
 # where they can copy this function out, change it, then pass it back in (functional shit is so cool)
-curveFitter <- function(dat, rho, cor, get.cov.only = NULL, jitter = 0, ff, params) {
+curveFitter <- function(dat, rho, cor, get.cov.only = NULL, refits = 0, ff, params) {
 
   ## Here's the thing - everything below is going to be used in dgauss, logistic,
   # poly, literally whatever else. That is the benefit of establish ff above, because
@@ -22,7 +22,7 @@ curveFitter <- function(dat, rho, cor, get.cov.only = NULL, jitter = 0, ff, para
                       error = function(e) NULL)
 
       if (is.null(fit)) {
-        attempts <- jitter
+        attempts <- refits
         while (attempts > 0 & is.null(fit)) {
           attempts <- attempts - 1
           params <- jitter(params)
@@ -37,7 +37,7 @@ curveFitter <- function(dat, rho, cor, get.cov.only = NULL, jitter = 0, ff, para
       fit <- tryCatch(gnls(eval(ff), data = dat, start = params), error = function(e) NULL)
 
       if (is.null(fit)) {
-        attempts <- jitter
+        attempts <- refits
         while (attempts > 0 & is.null(fit)) {
           attempts <- attempts - 1
           params <- jitter(params)
@@ -48,3 +48,4 @@ curveFitter <- function(dat, rho, cor, get.cov.only = NULL, jitter = 0, ff, para
   }
   list(fit = fit, cor = cor)
 }
+

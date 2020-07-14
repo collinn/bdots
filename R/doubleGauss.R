@@ -41,7 +41,7 @@ dgaussPars <- function(dat, conc) {
 
 ## I guess let's make jitter a numeric argument, since jitter > 0 implies jitter == TRUE
 estDgaussCurve <- function(dat, rho, conc, params = NULL,
-                           cor = TRUE, get.cov.only = FALSE, jitter = FALSE) {
+                           cor = TRUE, get.cov.only = FALSE, refits = FALSE) {
   if (is.null(params)) {
     params <- dgaussPars(dat, conc)
   } else {
@@ -51,52 +51,18 @@ estDgaussCurve <- function(dat, rho, conc, params = NULL,
     }
   }
 
+  ## Maybe have functions that just return this formula for
+  # ease of update for end user
   ff <- quote(y ~ (time < mu) * (exp(-1 * (time - mu) ^ 2
                   / (2 * sig1 ^ 2)) * (ht - base1) + base1)
                   + (mu <= time) * (exp(-1 * (time - mu) ^ 2
                   / (2 * sig2 ^ 2)) * (ht - base2) + base2))
 
-  fit <- curveFitter(dat, rho, cor, get.cov.only = FALSE, jitter, ff, params)
 
-  # ## Everthing about this line is unique to dgauss, and can stay in this function
-  #
-  # ## Here's the thing - everything below is going to be used in dgauss, logistic,
-  # # poly, literally whatever else. That is the benefit of establish ff above, because
-  # # the rest of these are never going to change. Aw hell yeah!
-  # if(get.cov.only) {
-  #   fit <- gnls(eval(ff), start = params, data = data.frame(time, y),
-  #               correlation = corAR1(rho),
-  #               control = gnlsControl(maxIter = 0, nlsMaxIter = 0, msMaxIter = 0, returnObject = TRUE))
-  #   cor <- TRUE
-  # } else {
-  #   if (cor) {
-  #     fit <- tryCatch(gnls(eval(ff), start = params, correlation = corAR1(rho)),
-  #                     error = function(e) NULL)
-  #
-  #     if (is.null(fit)) {
-  #       attempts <- jitter
-  #       while (attempts > 0 & is.null(fit)) {
-  #         attempts <- attempts - 1
-  #         params <- jitter(params)
-  #         fit <- tryCatch(gnls(eval(ff), start = params, correlation = corAR1(rho)),
-  #                         error = function(e) NULL)
-  #       }
-  #       if (is.null(fit)) cor <- FALSE
-  #     }
-  #   }
-  #
-  #   if (!cor) {
-  #     fit <- tryCatch(gnls(eval(ff), start = params), error = function(e) NULL)
-  #
-  #     if (is.null(fit)) {
-  #       attempts <- jitter
-  #       while (attempts > 0 & is.null(fit)) {
-  #         attempts <- attempts - 1
-  #         params <- jitter(params)
-  #         fit <- tryCatch(gnls(eval(ff), start = params), error = function(e) NULL)
-  #         }
-  #       }
-  #     }
-  #   }
-  #   list(fit = fit, cor = cor)
+  fit <- curveFitter(dat, rho, cor, get.cov.only = FALSE, refits, ff, params)
+
+  ## I don't need to return this, they can find their own starting parameters with
+  # the function above. Plus, it makes it too complicated
+  return(fit)
+
 }

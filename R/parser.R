@@ -18,12 +18,33 @@ breakupExpression <- function(ee) {
 
 ## Parse formula passed to bdotsBoot
 ## Can probably make something similar for bdotsFit?
+# y ~ Subject * Time | groups ?
+# need to figure out the subject/time arrangement
+# fuuuh, or do it like survival packave
+# (y, time) ~ subject | g1 + ...  <- yup
 
 ## Also possible that there are no RHS groups (shit)
+## Actually, no, could be no groups to LHS
 # or no, we wouldn't have diffs(y, g1(n1, n2)) ~ 1, it would be y ~ g1(n1, n2))
+
+
+
+## important to keep in  mind, this function should return
+# same object, regardless of input.
+## Also. For final, export to CRAN bdots package,
+# should rewrite everything from this there, so that I can
+# keep all of the comments I've made detailing my thoughts on certain aspects of the code
+# while retaining dignity of original authors, I do think it would be a helpful
+# exercise to detail what was wrong, and how it change. How can I do that in
+# a purely academic sense, with no discredit to Michael (Brad, eh. Nobody knows he did anything
+# and what he added made it marginally better. It was an improvement to poorly written code,
+# while retaining the logic and paradigm/style of the original. Ex. See, he saw this problem in v.1,
+# he made v.2, see how v.2 > v.1, but then see why v3 is better suited to this problem)
 bdotsParser <- function(ff) {
   print(class(ff))
   if(length(ff) != 3) stop("need y ~ x")
+
+  ## Since formula always list, with first object `~`
   lhs <- ff[[2]]
   rhs <- ff[[3]]
 

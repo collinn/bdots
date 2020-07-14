@@ -3,8 +3,8 @@
 ## We could almost assume that this takes subjectDat <- dat[subject == w/e, ]
 
 ## test environment
-load(file = "~/packages/bdots/data/test_env.RData")
-dat <- tdat[subject == "2", ]
+#load(file = "~/packages/bdots/data/test_env.RData")
+#dat <- tdat[subject == "2", ]
 
 
 
@@ -16,23 +16,29 @@ dat <- tdat[subject == "2", ]
 # failed, they can inspect it OR they can take names from that list and just pass
 # their own subset portion of the dataset to do it themselves.
 # The modularity of this is coming along nicely, I think
-bdotsFitter <- function(dat, curveType, concave, cor, rho, verbose, params = NULL) {
+for(i in seq_along(newdat)) {
+  bdotsFitter(newdat[[i]])
+}
 
 
-  time <- sort(unique(dat$time))
 
-  ## Aggregate duplicated y values
+bdotsFitter <- function(dat, curveType, concave, cor, rho, refits = FALSE, verbose, params = NULL) {
+
+
+
+  ## This will need to be handled differently, as dat may not contain
+  # y, time, etc
   if(any(dat[, .N, by = .(time)]$N > 1)) {
     warning("Some subjects have multiple observations for unique time. These will be averaged")
     dat[, y := mean(y), by = .(time)]
     dat <- unique(dat, by = c("time"))
   }
-  #dat <- unique(dat, by = "time")
 
   ## Well, determine what curveType, but for now, just  gauss
   # which means I need to make estLogistic
   # also the order of these variables (and in curveFitter and elsewhere) is fucked
-  fit <- estDgaussCurve(dat, rho = 0.9, get.cov.only = FALSE, cor = TRUE, jitter = 0, conc = TRUE)
+  #fit <- estDgaussCurve(dat, rho = 0.9, get.cov.only = FALSE, cor = TRUE, jitter = 0, conc = TRUE)
+  fit <- estLogisticCurve(dat, rho = 0.9, get.cov.only = FALSE, cor = TRUE, refits = 4)
   #str(fit)
 
   #fit <- estLogisticCurve(dat, rho, cor = FALSE, jitter = 5)
@@ -78,34 +84,10 @@ bdotsFitter <- function(dat, curveType, concave, cor, rho, verbose, params = NUL
 
   ## Don't actually need fit[[2]], since we can check if failCode > 3
   ## Returns list(model_fit, AR1cor (boolean), R2, failCode)
-  list(fit = fit[[1]], R2 = R2, fitCode = fitCode)
+    ## Consider also returning parameters start position?
+  list(fit = fit[["fit"]], R2 = R2, fitCode = fitCode)
 }
 
 
 
 
-
-
-
-
-
-
-dat1 <- data.table(subject = rep(1:2, each = 256),
-                   group1 = rep(c("red", "blue"), each = 128),
-                   group2 = rep(c("low", "high"), each = 64),
-                   y = rnorm(16^4))
-
-## function that returns awkward list, with big data in it
-f <- function(dat, vars) {
-  q <- list(list(res = mean(dat[[1]]), dog = dat, cat = vars))
-}
-
-## With current number, dat1 goes from nrow = 256 to
-## nrow(rr) = 8, or whatever number of group/subject permutations there are
-## AND they are already labeled. Check `rr`
-# (take time to work out why we need 3 `list` here between list(f(.SD))) and the return above
-# There is going to make subsetting and comparison literally trivial
-## Can use .BY to pass in names of groups for verbose printing. nice
-rr <- dat1[, list(f(.SD, .BY)), by = c("subject","group1", "group2")]
-
-#rr2 <- dat1[, f(.SD), by = c("sub","respType", "subCond")]
