@@ -63,6 +63,6 @@ estDgaussCurve <- function(dat, rho, conc, params = NULL,
 
   ## I don't need to return this, they can find their own starting parameters with
   # the function above. Plus, it makes it too complicated
-  return(fit)
-
+  #return(list(fit = fit[['fit']], cor = fit[['cor']], ff = ff))
+  return(list(fit = fit, ff = ff))
 }

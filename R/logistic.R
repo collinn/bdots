@@ -39,7 +39,7 @@ estLogisticCurve <- function(dat, rho, params = NULL,
 
   ## Need to move this argument (for all of these calls nulls at end)
   fit <- curveFitter(dat, rho, cor, refits = refits, ff = ff, params = params)
-  return(fit)
+  return(list(fit = fit[['fit']], cor = fit[['cor']], ff = ff))
 }
 
 

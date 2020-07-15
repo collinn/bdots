@@ -6,21 +6,9 @@ library(parallel)
 # data.table
 # parallel
 # nlme
-# we could almost remove data.table....
-# since we don't have any operations  w/n groups
-# and the dat[, list(f...), by = , .SDcols = ] isn't parallelized
-# However, it will be nice for subsetting things like
-# result[fitCode == xyz, this thing]
-# or plot(result[lkajsdfl, alkdsjf])
-## Keeping dependencies down is dope. Eff you stringr
 
-## possible additions
-# refits - number of times to jitter initial parameters
 
-## for each fit, give numeric value, i.e., 1 - AR1 R2 > 0.95, 2 - AR1 R2 > 0.85, etc.
-## this will make refitting SO much easier
-## it will make dropping subjects easier too!
-## Definitely going to be using data table for this
+
 
 # pair verbose with message
 
@@ -31,7 +19,6 @@ library(parallel)
 ## Add argument for minimally accepted R2. For example, if a
 # model fits with AR1 = TRUE, but R2 =
 
-## Go through and replace jitter with something else
 
 ## Yo, if we end up having to delete subjects, how do we do a paired t test?
 bdotsFit <- function(data, # dataset
@@ -43,6 +30,7 @@ bdotsFit <- function(data, # dataset
                      concave = NULL, # doubleGauss only concavity
                      cor = TRUE, # autocorrelation?
                      rho = 0.9, # autocor value
+                     refits = 0,
                      cores = 0, # cores to use, 0 == 50% of available
                      verbose = FALSE) {
 
@@ -83,37 +71,34 @@ bdotsFit <- function(data, # dataset
   ## Set key
   setkeyv(dat, c("subject", group))
 
-
- ## Unfortunatley, this is faster x3 (and far less sexy xInf)
-  # ugh, about same speed with data.frame.
- cl <- makePSOCKcluster(4)
+  ## if(.platform$OStype == windows)
+  ## This allows output to be print to console, possibly not possible in windows
+ cl <- makePSOCKcluster(4, outfile = "") # prefer to not have output here
  clusterExport(cl, c("curveType", "concave", "cor", "rho", "refits", "verbose",
                      "curveFitter", "estDgaussCurve", "dgaussPars", "gnls", "corAR1",
                      "estLogisticCurve", "logisticPars"), envir = parent.frame())
  #clusterEvalQ(cl, library(data.table))
  invisible(clusterEvalQ(cl, library(nlme)))
  newdat <- split(dat, by = c("subject", group), drop = TRUE) # these needs to not be in string
+ ## Would like to pass names into this
  system.time(res <- parLapply(cl, newdat, bdotsFitter)) # this also needs arguments (does it?)
-
+ ## This allows us to pass names for verbose
+ #system.time(res <- clusterMap(cl, bdotsFitter, newdat, thenames = names(newdat))) # this also needs arguments (does it?)
  stopCluster(cl)
 
- #tt <- strsplit(names(newdat), "\\.")
- # this gives me same as before (good), but still need to
- # do processing on 'result'
- #x <- names(newdat)[1]
+
  ## At some point, need to change the way this returns fit entry as "AsIs" object, nested lis t
- tt <- lapply(names(newdat), function(x) {
+ fitList <- lapply(names(newdat), function(x) {
    result <- res[[x]] # list of length 3
    x <- strsplit(x, "\\.") # list of by variables for newdat
 
    dat1 <- as.data.table(matrix(x[[1]], ncol = length(x[[1]])))
-   #dat1 <- as.data.frame(matrix(x[[1]], ncol = length(x[[1]])))
    names(dat1) <-  c(subject, group)
 
    # I don't really like that this has to be like this
    # it's a length 1 list where result is a list of length 3, but w/e for now
    # since assigning class, could also make method `[` or `[[`
-   dat1$fit <- I(list(result[1])) #<- this fixes it so that object is gnls inside list of length 1
+   dat1$fit <- I(list(result['fit'])) #<- this fixes it so that object is gnls inside list of length 1
 
 
    # These got named weird things from function, so use number. ew
@@ -125,16 +110,8 @@ bdotsFit <- function(data, # dataset
    dat1$fitCode <- result['fitCode']
    dat1
  })
- tt <- rbindlist(tt)
- rr <- tt[1, ]
- ## This alone is a few seconds (2.097 vs 0.021)
- ## ok, w/e, find having this as data.frame, but it prints out wrong
- #system.time(tt1 <- Reduce(rbind, tt))
- #system.time(tt2 <- rbindlist(tt))
+ fitList <- rbindlist(fitList)
 
- ## What else should be returned? anything in sub level stuff?
- # perhaps a curve type, so list(curvetype, tt1), for example? what else?
- # think of summary functions
 
  ## Class bdots object
 
@@ -159,9 +136,11 @@ bdotsFit <- function(data, # dataset
     # II) input your own starting parameters (as matrix)
        # a) must be same dimension as refits doing
 
+   res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
+                    list(curveType = curveType,
+                         formula = res[[1]]$ff,
+                         fits = fitList))
 
-
-  return(dat)
 
 }
 
