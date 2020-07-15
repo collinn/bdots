@@ -1,4 +1,3 @@
-
 # pdf for logistic function
 # logistic_f()
 
@@ -22,7 +21,7 @@ logisticPars <- function(dat) {
 }
 
 estLogisticCurve <- function(dat, rho, params = NULL,
-                             cor = TRUE, get.cov.only = FALSE, refits = FALSE) {
+                              get.cov.only = FALSE, refits = FALSE) {
 
   if (is.null(params)) {
     params <- logisticPars(dat)
@@ -37,10 +36,6 @@ estLogisticCurve <- function(dat, rho, params = NULL,
 
   ff <- quote(y ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (time)) / (peak - mini))))
 
-  ## Need to move this argument (for all of these calls nulls at end)
-  fit <- curveFitter(dat, rho, cor, refits = refits, ff = ff, params = params)
-  return(list(fit = fit[['fit']], cor = fit[['cor']], ff = ff))
+  fit <- curveFitter(dat, ff, params, rho, refits, get.cov.only, ...)
+  return(list(fit = fit, ff = ff))
 }
-
-
-

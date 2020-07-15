@@ -1,6 +1,6 @@
 
-ff <- diffs(y, condition(M,W)) ~ group(DLD, TD) + g2(n1, n2)
-ff <- y ~ group(DLD, TD)
+# ff <- diffs(y, condition(M,W)) ~ group(DLD, TD) + g2(n1, n2)
+# ff <- y ~ group(DLD, TD)
 
 ## Get group and subset from something of form grp(n1, n2)
 # needs to be length 1 or 2
@@ -86,7 +86,132 @@ bdotsParser <- function(ff) {
 
 }
 
-bdotsParser(ff <- diffs(y, condition(M,W)) ~ group(DLD, TD) + g2(n1, n2))
+#bdotsParser(ff <- diffs(y, condition(M,W)) ~ group(DLD, TD) + g2(n1, n2))
+
+## parses things like doubleGauss(concave = TRUE), logistic(), poly(degree = n), etc.
+
+## This version of f/g works
+f <- function(a) { # <- curve parse function
+  class(a) %>% print()
+  a
+}
+g <- function(a) { # <- bdots, with a = doubleGauss(curve = TRUE)
+  f(substitute(a))
+}
+
+ee <- g(doubleGauss(concave = TRUE, lickmyballs = TRUE, n = 8))
+
+
+rr <- f(doubleGauss(concave = FALSE, balls = TRUE))
+rr <- f(doubleGauss(concave = TRUE))
+names(rr)
+
+# bdotsFit(...) { curveParser(substitute(expr))}
+
+#strsplit(ee, "[\\(\\)]")
+## expr comes in as a call
+expr <- ee
+
+## This takes expression for curve type
+# i.e., doubleGauss(concave = TRUE)
+# poly(n = w/e)
+# maybe someday get sophisticated with this
+# return value is list named with curve, elements are arguments
+curveParser <- function(expr) {
+  if(!is.call(expr)) stop("Invalid curve expression")
+  expr <- unlist(strsplit(deparse(expr), "[\\(\\)]"))
+
+  ## First of these is function name
+  curve <- expr[1]
+  if (!(curve %in% c("doubleGauss", "logistic", "poly"))) stop("Invalid curve type") # can probably remove this (probably should)
+
+  arggs <- strsplit(expr[-1], ",") # get all arguments
+  arggs <- lapply(arggs, function(x) gsub("^[ \t]+|[ \t]+$", "", x))
+
+  # sanity check
+  for(v in unlist(arggs)) {
+    if(!grep("[=]", v)) stop(paste0(v, " is an invalid argument"))
+    if(length(unlist(strsplit(v, "[=]"))) != 2) stop(paste0(v, " is an invalid assignment"))
+  }
+
+  setNames(arggs, curve)
+}
+
+(ww(doubleGauss(concave = FALSE, eatmyshitter = TRUE)))
+
+ ## It's important that we call with substitute in function
+ww <- function(a) {
+  curveParser(substitute(a))
+}
+
+
+### Lets test that output
+# Shit yes, this evaluates everything
+ww <- function(a) {
+  val <- curveParser(substitute(a))
+  curveType <- names(val)
+  val <- as.list(unlist(val, use.names = FALSE))
+  myenv <- new.env()
+  for(i in seq_along(val)) {
+    #eval(parse(text = val[i]), envir = sys.frame(sys.nframe()))
+    eval(parse(text = val[i]), envir = myenv)
+  }
+  myenv
+}
+
+aa <- (ww(doubleGauss(concave = FALSE, eatmyshitter = TRUE)))
+
+a1 <- aa[[1]]
+
+## What we find is that frame_n gives frame of current env
+# sys.frame(frame_n) allows us to list2env in function
+# this shit works with mclapply
+# also works for  parLapply
+# f <- function(ll = 1) {
+#   a <- 2
+#   b <- 3
+#   frame_n <- sys.nframe() # what frame am I in?
+#   list2env(ll, envir = sys.frame(frame_n))
+#   tt <- ls()
+#   mm
+# }
+#
+# h <- function() {
+#   ll <- list(list(m = 1, mm = 2), list(m = 1, mm = 9))
+#   #aa <- mclapply(ll, f)
+#
+#   cl <- makePSOCKcluster(2)
+#   clusterExport(cl, c("ll", "f"))
+#   aa <- parLapply(cl, ll, f)
+#   stopCluster(cl)
+#   aa
+# }
+#
+# (h())
+
+### Can we assign to env and export in parallel? YES
+f <- function(x, ...) {
+  cat(doggy)
+}
+ww <- function(a) {
+  val <- curveParser(substitute(a))
+  curveType <- names(val)
+  val <- as.list(unlist(val, use.names = FALSE))
+  myenv <- new.env()
+  for(i in seq_along(val)) {
+    #eval(parse(text = val[i]), envir = sys.frame(sys.nframe()))
+    eval(parse(text = val[i]), envir = myenv)
+  }
+
+  cl <- makePSOCKcluster(2, outfile = "")
+  clusterExport(cl, c("f"))
+  clusterExport(cl, ls(envir = myenv), envir = myenv) # this will export named  variables in myenv
+  aa <- parLapply(cl, 1:10, f)
+  stopCluster(cl)
+
+}
+(ww(doubleGauss(doggy = "doggy")))
+
 
 
 

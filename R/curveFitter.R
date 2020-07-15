@@ -7,18 +7,18 @@
 ## If this isn't working for them, in bdotsFit, there can be a (...) argument
 # where they can copy this function out, change it, then pass it back in (functional shit is so cool)
 # Add argument for minimum cutoffs?
-curveFitter <- function(dat, rho, cor, get.cov.only = NULL, refits = 0, ff, params) {
 
-  ## Here's the thing - everything below is going to be used in dgauss, logistic,
-  # poly, literally whatever else. That is the benefit of establish ff above, because
-  # the rest of these are never going to change. Aw hell yeah!
-  if(!is.null(get.cov.only) && get.cov.only) {
+## If exported to user, need error checking
+curveFitter <- function(dat, ff, params, rho, refits = 0, get.cov.only = NULL, ...) {
+
+  browser()
+
+  if (!is.null(get.cov.only) && get.cov.only) {
     fit <- gnls(eval(ff), start = params, data = data.frame(time, y),
                 correlation = corAR1(rho),
                 control = gnlsControl(maxIter = 0, nlsMaxIter = 0, msMaxIter = 0, returnObject = TRUE))
-    cor <- TRUE
   } else {
-    if (cor) {
+    if (rho) { # if rho != 0
       fit <- tryCatch(gnls(eval(ff), data = dat, start = params, correlation = corAR1(rho)),
                       error = function(e) NULL)
 
@@ -30,11 +30,11 @@ curveFitter <- function(dat, rho, cor, get.cov.only = NULL, refits = 0, ff, para
           fit <- tryCatch(gnls(eval(ff), data = dat, start = params, correlation = corAR1(rho)),
                           error = function(e) NULL)
         }
-        if (is.null(fit)) cor <- FALSE
+        if (is.null(fit)) rho <- 0
       }
     }
 
-    if (!cor) {
+    if (!rho) {
       fit <- tryCatch(gnls(eval(ff), data = dat, start = params), error = function(e) NULL)
 
       if (is.null(fit)) {
@@ -48,7 +48,7 @@ curveFitter <- function(dat, rho, cor, get.cov.only = NULL, refits = 0, ff, para
     }
   }
   ## cor can be determined by existence of fit$modelStruct$corStuct
+  # and in this function, it can be implied by rho
   fit
-  #list(fit = fit, cor = cor)
 }
 

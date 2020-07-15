@@ -40,10 +40,11 @@ dgaussPars <- function(dat, conc) {
 }
 
 ## I guess let's make jitter a numeric argument, since jitter > 0 implies jitter == TRUE
-estDgaussCurve <- function(dat, rho, conc, params = NULL,
-                           cor = TRUE, get.cov.only = FALSE, refits = FALSE) {
+estDgaussCurve <- function(dat, rho, concave, params = NULL,
+                            get.cov.only = FALSE, refits = 0, ...) {
+
   if (is.null(params)) {
-    params <- dgaussPars(dat, conc)
+    params <- dgaussPars(dat, concave)
   } else {
     if (length(params) != 6) stop("doubleGauss requires 6 parameters be specified for refitting")
     if (!all(names(params) %in% c("mu", "ht", "sig1", "sig2", "base1", "base2"))) {
@@ -59,7 +60,8 @@ estDgaussCurve <- function(dat, rho, conc, params = NULL,
                   / (2 * sig2 ^ 2)) * (ht - base2) + base2))
 
 
-  fit <- curveFitter(dat, rho, cor, get.cov.only = FALSE, refits, ff, params)
+
+  fit <- curveFitter(dat, ff, params, rho, refits, get.cov.only, ...)
 
   ## I don't need to return this, they can find their own starting parameters with
   # the function above. Plus, it makes it too complicated

@@ -12,15 +12,12 @@ library(parallel)
 
 # pair verbose with message
 
-## If rho null but cor = TRUE, couldn't we guess at rho?
-
 ## Need to not make my own names for this (i.e., y, subject, time)
 
-## Add argument for minimally accepted R2. For example, if a
-# model fits with AR1 = TRUE, but R2 =
 
 
 ## Yo, if we end up having to delete subjects, how do we do a paired t test?
+## concave is doubleGauss onlly. Surely we can do better
 bdotsFit <- function(data, # dataset
                      subject, # subjects
                      time, # column for time
@@ -32,9 +29,13 @@ bdotsFit <- function(data, # dataset
                      rho = 0.9, # autocor value
                      refits = 0,
                      cores = 0, # cores to use, 0 == 50% of available
-                     verbose = FALSE) {
+                     verbose = FALSE,
+                     ...) {
 
-  if(cores < 1) cores <- detectCores()/2
+  if (cores < 1) cores <- detectCores()/2
+
+  # for removing rho (need to adjust in case it's in (...))
+  rho <- ifelse(cor, 0.9, 0)
 
 
   ## Cheat around DT reference, conditionally set key for subset
@@ -52,39 +53,48 @@ bdotsFit <- function(data, # dataset
   for(gg in seq_along(group)) {
     set(dat, j = group[gg], value = data[[group[gg]]])
   }
-
-  ## For logistic
-  data(ci)
-  ci <- as.data.table(ci)
-  ci <- ci[LookType == "Target", ]
-  group <- "protocol"
-  dat <- data.table()
-  dat$subject <- ci[[subject]]
-  dat$time <- ci[[time]] %>% as.numeric()
-  dat$y <- ci[[y]] %>% as.numeric()
-  for(gg in seq_along(group)) {
-    set(dat, j = group[gg], value = ci[[group[gg]]])
-  }
+#
+#   ## For logistic
+#   data(ci)
+#   ci <- as.data.table(ci)
+#   ci <- ci[LookType == "Target", ]
+#   group <- "protocol"
+#   dat <- data.table()
+#   dat$subject <- ci[[subject]]
+#   dat$time <- ci[[time]] %>% as.numeric()
+#   dat$y <- ci[[y]] %>% as.numeric()
+#   for(gg in seq_along(group)) {
+#     set(dat, j = group[gg], value = ci[[group[gg]]])
+#   }
 
 
 
   ## Set key
   setkeyv(dat, c("subject", group))
 
-  ## if(.platform$OStype == windows)
-  ## This allows output to be print to console, possibly not possible in windows
- cl <- makePSOCKcluster(4, outfile = "") # prefer to not have output here
- clusterExport(cl, c("curveType", "concave", "cor", "rho", "refits", "verbose",
+ #  ## if(.platform$OStype == windows)
+ #  ## This allows output to be print to console, possibly not possible in windows
+ # #cl <- makePSOCKcluster(4, outfile = "") # prefer to not have output here
+ cl <- makePSOCKcluster(4)
+ #cl <- makePSOCKcluster(4) # prefer to not have output here
+ ## Ideally, I could clusterEvalQ bdots
+ clusterExport(cl, c("curveType", "concave", "rho", "refits", "verbose",
                      "curveFitter", "estDgaussCurve", "dgaussPars", "gnls", "corAR1",
                      "estLogisticCurve", "logisticPars"), envir = parent.frame())
  #clusterEvalQ(cl, library(data.table))
  invisible(clusterEvalQ(cl, library(nlme)))
  newdat <- split(dat, by = c("subject", group), drop = TRUE) # these needs to not be in string
  ## Would like to pass names into this
- system.time(res <- parLapply(cl, newdat, bdotsFitter)) # this also needs arguments (does it?)
+ system.time(res <- parLapply(cl, newdat, bdotsFitter, curveType = curveType, concave = concave, rho = rho, refits = refits, verbose = verbose)) # this also needs arguments (does it?)
  ## This allows us to pass names for verbose
  #system.time(res <- clusterMap(cl, bdotsFitter, newdat, thenames = names(newdat))) # this also needs arguments (does it?)
  stopCluster(cl)
+
+  # newdat <- split(dat, by = c("subject", group), drop = TRUE) # these needs to not be in string
+  # browser()
+  # for(i in seq_along(newdat)) {
+  #   res[[i]] <- bdotsFitter(dat = newdat[[i]], curveType = curveType, concave = concave, rho = rho, refits = refits, verbose = verbose)
+  # }
 
 
  ## At some point, need to change the way this returns fit entry as "AsIs" object, nested lis t
@@ -95,23 +105,14 @@ bdotsFit <- function(data, # dataset
    dat1 <- as.data.table(matrix(x[[1]], ncol = length(x[[1]])))
    names(dat1) <-  c(subject, group)
 
-   # I don't really like that this has to be like this
-   # it's a length 1 list where result is a list of length 3, but w/e for now
-   # since assigning class, could also make method `[` or `[[`
-   dat1$fit <- I(list(result['fit'])) #<- this fixes it so that object is gnls inside list of length 1
-
-
-   # These got named weird things from function, so use number. ew
-   # Should also include starting parameters here (only used for refitting or end user)
-   # that way, if user just throws in own model, they don't need to include extra nonsense
-   # if they do nothing, bdotsRefit will just keep jittering the start values
+   dat1$fit <- I(list(result['fit']))
    dat1$R2 <- result['R2']
    dat1$AR1 <- (result['fitCode'] < 3)
    dat1$fitCode <- result['fitCode']
    dat1
  })
  fitList <- rbindlist(fitList)
-
+ ff <- res[[1]][['ff']]
 
  ## Class bdots object
 
@@ -136,11 +137,13 @@ bdotsFit <- function(data, # dataset
     # II) input your own starting parameters (as matrix)
        # a) must be same dimension as refits doing
 
-   res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
-                    list(curveType = curveType,
-                         formula = res[[1]]$ff,
-                         fits = fitList))
-
+ ## Returned object is just a data.table with attributes
+ # this will make it significantly easier to work with/substitute
+ # it will also keep formula/curveType with subsets
+ res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
+                  .Data = fitList,
+                  formula = ff,
+                  curveType = curveType)
 
 }
 

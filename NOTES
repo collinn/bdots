@@ -17,7 +17,9 @@ Allows for subset based on condition fit
 
 (-) Bob made note to hide 0.9 for cor default from user, but allow to be specified with dots
 
+(-) In bdotsBoot, for the while loop determining PD matrix, have escape hatch and issue warning if fit without correlation in bivariate normal
 
+(-) value of rho is implied by argument to `cor`. If cor == TRUE rho <- 0.9 (or user input). If cor = FALSE, rho = 0
 
 Ideas:
 - Add argument for minimum R2 (i.e., if R2 < 0.8, drop auto correlation and try again)
