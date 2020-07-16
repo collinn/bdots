@@ -11,7 +11,6 @@
 ## If exported to user, need error checking
 curveFitter <- function(dat, ff, params, rho, refits = 0, get.cov.only = NULL, ...) {
 
-  browser()
 
   if (!is.null(get.cov.only) && get.cov.only) {
     fit <- gnls(eval(ff), start = params, data = data.frame(time, y),

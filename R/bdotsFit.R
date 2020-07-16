@@ -23,16 +23,15 @@ bdotsFit <- function(data, # dataset
                      time, # column for time
                      y, # response vector
                      group, # groups for subjects
-                     curveType = c("doubleGauss"), # logistic, doubleGauss, etc. maybe have length match responseGroup length?
-                     concave = NULL, # doubleGauss only concavity
+                     curveType = doubleGauss(concave = TRUE),
                      cor = TRUE, # autocorrelation?
-                     rho = 0.9, # autocor value
                      refits = 0,
                      cores = 0, # cores to use, 0 == 50% of available
                      verbose = FALSE,
                      ...) {
 
   if (cores < 1) cores <- detectCores()/2
+
 
   # for removing rho (need to adjust in case it's in (...))
   rho <- ifelse(cor, 0.9, 0)
@@ -43,58 +42,93 @@ bdotsFit <- function(data, # dataset
   # and get rid of magrittr
   # maybe get rid of data table :(
   ## For doubleGauss
+  ## Names actually might not matter if I don't make bdotsFitter public
   dat <- data.table()
   dat$subject <- data[[subject]]
   dat$time <- data[[time]] %>% as.numeric()
   dat$y <- data[[y]] %>% as.numeric()
-  group <- c("Group", "LookType")
+  #group <- c("Group", "LookType")
 
   ## Set group variables in data.tableb+
   for(gg in seq_along(group)) {
     set(dat, j = group[gg], value = data[[group[gg]]])
   }
 #
-#   ## For logistic
-#   data(ci)
-#   ci <- as.data.table(ci)
-#   ci <- ci[LookType == "Target", ]
-#   group <- "protocol"
-#   dat <- data.table()
-#   dat$subject <- ci[[subject]]
-#   dat$time <- ci[[time]] %>% as.numeric()
-#   dat$y <- ci[[y]] %>% as.numeric()
-#   for(gg in seq_along(group)) {
-#     set(dat, j = group[gg], value = ci[[group[gg]]])
-#   }
+# # for logistic
+#     data(ci)
+#     ci <- as.data.table(ci)
+#     ci <- ci[LookType == "Target", ]
+#     group <- "protocol"
+#     dat <- data.table()
+#     dat$subject <- ci[[subject]]
+#     dat$time <- ci[[time]] %>% as.numeric()
+#     dat$y <- ci[[y]] %>% as.numeric()
+#     for(gg in seq_along(group)) {
+#       set(dat, j = group[gg], value = ci[[group[gg]]])
+#     }
 
 
+
+  # Named list with args
+  # but look in parser.R to see how to put this in environment (makeCurveEnv)
+  curveList <- curveParser(substitute(curveType))
+  #curveList <- curveParser(quote(doubleGauss(concave = TRUE)))
+  #curveList <- curveParser(quote(logistic()))
 
   ## Set key
   setkeyv(dat, c("subject", group))
 
- #  ## if(.platform$OStype == windows)
- #  ## This allows output to be print to console, possibly not possible in windows
- # #cl <- makePSOCKcluster(4, outfile = "") # prefer to not have output here
+ # #  ## if(.platform$OStype == windows)
+ # #  ## This allows output to be print to console, possibly not possible in windows
+ # # #cl <- makePSOCKcluster(4, outfile = "") # prefer to not have output here
  cl <- makePSOCKcluster(4)
- #cl <- makePSOCKcluster(4) # prefer to not have output here
  ## Ideally, I could clusterEvalQ bdots
- clusterExport(cl, c("curveType", "concave", "rho", "refits", "verbose",
-                     "curveFitter", "estDgaussCurve", "dgaussPars", "gnls", "corAR1",
-                     "estLogisticCurve", "logisticPars"), envir = parent.frame())
+ clusterExport(cl, c("curveFitter", "estDgaussCurve", "dgaussPars",
+                     "estLogisticCurve", "logisticPars", "makeCurveEnv"), envir = parent.frame())
  #clusterEvalQ(cl, library(data.table))
  invisible(clusterEvalQ(cl, library(nlme)))
+ #invisible(clusterEvalQ(cl, library(bdots))) # someday
+
  newdat <- split(dat, by = c("subject", group), drop = TRUE) # these needs to not be in string
  ## Would like to pass names into this
- system.time(res <- parLapply(cl, newdat, bdotsFitter, curveType = curveType, concave = concave, rho = rho, refits = refits, verbose = verbose)) # this also needs arguments (does it?)
+ #system.time(res <- parLapply(cl, newdat, bdotsFitter, curveType = "doubleGauss", concave = TRUE, rho = rho, refits = refits, verbose = verbose)) # this also needs arguments (does it?)
+ system.time(res <- parLapply(cl, newdat, bdotsFitter,
+                              curveList = curveList,
+                              rho = rho, refits = refits,
+                              verbose = verbose))
  ## This allows us to pass names for verbose
  #system.time(res <- clusterMap(cl, bdotsFitter, newdat, thenames = names(newdat))) # this also needs arguments (does it?)
  stopCluster(cl)
 
+  #### TEST #####
+  # curveEnv <- curveParser2(substitute(curveType))
+  # cl <- makePSOCKcluster(4)
+  # # if rho, refits, verbose are exported, I don't need to pass them to function
+  # clusterExport(cl, c("rho", "refits", "verbose",
+  #                     "curveFitter", "estDgaussCurve", "dgaussPars",
+  #                     "estLogisticCurve", "logisticPars"), envir = parent.frame())
+  # invisible(clusterEvalQ(cl, library(nlme)))
+  # invisible(clusterExport(cl, ls(envir = curveEnv), envir = curveEnv))
+  #
   # newdat <- split(dat, by = c("subject", group), drop = TRUE) # these needs to not be in string
-  # browser()
-  # for(i in seq_along(newdat)) {
-  #   res[[i]] <- bdotsFitter(dat = newdat[[i]], curveType = curveType, concave = concave, rho = rho, refits = refits, verbose = verbose)
-  # }
+  # ## Would like to pass names into this
+  # system.time(res <- parLapply(cl, newdat, bdotsFitter)) # this also needs arguments (does it?)
+  # ## This allows us to pass names for verbose
+  # #system.time(res <- clusterMap(cl, bdotsFitter, newdat, thenames = names(newdat))) # this also needs arguments (does it?)
+  # stopCluster(cl)
+
+  ##### END TEST
+
+ ## Some fits may be null, so we want to make sure we
+ ## initialize their data.table below correctly
+ # First, let's find a non-null fit
+ #tt <- which(vapply(replicate(10, NULL), function(x) !is.null(x), logical(1))) # <- length 0 vector
+ nnfit_v <- which(vapply(res, function(x) !is.null(x$fit), logical(1)))
+ if(!length(nnfit_v)) stop("No models successfully fit") # here, which should still return something, but stop for now
+
+ ## Null fit template for parameters from first fully fit model
+ dt_null <- data.table(t(coef(res[[nnfit_v[1]]]$fit)))
+ dt_null[] <- NA
 
 
  ## At some point, need to change the way this returns fit entry as "AsIs" object, nested lis t
@@ -109,7 +143,17 @@ bdotsFit <- function(data, # dataset
    dat1$R2 <- result['R2']
    dat1$AR1 <- (result['fitCode'] < 3)
    dat1$fitCode <- result['fitCode']
-   dat1
+
+   if(!is.null(result[['fit']])) {
+     dt_par <- data.table(t(coef(result[['fit']])))
+   } else {
+     dt_par <- copy(dt_null)
+   }
+
+   # Not sexy, but these aren't large things being copied either
+   # Otherwise, need to do more complicated manuevering to determine
+   # how to make par columns for NULL fits to be rbindlisted below
+   cbind(dat1, dt_par)
  })
  fitList <- rbindlist(fitList)
  ff <- res[[1]][['ff']]
@@ -143,7 +187,7 @@ bdotsFit <- function(data, # dataset
  res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
                   .Data = fitList,
                   formula = ff,
-                  curveType = curveType)
+                  curveType = curveList)
 
 }
 

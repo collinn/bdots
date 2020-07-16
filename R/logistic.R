@@ -21,7 +21,7 @@ logisticPars <- function(dat) {
 }
 
 estLogisticCurve <- function(dat, rho, params = NULL,
-                              get.cov.only = FALSE, refits = FALSE) {
+                              get.cov.only = FALSE, refits = FALSE, ...) {
 
   if (is.null(params)) {
     params <- logisticPars(dat)

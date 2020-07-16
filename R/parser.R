@@ -92,7 +92,7 @@ bdotsParser <- function(ff) {
 
 ## This version of f/g works
 f <- function(a) { # <- curve parse function
-  class(a) %>% print()
+  #class(a) %>% print()
   a
 }
 g <- function(a) { # <- bdots, with a = doubleGauss(curve = TRUE)
@@ -101,10 +101,6 @@ g <- function(a) { # <- bdots, with a = doubleGauss(curve = TRUE)
 
 ee <- g(doubleGauss(concave = TRUE, lickmyballs = TRUE, n = 8))
 
-
-rr <- f(doubleGauss(concave = FALSE, balls = TRUE))
-rr <- f(doubleGauss(concave = TRUE))
-names(rr)
 
 # bdotsFit(...) { curveParser(substitute(expr))}
 
@@ -117,6 +113,7 @@ expr <- ee
 # poly(n = w/e)
 # maybe someday get sophisticated with this
 # return value is list named with curve, elements are arguments
+## Keep
 curveParser <- function(expr) {
   if(!is.call(expr)) stop("Invalid curve expression")
   expr <- unlist(strsplit(deparse(expr), "[\\(\\)]"))
@@ -137,16 +134,32 @@ curveParser <- function(expr) {
   setNames(arggs, curve)
 }
 
-(ww(doubleGauss(concave = FALSE, eatmyshitter = TRUE)))
+### Lets test that output
+# Shit yes, this evaluates everything and returns environment
+## But instead assume it has input from curveParser
+## Keep
+# takes list, returns environment
+makeCurveEnv <- function(val) {
+  curveType <- names(val)
+  val <- as.list(unlist(val, use.names = FALSE))
+  myenv <- new.env()
+  for(i in seq_along(val)) {
+    #eval(parse(text = val[i]), envir = sys.frame(sys.nframe()))
+    eval(parse(text = val[i]), envir = myenv)
+  }
+  myenv
+}
+
+
 
  ## It's important that we call with substitute in function
 ww <- function(a) {
   curveParser(substitute(a))
 }
 
-
+(ww(doubleGauss(concave = FALSE, eatmyshitter = TRUE)))
 ### Lets test that output
-# Shit yes, this evaluates everything
+# Shit yes, this evaluates everything and returns environment
 ww <- function(a) {
   val <- curveParser(substitute(a))
   curveType <- names(val)
@@ -159,9 +172,44 @@ ww <- function(a) {
   myenv
 }
 
+## This returns an environment
 aa <- (ww(doubleGauss(concave = FALSE, eatmyshitter = TRUE)))
 
-a1 <- aa[[1]]
+## Maybe I can combien this all in one place
+curveParser2 <- function(expr) {
+  if(!is.call(expr)) stop("Invalid curve expression")
+  expr <- unlist(strsplit(deparse(expr), "[\\(\\)]"))
+
+  ## First of these is function name
+  curve <- expr[1]
+  if (!(curve %in% c("doubleGauss", "logistic", "poly"))) stop("Invalid curve type") # can probably remove this (probably should)
+
+  arggs <- strsplit(expr[-1], ",") # get all arguments
+  arggs <- lapply(arggs, function(x) gsub("^[ \t]+|[ \t]+$", "", x))
+
+  # sanity check
+  for(v in unlist(arggs)) {
+    if(!grep("[=]", v)) stop(paste0(v, " is an invalid argument"))
+    if(length(unlist(strsplit(v, "[=]"))) != 2) stop(paste0(v, " is an invalid assignment"))
+  }
+
+  myenv <- new.env()
+  arggs <- as.list(unlist(arggs, use.names = FALSE))
+  myenv <- new.env()
+  myenv$curveType <- curve
+  for(i in seq_along(arggs)) {
+    #eval(parse(text = val[i]), envir = sys.frame(sys.nframe()))
+    eval(parse(text = arggs[i]), envir = myenv)
+  }
+  myenv
+  #setNames(arggs, curve)
+}
+
+ww2 <- function(a) {
+  curveParser2(substitute(a))
+}
+
+aa <- (ww2(doubleGauss(concave = FALSE, eatmyshitter = TRUE)))
 
 ## What we find is that frame_n gives frame of current env
 # sys.frame(frame_n) allows us to list2env in function
@@ -191,7 +239,7 @@ a1 <- aa[[1]]
 
 ### Can we assign to env and export in parallel? YES
 f <- function(x, ...) {
-  cat(doggy)
+  #cat(doggy)
 }
 ww <- function(a) {
   val <- curveParser(substitute(a))
@@ -203,7 +251,7 @@ ww <- function(a) {
     eval(parse(text = val[i]), envir = myenv)
   }
 
-  cl <- makePSOCKcluster(2, outfile = "")
+  cl <- makePSOCKcluster(2) #, outfile = "")
   clusterExport(cl, c("f"))
   clusterExport(cl, ls(envir = myenv), envir = myenv) # this will export named  variables in myenv
   aa <- parLapply(cl, 1:10, f)
@@ -211,7 +259,6 @@ ww <- function(a) {
 
 }
 (ww(doubleGauss(doggy = "doggy")))
-
 
 
 

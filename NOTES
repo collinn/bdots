@@ -21,5 +21,13 @@ Allows for subset based on condition fit
 
 (-) value of rho is implied by argument to `cor`. If cor == TRUE rho <- 0.9 (or user input). If cor = FALSE, rho = 0
 
+(?) sys.nframe() returns number of frames from global env. How does this work in parellel? Fuck, I've got something sexy for that.
+
+(-) should make doubleGauss(concave = TRUE), logistic(), poly(n = N) actual functions that return everything needed for fitting parameters based on input of data. This would keep the model/parameter fitting fullyl specified by this function. If we assume it has a specified form, anybody could create their own to do the same.
+
+(-) print.bdots <- wrapper around print.data.table. Take the bdotsObj, hide the rows that are marked as 'removed' and only print out the remaining ones
+
+(-) add model coefficients to bdotsObj output
+
 Ideas:
 - Add argument for minimum R2 (i.e., if R2 < 0.8, drop auto correlation and try again)

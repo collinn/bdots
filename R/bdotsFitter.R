@@ -20,12 +20,14 @@
 #   bdotsFitter(newdat[[i]])
 # }
 #
-# bdotsFitter(dat = newdat[[1]], "doubleGauss", concave, rho = 0.9, verbose = FALSE)
+#bdotsFitter(dat = newdat[[1]], "doubleGauss", concave, rho = 0.9, verbose = FALSE)
 
+#bdotsFitter(dat = newdat[[1]], curveList = curveList, rho = 0.9)
 
 ## This will ultimately not be passed to end user, so I can make more assumptions
 # (with less checking). concave probably shouldn't be passed
-bdotsFitter <- function(dat, curveType, concave, rho, refits = 0,
+## Definitely not passed to user
+bdotsFitter <- function(dat, curveList, rho, refits = 0,
                         verbose, thenames = NULL, get.cov.only = NULL, ...) {
 
 
@@ -38,7 +40,10 @@ bdotsFitter <- function(dat, curveType, concave, rho, refits = 0,
     dat <- unique(dat, by = c("time"))
   }
 
-  estCurveFit <- switch(curveType,
+  ## curve environment
+  curveEnv <- makeCurveEnv(curveList)
+
+  estCurveFit <- switch(names(curveList),
     doubleGauss = estDgaussCurve,
     logistic = estLogisticCurve #,
     #poly = estPolyCurve()
@@ -46,10 +51,12 @@ bdotsFitter <- function(dat, curveType, concave, rho, refits = 0,
 
   ## This is where my error lives and I don't know why
   ## Named list of current environment
-  arggs <- c(as.list(environment()), list(...))
+  arggs <- c(as.list(environment()), list(...), as.list(curveEnv))
+
+  #browser()
 
   #arggs <- list(dat = dat, curveType = curveType, concave = concave, rho = rho, refits = refits, verbose = FALSE)
-  fit <- do.call(estDgaussCurve, arggs) # <- this also fails
+  fit <- do.call(estCurveFit, arggs) # <- this also fails
 
   #fit <- estDgaussCurve(dat, rho = 0.9, get.cov.only = FALSE, cor = TRUE, refits = 0, conc = TRUE)
   #fit <- estLogisticCurve(dat, rho = 0.9, get.cov.only = FALSE, cor = TRUE, refits = 4)
@@ -57,9 +64,9 @@ bdotsFitter <- function(dat, curveType, concave, rho, refits = 0,
   ## Practice verbose (put at top)
   #if (FALSE) message(thenames)
 
-  # if (is.null(fit[['fit']])) {
-  #   return(list(fit = fit[["fit"]], R2 = NA, fitCode = 6, ff = fit[['ff']]))
-  # }
+  if (is.null(fit[['fit']])) {
+    return(list(fit = fit[["fit"]], R2 = NA, fitCode = 6, ff = fit[['ff']]))
+  }
 
   SSE <- sum(resid(fit[['fit']])^2)
   SSY <- sum((dat$y - mean(dat$y))^2)
