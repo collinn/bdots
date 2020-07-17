@@ -50,4 +50,3 @@ curveFitter <- function(dat, ff, params, rho, refits = 0, get.cov.only = NULL, .
   # and in this function, it can be implied by rho
   fit
 }
-

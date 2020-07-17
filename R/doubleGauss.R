@@ -1,3 +1,59 @@
+# Presently, this is not the priority, but we will return to it
+## Flagship function composed of those below
+## Before calling in bdotsFit, we will check if params exist and if so, use those as our
+# parameter estimates (this would be the case in a refit, but not a first fit)
+# the user can ignore this always. If params are  provided, we will still use formula
+# They need to make sure the return value is a list we want
+# doubleGauss <- function(dat, concave, params = NULL,  ...) {
+#
+#   ## First define function for setting parameters
+#   ## misc functions for finding parameters
+#   dgaussPars <- function(dat, concave) {
+#     time <- dat$time
+#     y <- dat$y
+#
+#     mu <- ifelse(conc, time[which.max(y)], time[which.min(y)])
+#     ht <- ifelse(conc, max(y), min(y))
+#     base1 <- ifelse(conc, min(y[time < mu]), max(y[time < mu]))
+#     base2 <- ifelse(conc, min(y[time > mu]), max(y[time > mu]))
+#
+#     ## A little more involved
+#     y1 <- y - base1
+#     y1 <- rev(y1[time <= mu])
+#     time1 <- rev(time[time <= mu])
+#     totalY1 <- sum(y1)
+#     sigma1 <- mu - time1[which.min(abs((pnorm(1) - pnorm(-1)) * totalY1 - cumsum(y1)))]
+#
+#     y2 <- y - base2
+#     y2 <- y2[time >= mu]
+#     time2 <- time[time >= mu]
+#     totalY2 <- sum(y2)
+#     sigma2 <- time2[which.min(abs((pnorm(1) - pnorm(-1)) * totalY2 - cumsum(y2)))] - mu
+#
+#     return(c(mu = mu, ht = ht, sig1 = sigma1, sig2 = sigma2,
+#              base1 = base1, base2 = base2))
+#   }
+#
+#   ## Appropriate error checking, relying on said function
+#   if (is.null(params)) {
+#     params <- dgaussPars(dat, concave)
+#   } else {
+#     if (length(params) != 6) stop("doubleGauss requires 6 parameters be specified for refitting")
+#     if (!all(names(params) %in% c("mu", "ht", "sig1", "sig2", "base1", "base2"))) {
+#       stop("doubleGauss parameters for refitting must be correctly labeled")
+#     }
+#   }
+#
+#   ## Formula to be used (but quote it)
+#   ff <- quote(y ~ (time < mu) * (exp(-1 * (time - mu) ^ 2
+#                                      / (2 * sig1 ^ 2)) * (ht - base1) + base1)
+#               + (mu <= time) * (exp(-1 * (time - mu) ^ 2
+#                                     / (2 * sig2 ^ 2)) * (ht - base2) + base2))
+#
+#
+# }
+
+
 ## doubleGauss related functions
 
 ## These are just fitted values, but come up elsewhere so leave here for now for reference
@@ -41,7 +97,7 @@ dgaussPars <- function(dat, conc) {
 
 ## I guess let's make jitter a numeric argument, since jitter > 0 implies jitter == TRUE
 estDgaussCurve <- function(dat, rho, concave, params = NULL,
-                            get.cov.only = FALSE, refits = 0, ...) {
+                           get.cov.only = FALSE, refits = 0, ...) {
 
   if (is.null(params)) {
     params <- dgaussPars(dat, concave)
@@ -55,12 +111,14 @@ estDgaussCurve <- function(dat, rho, concave, params = NULL,
   ## Maybe have functions that just return this formula for
   # ease of update for end user
   ff <- quote(y ~ (time < mu) * (exp(-1 * (time - mu) ^ 2
-                  / (2 * sig1 ^ 2)) * (ht - base1) + base1)
-                  + (mu <= time) * (exp(-1 * (time - mu) ^ 2
-                  / (2 * sig2 ^ 2)) * (ht - base2) + base2))
+                                     / (2 * sig1 ^ 2)) * (ht - base1) + base1)
+              + (mu <= time) * (exp(-1 * (time - mu) ^ 2
+                                    / (2 * sig2 ^ 2)) * (ht - base2) + base2))
 
 
 
+  ## In retrospect, this is a bad idea, because then this will be copied
+  # in a bunch of different functions, making updates error prone.
   fit <- curveFitter(dat, ff, params, rho, refits, get.cov.only, ...)
 
   ## I don't need to return this, they can find their own starting parameters with

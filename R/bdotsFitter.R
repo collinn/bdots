@@ -31,6 +31,9 @@ bdotsFitter <- function(dat, curveList, rho, refits = 0,
                         verbose, thenames = NULL, get.cov.only = NULL, ...) {
 
 
+  ## Check the dat object to see if params exist
+  ## need to be a bit more careful actually if this is used both
+  # here and bdots refit
 
   ## This will need to be handled differently, as dat may not contain
   # y, time, etc
@@ -40,6 +43,7 @@ bdotsFitter <- function(dat, curveList, rho, refits = 0,
     dat <- unique(dat, by = c("time"))
   }
 
+  ## We can avoid all of this if we have a function passed!
   ## curve environment
   curveEnv <- makeCurveEnv(curveList)
 

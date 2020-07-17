@@ -23,11 +23,13 @@ Allows for subset based on condition fit
 
 (?) sys.nframe() returns number of frames from global env. How does this work in parellel? Fuck, I've got something sexy for that.
 
-(-) should make doubleGauss(concave = TRUE), logistic(), poly(n = N) actual functions that return everything needed for fitting parameters based on input of data. This would keep the model/parameter fitting fullyl specified by this function. If we assume it has a specified form, anybody could create their own to do the same.
+(-) should make doubleGauss(concave = TRUE), logistic(), poly(n = N) actual functions that return everything needed for fitting parameters based on input of data. This would keep the model/parameter fitting fullyl specified by this function. If we assume it has a specified form, anybody could create their own to do the same. We can put the ones we built into their own R files (all gauss functions, all logistic), but then document what it is, and what it requires
+
+Say they pass `call = doubleGauss(concave = TRUE)`, we can then take this and do `call[[data]] <- data` to add what is needed to these functions. It will also make passing shit to clusterExport cleaner. FUCK, we can do that from the beginning. Pass in rho, cor, whatever else we need to do so
 
 (-) print.bdots <- wrapper around print.data.table. Take the bdotsObj, hide the rows that are marked as 'removed' and only print out the remaining ones
 
-(-) add model coefficients to bdotsObj output
+(-) add model coefficients to bdotsObj output <- I don't like this just being appended. I think it would be far cleaner as a matrix stored in attributes
 
 Ideas:
 - Add argument for minimum R2 (i.e., if R2 < 0.8, drop auto correlation and try again)

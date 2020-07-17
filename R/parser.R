@@ -152,7 +152,7 @@ makeCurveEnv <- function(val) {
 
 
 
- ## It's important that we call with substitute in function
+## It's important that we call with substitute in function
 ww <- function(a) {
   curveParser(substitute(a))
 }

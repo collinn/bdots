@@ -32,11 +32,32 @@
 
 ## Shit, yo, the results of this can just be appended onto the bdotsObj in the associated rows
 
+## Outline
+# bdotsBoot
+# 1. parse formula and make appropriate subsets to bdotsOjb
+# 2. All we need to retain are `compareGroup` and `diffGroup`, if not NULL
+# 3. If diffGroup, we next need to decide if drawing from multivariate
+#  i. split bdotsObj into diffgroup1 and diffgroup2
+#  ii. See if subject identifiers are unique or repeated
+#  iii. If unique, bootstraps not correlated, but yes paired t-test
+#  iv. If repeated, bootstraps ARE correlated (bivariate normal), no pair t-test
+# 4. If diffGroup NULL, check if IDs are repeated
+#   i. If yes, draw bivariate normal, paired t-test
+#   ii. If no, standard draw, no paired t-test
+# Get p-value adjustments
+# find significant regions
+# finish
+
+
+
+
 # should finish bdotsFitter so I can replicate this
 # taken from current bdotsFit
-sdat <- tt2[subject == 1, ]
-diffGroup <- c("LookType", "Cohort", "Unrelated_Cohort")
-fitGroup <- c("Group", "50", "65")
+# sdat <- tt2[subject == 1, ]
+
+
+# diffGroup <- c("LookType", "Cohort", "Unrelated_Cohort")
+# fitGroup <- c("Group", "50", "65")
 bdotsBooter <- function(sdat, N.iter, diffGroup = NULL, fitGroup = NULL) {
 
   ## Get names of Groupvars being kept

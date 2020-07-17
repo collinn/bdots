@@ -184,10 +184,16 @@ bdotsFit <- function(data, # dataset
  ## Returned object is just a data.table with attributes
  # this will make it significantly easier to work with/substitute
  # it will also keep formula/curveType with subsets
+ ## Add number of parameters so that we know we are plotting last p columns
+
+ ## We can extract this SUPER easily since it's named with
+ # mod <- attr(res, "call")$curveType to get logistic(), poly(n), etc.,
  res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
                   .Data = fitList,
                   formula = ff,
-                  curveType = curveList)
+                  curveType = curveList,
+                  call = match.call(),
+                  npars = ncol(dt_null))
 
 }
 
