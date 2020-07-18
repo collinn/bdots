@@ -76,7 +76,7 @@ bdotsFit <- function(data, # dataset
   #curveList <- curveParser(quote(logistic()))
 
   ## Set key
-  setkeyv(dat, c("subject", group))
+  #setkeyv(dat, c("subject", group))
 
  # #  ## if(.platform$OStype == windows)
  # #  ## This allows output to be print to console, possibly not possible in windows
@@ -188,6 +188,14 @@ bdotsFit <- function(data, # dataset
 
  ## We can extract this SUPER easily since it's named with
  # mod <- attr(res, "call")$curveType to get logistic(), poly(n), etc.,
+ ## one thing to keep in mind with putting parameters in attributes
+ # is retaining them upon subset
+ ## Shit, yo, just make my own `[.bdotsObj` that inherits from data.table
+ # preserves the matrix
+ # same thing to be on lookout for when merging
+ # rbind.bdotsObj == stop("don't do this, use merge")
+ # shit, yo, could also use `makeActiveBinding()`
+ # at some point, just consider R4 objects
  res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
                   .Data = fitList,
                   formula = ff,

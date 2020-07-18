@@ -4,6 +4,8 @@
 # parameter estimates (this would be the case in a refit, but not a first fit)
 # the user can ignore this always. If params are  provided, we will still use formula
 # They need to make sure the return value is a list we want
+# necessitate that formula given in `time` (rather than Time, t, etc) as this
+# will be used later when computing values for our curve
 # doubleGauss <- function(dat, concave, params = NULL,  ...) {
 #
 #   ## First define function for setting parameters

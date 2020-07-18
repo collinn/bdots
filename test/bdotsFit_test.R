@@ -18,7 +18,6 @@ y <- "Fixations"
 concave <-  TRUE
 conc <- TRUE
 rho <-  0.9
-cor <-  TRUE
 refits <- 0
 cores <-  1
 verbose <-  FALSE
@@ -37,6 +36,14 @@ system.time(res <- bdotsFit(cohort_unrelated,
                 refits = 2,
                 cores = 0,
                 verbose = FALSE))
+
+## Keep only valid pairs for now
+res2 <- res[, 1:7]
+
+# this removes possible pairs
+#res2 <- res2[fitCode != 6, ]
+res2 <- res2[Subject %in% c(1, 2, 3, 5, 7:12, 14:21, 23:26)]
+
 
 
 ## logistic
@@ -66,7 +73,21 @@ system.time(res.l <- bdotsFit(data = ci,
 #   }
 
 
+## Bdots for bob's  data
+bobdat <- read.delim("~/bdots/mcmurray_folder/bdots_stuff/example bdots code/data.txt")
+bobdat <- as.data.table(bobdat)
+currdata <- bobdat [bobdat$TrialType == "W" | bobdat$TrialType == "M" , ]
+names(currdata)[names(currdata) == 'dx'] <- 'Group'
+#currdata$Curve <- ifelse(currdata$TrialType == "M", 1, 2)
 
+system.time(res.b <- bdotsFit(data = currdata,
+                              subject = "Subject",
+                              time = "Time",
+                              y = "Looks",
+                              group = c("Group", "TrialType"),
+                              curve = logistic(),
+                              cor = TRUE,
+                              refits = 2))
 
 
 

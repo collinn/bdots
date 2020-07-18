@@ -31,5 +31,9 @@ Say they pass `call = doubleGauss(concave = TRUE)`, we can then take this and do
 
 (-) add model coefficients to bdotsObj output <- I don't like this just being appended. I think it would be far cleaner as a matrix stored in attributes
 
+(-) Can I fit paired group in gnls at same time? By melting DT by group?
+
+(-) https://stackoverflow.com/questions/27547548/solving-error-message-step-halving-factor-reduced-below-minimum-in-nls-step-a
+
 Ideas:
 - Add argument for minimum R2 (i.e., if R2 < 0.8, drop auto correlation and try again)

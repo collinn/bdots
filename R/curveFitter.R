@@ -13,7 +13,7 @@ curveFitter <- function(dat, ff, params, rho, refits = 0, get.cov.only = NULL, .
 
 
   if (!is.null(get.cov.only) && get.cov.only) {
-    fit <- gnls(eval(ff), start = params, data = data.frame(time, y),
+    fit <- gnls(eval(ff), start = params, data = dat,
                 correlation = corAR1(rho),
                 control = gnlsControl(maxIter = 0, nlsMaxIter = 0, msMaxIter = 0, returnObject = TRUE))
   } else {
