@@ -127,28 +127,55 @@ bdotsFit <- function(data, # dataset
  if(!length(nnfit_v)) stop("No models successfully fit") # here, which should still return something, but stop for now
 
  ## Null fit template for parameters from first fully fit model
- dt_null <- data.table(t(coef(res[[nnfit_v[1]]]$fit)))
- dt_null[] <- NA
+ mat_null <- t(coef(res[[nnfit_v[1]]]$fit))
+ mat_null[] <- NA
 
 
- ## At some point, need to change the way this returns fit entry as "AsIs" object, nested lis t
+ ## Dude, just store that covariate table they want in a list as well
+ # and that can be it's own class if need be
+ ## Neat idea - environment to data.table to work with objects like this
+ # that are actually environments, but behave like data.table
+ # useful!
+ ## At some point, need to change the way this returns fit entry as "AsIs" object, nested list
+ ## YO, mother-effer. We are doing this to each element of a list with
+ # information from that list. In other words, this whole function
+ # right here, everything that happens, we can throw that shit
+ # into bdotsFitter. It has no place here. Goodness gracious. That's
+ # why it'll be important to have the curvefunction pass something that
+ # gives us names for the parameters!
+ ## So, to-do here:
+ # remove matrix as attachment to it
+ # consider putting it in attributes? This would
+ # assist with subsetting and letting them adjust it
+ # manually. We will put more thought in this later
  fitList <- lapply(names(newdat), function(x) {
    result <- res[[x]] # list of length 3
    x <- strsplit(x, "\\.") # list of by variables for newdat
 
-   dat1 <- as.data.table(matrix(x[[1]], ncol = length(x[[1]])))
+   dat1 <- as.list(matrix(x[[1]], ncol = length(x[[1]])))
    names(dat1) <-  c(subject, group)
 
-   dat1$fit <- I(list(result['fit']))
-   dat1$R2 <- result['R2']
-   dat1$AR1 <- (result['fitCode'] < 3)
-   dat1$fitCode <- result['fitCode']
 
+   #set(dat1, j = "fit", value = result[['fit']])
+   #dat1$fit <- I(list(result['fit']))
+   dat1$R2 <- result[['R2']]
+   dat1$AR1 <- (result[['fitCode']] < 3)
+   dat1$fitCode <- result[['fitCode']]
+   #set(dat1, i = 1, j = "time", time)
    if(!is.null(result[['fit']])) {
-     dt_par <- data.table(t(coef(result[['fit']])))
+     dat1$coef <- list(t(coef(result[['fit']])))
    } else {
-     dt_par <- copy(dt_null)
+     dat1$coef <- list(mat_null)
    }
+
+   # as.data.table works, but do I REALLY want to
+   # make these a part of my output? They are visual noise that
+   # could be easily fixed with coef(bdotsObj)
+   test <- structure(dat1, class = c("data.table", "data.frame"),
+                     row.names = integer(0),
+                     names = colnames(dat1))
+   ## I bet there is a slick way to do this
+   test2 <- data.table(colnames(dat1) = dat1)
 
    # Not sexy, but these aren't large things being copied either
    # Otherwise, need to do more complicated manuevering to determine

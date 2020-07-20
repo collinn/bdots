@@ -35,5 +35,8 @@ Say they pass `call = doubleGauss(concave = TRUE)`, we can then take this and do
 
 (-) https://stackoverflow.com/questions/27547548/solving-error-message-step-halving-factor-reduced-below-minimum-in-nls-step-a
 
+(-) For fitting multiple curves simultaneously, this seems to confirm my original intuitiion:
+https://stackoverflow.com/questions/27405484/2-curves-simultaneous-nonlinear-regression
+
 Ideas:
 - Add argument for minimum R2 (i.e., if R2 < 0.8, drop auto correlation and try again)
