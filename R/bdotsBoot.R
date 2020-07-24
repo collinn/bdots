@@ -71,14 +71,18 @@ mg2 <- mm[c(FALSE, TRUE), ]
 corMat <- cor(mg1, mg2)
 
 ## This is what a typical entry may look like (this one paired)
+reslist <- split(res2, by = "LookType")
 dat <- reslist[[1]][Subject == 1, ]
-class(dat) <- c("bdotsObj", "data.table", "data.frame")
+class(dat) <- c("bdotsObj", "data.table", "data.frame") # split doesn't retain class
+
+
 ## Extract coef from  bdotsObj
 ## uh, this doesn't adress null
 # Ah, mother fucker, that's fitcode 6!
+#### Can't replace fit[[1]] since it's unnamed length 1 list. Could name it, I guess
 coef.bdots <- function(dat) {
-  if (!inherits(dat, "bdotsObj")) stop('need bdotsObj')
-  nnfit_v <- which(vapply(dat$fit, function(x) !is.null(x$fit), logical(1)))
+  #if (!inherits(dat, "bdotsObj")) stop('need bdotsObj')
+  nnfit_v <- which(vapply(dat$fit, function(x) !is.null(x$fit), logical(1))) #dat$fitCode != 6 (change here and somewhere else I remember)
   if (!length(nnfit_v)) stop("No models contain valid coefficients")
   mm <- matrix(NA, nrow = nrow(dat), ncol = length(cc <- coef(dat[nnfit_v[1], ]$fit[[1]])))
   colnames(mm) <- names(cc)
@@ -88,6 +92,7 @@ coef.bdots <- function(dat) {
   mm
 }
 
+## Same business here
 getVarMat <- function(dat) {
   if(nrow(dat) != 1) stop("only for single row of bdotsObj")
   dat$fit[[1]]$varBeta
@@ -118,8 +123,8 @@ bdotsBooter <- function(dat, N.iter, corMat = NULL) {
     sig <- cbind(rbind(sig11, sig12), rbind(t(sig12), sig22))
     # ee <- eigen(sig)$values
     # ll <- min(abs(ee))/max(abs(ee))
-    # tt <- nearPD(sig, keepDiag = TRUE, eig.tol = ll*1e-2, maxit = 1e7)
-    pars <- rmvnorm(N.iter, mean = c(t(mm)), sigma = sig)
+    # sig <- Matrix::nearPD(sig, keepDiag = TRUE, eig.tol = ll*1e-2, maxit = 1e7)$mat
+    pars <- mvtnorm::rmvnorm(N.iter, mean = c(t(mm)), sigma = sig)
   } else {
     sig <- getVarMat(dat)
     mm <- coef.bdots(dat)
@@ -161,109 +166,111 @@ bdotsBooter <- function(dat, N.iter, corMat = NULL) {
 ## could make an additional "tests" arguments that could find spots, time, or param
 ## I need to work on the wording for this/names to not be confused
 bdObj <- res2 # from bdotsFit_test.R
-bdObj <- res.b; diffGroup = "Group"; compareGroup <- "TrialType"   # bob's data
+bdObj <- res.b; outerDiff = "Group"; innerDiff <- "TrialType"   # bob's data
 bdotsBoot <- function(ff, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oleson", cores = 0, ...) {
 
   if (cores < 1) cores <- detectCores()/2
-
-  ## pretend ff is parsed. This gives us diffGroup, compareGroup
-  diffGroup <- "LookType" # or NULL
-  compareGroup <- "Group"
-
-  #, ah, NOPE!
-  ## Split by subject and diffgroup. Each resulting
-  ## diffGroup can be null, and this splits correctly
-  #test <- split(bdObj, by = c("Subject", NULL), drop = TRUE)
-  diffList <- split(bdObj, by = c("Subject", diffGroup), drop = TRUE)
-  diffList <- lapply(diffList, function(x) {class(x) <- class(bdObj); x})
-
-  ##  First split by diffGroup (could be NULL). Then get corMat if necessary
-  ## mm....should probably determine if this is paired now
-  # which, actually would be true if each item if diffList is nrow2
-  ## Determine if paired
-  ## Should not need to error check this. If every split for diffList is length
-  # 2, then paired. cor would only fail, then, if number of pars were different
-  is.paired <- !any(vapply(diffList, nrow, numeric(1)) != 2)
-  if (is.paired) {
-    coefs <- lapply(split(bdObj, by = compareGroup, drop = TRUE), function(x) {
-      class(x) <- class(bdObj)
-      coef.bdots(x)
-    })
-    corMat <- do.call(cor, setNames(coefs, c("x", "y")))
+  ## Could maybe list what was removed
+  if(any(bdObj$fitCode == 6)) {
+    warning("Some observations had NULL gnls fits. These will be removed")
+    bdObj <- bdObj[fitCode != 6, ]
   }
-
-
-  ## Draw the bootstraps
-  cl <- makePSOCKcluster(4)
-  invisible(clusterEvalQ(cl, library(mvtnorm)))
-  clusterExport(cl, c("getVarMat", "coef.bdots"), envir = parent.frame()) # <- used in bdotsBooter, but probably needs fixed
-  system.time(res <- parLapply(cl, diffList, bdotsBooter, N.iter, corMat))
-  stopCluster(cl)
-
-  meanMat <- Reduce(`+`, res)/length(res)
+  time <- attr(bdObj, "time")
 
   ## Get formula and turn into function
+  # be warry of name this time
   ff <- attr(bdObj, "formula")
-  f_bod <- deparse1(ff[[3]])
+  f_bod <- deparse1(ff[[3]]) # would be cool to get f_args from this instead
   f_args <- paste0(colnames(coef.bdots(bdObj)), collapse = ", ") # + colnames(dat)
   eval(parse(text = paste('curveFun <- function(', f_args, ', time', ') { return(' , f_bod , ')}', sep='')))
 
-  ## Not the correct way to do this
-  if (is.paired) {
-    ## Here is where I need the `time` part
-    # oh. I need each of these columns to go in seperately
-    mm <- as.data.table(meanMat[, 1:4])
-    time <- unique(currdata$Time)
+  ## Ok, we assume that above, we have parsed formula and have correctly subset our data
+  outerDiff <- "Group"; innerDiff <- "TrialType" # bob data
+  ## If anything would be null, it would be innerDiff
 
-    ## Basically, process looks like this
-    # I need each column of meanMat to be a list, with additional elelemnt time
-    # storing time in a list without it being a list is tricky
-    mmList <- split(mm, by = colnames(mm))
-    mmList <- lapply(mmList, function(x) {x <- as.list(x); x$time <- time; x}) #!# this solves issue in bdotsObj!
-    ## Take away here is this - to make data.table/frame with a list/vector element,
-    # start with a list for each row
-    # append it to list AsIs
-    # rbindlist
+  ################################################################
+  ################################################################
+  ########## Everything above is assumed to be working ###########
+  ################################################################
+  ################################################################
 
-    ## This gives me a list of fitted curves
-    ## Should really synthesize this with the split/apply/combine paper
-    ## also, dude, the power of lists and lazy evaluation. This shit is so cool
-    cl <- makePSOCKcluster(4)
-    clusterExport(cl, "curveFun")
-    res1 <- parLapply(cl, mmList, function(x) do.call(curveFun, x))
-    stopCluster(cl)
 
-    ## These didn't work, but illustrating example of why not, given above
-    # mmListprep <- lapply(mmList, function(x) {x$time <- unlist(x$time); x})
-    # res <- lapply(mmListprep, function(x) do.call(curveFun, as.list(x))) # <- issue here with time being a list
+  ## Let's just write out as a bunch of conditionals and then collapse later
+  # we can assume subjects are sorted from bdotsFit  (probably true if split is ordered by name)
+  if(!is.null(outerDiff)) {
 
-    ## Ok, let's do it again for 2, but obviously this is not how it will be
-    ## its still embarassing to get the idea out. But why? I think this is ok as a
-    # temporary solution. And it's a MUCH better way of keeping notes of ideas, really
-    # This kind of part of my writing step
+    ## This splits by diffGroup, isPaired defined in helper
+    outerDiffList <- split(bdObj, by = outerDiff, drop = TRUE)
 
-    ## Anyways, here's N.iter curves for the other group
-    mm <- as.data.table(meanMat[, 5:8])
-    mmList <- split(mm, by = colnames(mm))
-    mmList <- lapply(mmList, function(x) {x <- as.list(x); x$time <- time; x})
-    cl <- makePSOCKcluster(4)
-    clusterExport(cl, "curveFun")
-    res2 <- parLapply(cl, mmList, function(x) do.call(curveFun, x))
-    stopCluster(cl)
+    #is.paired <- isPaired(diffList)
 
-    ### This is, in general, the idea of differencing curves
-    ### so we could wrap this up into a single idea as well
-    ## This is paired, so next steps
-    # i. take mean of each element in the list
-    # ii. subtract them
-    #   a. these had to be matrices, not vectors first. False. Use `+` not sum (good to know)
-    res11 <- Reduce(`+`, res1) / length(res1)
-    res22 <- Reduce(`+`, res2) / length(res2)
+    ## Determine if parameter bootstrap should be correlated
+    corMat <- lapply(outerDiffList, function(x) {
+      tt <- split(x, by = innerDiff, drop = TRUE)
+      if (isPaired(tt)) {
+        cm <- lapply(tt, coef.bdots)
+        do.call(cor, setNames(cm, c("x", "y")))
+      } else {
+        NULL
+      }
+    })
 
-    res111 <- Reduce(rbind, res1)
-    res222 <- Reduce(rbind, res2)
+    ## We are now going to make outerDiffList a list of lists by subject
+    outerDiffList <- lapply(outerDiffList, split, by = "Subject")
 
-  }
+    ## Each diffGroup of diffList will now have its subjects fit (go for parLapply since it's two larger groups)
+    curveList <- lapply(names(outerDiffList), function(nn) {
+      ## Bootstrapped parameters for each subject
+      bootPars <- lapply(outerDiffList[[nn]], bdotsBooter, N.iter, corMat[[nn]])
+      meanMat <- Reduce(`+`, bootPars)/length(bootPars) # N.iter x numPars (mean across subjects for each iteration)
+
+      ## Here, we are asking - did we fit 4 or 8  parameters
+      if (!is.null(corMat[[nn]])) { # fit 8
+        mm <- meanMat[, 1:(ncol(meanMat)/2)]
+        mmList <- split(mm, row(mm))
+
+        parNames <- colnames(mm)
+        mmList <- lapply(mmList, function(x) {
+          x <- as.list(x)
+          x$time <- time
+          setNames(x, c(parNames, "time"))
+          })
+
+        ## I should unlist this to get numeric matrix, and then rebuild it
+        res1 <- lapply(mmList, function(x){force(x); do.call(curveFun, x)}) # this is 1000 curve fits
+        res1 <- matrix(unlist(res1, use.names = FALSE), nrow = length(res1), byrow = TRUE)
+        # curve1 <- colMeans(res1) # re bobs data, this is curve for TrialType = M
+        # sd1 <- apply(res1, 2, sd)
+
+
+        mm <- meanMat[, (ncol(meanMat)/2 + 1):ncol(meanMat)]
+        mmList <- split(mm, row(mm))
+        mmList <- lapply(mmList, function(x) {
+          x <- as.list(x)
+          x$time <- time
+          setNames(x, c(parNames, "time"))
+          })
+        res2 <- lapply(mmList, function(x){force(x); do.call(curveFun, x)})
+        res2 <- matrix(unlist(res2, use.names = FALSE), nrow = length(res2), byrow = TRUE)
+        # curve2 <- colMeans(res2) # re bobs data, this is curve for TrialType = W
+        # sd2 <- apply(res2, 2, sd)
+        list(bootCurve1 = res1, bootCurve2 = res2)
+        } else {
+          mmList <- split(meanMat, row(meanMat))
+          parNames <- colnames(meanMat)
+          mmList <- lapply(mmList, function(x) {
+            x <- as.list(x)
+            x$time <- time
+            setNames(x, c(parNames, "time"))
+            })
+          res <- lapply(mmList, function(x) {force(x); do.call(curveFun, x)})
+          res <- matrix(unlist(res, use.names = FALSE), nrow = length(res), byrow = TRUE)
+          #curve <- colMeans(res)
+          #sdd <- apply(res, 2, sd)
+          list(bootCurve1 = res)
+          }
+      })
+
 
 }
 

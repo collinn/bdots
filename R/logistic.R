@@ -8,7 +8,7 @@ logisticPars <- function(dat) {
   mini <- min(y)
   peak <- max(y)
   r <- (peak - mini)
-  cross <- time[which.min(abs(.5 * r - y))]
+  cross <- time[which.min(abs(0.5*r - y))]
 
   # slope
   q75 <- .75 * r + mini

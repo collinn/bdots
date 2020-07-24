@@ -45,6 +45,7 @@ bdotsFitter <- function(dat, curveList, rho, refits = 0,
 
   ## We can avoid all of this if we have a function passed!
   ## curve environment
+  ## Obviously will have to change if we change curvetype input
   curveEnv <- makeCurveEnv(curveList)
 
   estCurveFit <- switch(names(curveList),
@@ -55,12 +56,15 @@ bdotsFitter <- function(dat, curveList, rho, refits = 0,
 
   ## This is where my error lives and I don't know why
   ## Named list of current environment
-  arggs <- c(as.list(environment()), list(...), as.list(curveEnv))
+  ## This has made testing a motherfucker
+  #arggs <- c(as.list(curveEnv), rho = 0.9)
+  #arggs$dat <- dat
+  arggs <- c(as.list(environment()), as.list(curveEnv), list(...))
 
-  #browser()
+
 
   #arggs <- list(dat = dat, curveType = curveType, concave = concave, rho = rho, refits = refits, verbose = FALSE)
-  fit <- do.call(estCurveFit, arggs) # <- this also fails
+  fit <- do.call(estCurveFit, arggs)
 
   #fit <- estDgaussCurve(dat, rho = 0.9, get.cov.only = FALSE, cor = TRUE, refits = 0, conc = TRUE)
   #fit <- estLogisticCurve(dat, rho = 0.9, get.cov.only = FALSE, cor = TRUE, refits = 4)

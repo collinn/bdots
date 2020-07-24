@@ -8,6 +8,7 @@ source("~/packages/bdots/R/parser.R")
 source("~/packages/bdots/R/curveFitter.R")
 source("~/packages/bdots/R/doubleGauss.R")
 source("~/packages/bdots/R/logistic.R")
+library(nlme) # fuck me, not knowing I was missing this made debugging hard
 
 load("~/bdots/demo.RData")
 data <- cohort_unrelated
@@ -36,13 +37,13 @@ system.time(res <- bdotsFit(cohort_unrelated,
                 refits = 2,
                 cores = 0,
                 verbose = FALSE))
-
+res2 <- res[Subject %in% c(1, 2, 3, 5, 7:12, 14:21, 23:26)]
 ## Keep only valid pairs for now
-res2 <- res[, 1:7]
+#res2 <- res[, 1:7]
 
 # this removes possible pairs
 #res2 <- res2[fitCode != 6, ]
-res2 <- res2[Subject %in% c(1, 2, 3, 5, 7:12, 14:21, 23:26)]
+
 
 
 
@@ -74,13 +75,19 @@ system.time(res.l <- bdotsFit(data = ci,
 
 
 ## Bdots for bob's  data
+library(nlme)
+library(mvtnorm)
 bobdat <- read.delim("~/bdots/mcmurray_folder/bdots_stuff/example bdots code/data.txt")
 bobdat <- as.data.table(bobdat)
 currdata <- bobdat [bobdat$TrialType == "W" | bobdat$TrialType == "M" , ]
 names(currdata)[names(currdata) == 'dx'] <- 'Group'
 #currdata$Curve <- ifelse(currdata$TrialType == "M", 1, 2)
+currdata2 <- as.data.table(currdata)
+currdata2 <- currdata2[Subject != 405, ]
+N.iter <- 1000
 
-system.time(res.b <- bdotsFit(data = currdata,
+## About 30 seconds
+system.time(res.b <- bdotsFit(data = currdata2,
                               subject = "Subject",
                               time = "Time",
                               y = "Looks",
@@ -88,6 +95,11 @@ system.time(res.b <- bdotsFit(data = currdata,
                               curve = logistic(),
                               cor = TRUE,
                               refits = 2))
+
+
+#tt <- currdata[Subject == 405, ]
+#tt1 <- tt[TrialType == "M", ]
+#tt2 <- tt[TrialType == "W", ]
 
 
 

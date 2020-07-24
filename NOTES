@@ -30,6 +30,7 @@ Say they pass `call = doubleGauss(concave = TRUE)`, we can then take this and do
 (-) print.bdots <- wrapper around print.data.table. Take the bdotsObj, hide the rows that are marked as 'removed' and only print out the remaining ones
 
 (-) add model coefficients to bdotsObj output <- I don't like this just being appended. I think it would be far cleaner as a matrix stored in attributes
+-- Note, though, that means I would have to add bdots::`[`. It would also not save them from using subset(bdotsObj, ..., ...). Fuck. Or any of the dplyr things. For now, I'm going to not worry about the refit step.
 
 (-) Can I fit paired group in gnls at same time? By melting DT by group?
 
@@ -37,6 +38,12 @@ Say they pass `call = doubleGauss(concave = TRUE)`, we can then take this and do
 
 (-) For fitting multiple curves simultaneously, this seems to confirm my original intuitiion:
 https://stackoverflow.com/questions/27405484/2-curves-simultaneous-nonlinear-regression
+
+(-) (!) LOL. I can rewrite bdotsFit and bdotsFitter so that bdotsFitter is the "base case" and I can otherwise just call bdotsFit on itself. That removes an entire function from this package! ARHARHAHRA!!!!! (it's in parallel  because there are only two cases 1) it's a single observation or 2) its multiple, and then when parApply that shit
+
+(-) instead of checking class  "bdotsObj", make function isBdots. That way, if something is lost while transforming it, we can still recover
+
+(-) Should rewrite split.data.table for split.bdotsObj
 
 Ideas:
 - Add argument for minimum R2 (i.e., if R2 < 0.8, drop auto correlation and try again)
