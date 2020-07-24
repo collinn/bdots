@@ -190,93 +190,110 @@ bdotsBoot <- function(ff, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oleson", 
 
   ################################################################
   ################################################################
-  ########## Everything above is assumed to be working ###########
+  ########## Everything above is assumed to be working ########### (it's not, yet)
   ################################################################
   ################################################################
+  bdObj <- res.b # bob's data
+  outerDiff <- "Group"; innerDiff <- NULL; bdObj2 <- bdObj[TrialType == "M", ]
+  outerDiff <- "TrialType"; innerDiff <- NULL; bdObj2 <- bdObj[Group == "LI", ]
+  outerDiff <- "Group"; innerDiff <- "TrialType"; bdObj2 <- bdObj
+
+  ################################################################
+
+  ## Here, we get bootstraps of the curves
+  # diffs computed there now too
+  if(is.null(innerDiff)) {
+    curveList <- curveBooter(bdObj2, splitby = outerDiff, N.iter = 1000, curveFun = curveFun) # nice if this is a list with name of Group
+  } else {
+    diffList <- split(bdObj, by = outerDiff, drop = TRUE)
+    curveList <- lapply(diffList, curveBooter, splitby = innerDiff, N.iter = 1000, curveFun = curveFun)
+  }
+
+  ## Assume at this point, we have reduced this down to 2 groups (having combined diff if necessary)
+  # if (paired) {
+  #
+  # }
 
 
-  ## Let's just write out as a bunch of conditionals and then collapse later
-  # we can assume subjects are sorted from bdotsFit  (probably true if split is ordered by name)
-  if(!is.null(outerDiff)) {
 
-    ## This splits by diffGroup, isPaired defined in helper
-    outerDiffList <- split(bdObj, by = outerDiff, drop = TRUE)
+  ################################################################
+  ## Fucking yes. This works.
+  # 1.) Might also need to save parameter matrices?
+  # 2.) I guess we could return list( list(curve1, mat1), list(curve2, mat2))
+  # that's just a lot of data to pass around. But whatever, we can
+  test <- curveBooter(bdObj2, splitby = outerDiff, N.iter = 1000, curveFun = curveFun)
 
-    #is.paired <- isPaired(diffList)
-
-    ## Determine if parameter bootstrap should be correlated
-    corMat <- lapply(outerDiffList, function(x) {
-      tt <- split(x, by = innerDiff, drop = TRUE)
-      if (isPaired(tt)) {
-        cm <- lapply(tt, coef.bdots)
-        do.call(cor, setNames(cm, c("x", "y")))
-      } else {
-        NULL
-      }
-    })
-
-    ## We are now going to make outerDiffList a list of lists by subject
-    outerDiffList <- lapply(outerDiffList, split, by = "Subject")
-
-    ## Each diffGroup of diffList will now have its subjects fit (go for parLapply since it's two larger groups)
-    curveList <- lapply(names(outerDiffList), function(nn) {
-      ## Bootstrapped parameters for each subject
-      bootPars <- lapply(outerDiffList[[nn]], bdotsBooter, N.iter, corMat[[nn]])
-      meanMat <- Reduce(`+`, bootPars)/length(bootPars) # N.iter x numPars (mean across subjects for each iteration)
-
-      ## Here, we are asking - did we fit 4 or 8  parameters
-      if (!is.null(corMat[[nn]])) { # fit 8
-        mm <- meanMat[, 1:(ncol(meanMat)/2)]
-        mmList <- split(mm, row(mm))
-
-        parNames <- colnames(mm)
-        mmList <- lapply(mmList, function(x) {
-          x <- as.list(x)
-          x$time <- time
-          setNames(x, c(parNames, "time"))
-          })
-
-        ## I should unlist this to get numeric matrix, and then rebuild it
-        res1 <- lapply(mmList, function(x){force(x); do.call(curveFun, x)}) # this is 1000 curve fits
-        res1 <- matrix(unlist(res1, use.names = FALSE), nrow = length(res1), byrow = TRUE)
-        # curve1 <- colMeans(res1) # re bobs data, this is curve for TrialType = M
-        # sd1 <- apply(res1, 2, sd)
-
-
-        mm <- meanMat[, (ncol(meanMat)/2 + 1):ncol(meanMat)]
-        mmList <- split(mm, row(mm))
-        mmList <- lapply(mmList, function(x) {
-          x <- as.list(x)
-          x$time <- time
-          setNames(x, c(parNames, "time"))
-          })
-        res2 <- lapply(mmList, function(x){force(x); do.call(curveFun, x)})
-        res2 <- matrix(unlist(res2, use.names = FALSE), nrow = length(res2), byrow = TRUE)
-        # curve2 <- colMeans(res2) # re bobs data, this is curve for TrialType = W
-        # sd2 <- apply(res2, 2, sd)
-        list(bootCurve1 = res1, bootCurve2 = res2)
-        } else {
-          mmList <- split(meanMat, row(meanMat))
-          parNames <- colnames(meanMat)
-          mmList <- lapply(mmList, function(x) {
-            x <- as.list(x)
-            x$time <- time
-            setNames(x, c(parNames, "time"))
-            })
-          res <- lapply(mmList, function(x) {force(x); do.call(curveFun, x)})
-          res <- matrix(unlist(res, use.names = FALSE), nrow = length(res), byrow = TRUE)
-          #curve <- colMeans(res)
-          #sdd <- apply(res, 2, sd)
-          list(bootCurve1 = res)
-          }
-      })
+  plot(colMeans(test[["curve1"]][["curveMat"]]))
+  plot(colMeans(test[["curve2"]][["curveMat"]]))
 
 
 }
 
+Obj <- bdObj2; splitby <- outerDiff
 
+## But let's re-evaluate that, because it might be more
+# sensible to return curve length t, sd length t
 
+## Returns length 2 nested list (outdated)
+# 1. curve1
+#   i. curveMat
+#   ii. parMat
+# 2. curve2
+#   i. curveMat
+#   ii. parMat
+curveBooter <- function(Obj, splitby, N.iter, curveFun) {
+  oP <- split(Obj, by = splitby,  drop = TRUE)
+  if (ip <- isPaired(oP)) {
+    cm <- lapply(oP, coef.bdots)
+    corMat <- do.call(cor, setNames(cm, c("x", "y")))
+  } else {
+    corMat <- NULL
+  }
+  if (!is.null(corMat)) {
+    outDiffL <- split(Obj, by = "Subject", drop = TRUE)
+    bootPars <- lapply(outDiffL, bdotsBooter, N.iter, corMat)
+    meanMat <- parMatSplit(Reduce(`+`,  bootPars)/length(bootPars))
+  } else {
+    outDiffL <- split(Obj, by = outerDiff, drop = FALSE)
+    outDiffL <- lapply(outDiffL, split, by = "Subject")
+    meanMat <- lapply(outDiffL, function(x) {
+      bootPars <- lapply(x,  bdotsBooter, N.iter, corMat)
+      meanMat <- Reduce(`+`,  bootPars)/length(bootPars)
+    })
+  }
+  curveList <- lapply(meanMat, function(mm) {
+    parNames <- colnames(mm)
+    mmList <- lapply(split(mm, row(mm)), function(x) {
+      x <- as.list(x)
+      x$time <- time
+      setNames(x, c(parNames, "time"))
+    })
+    ## Note, use this  to get mean and sd for the curves
+    res <- lapply(mmList, function(x) {force(x); do.call(curveFun, x)})
+    res <- matrix(unlist(res, use.names = FALSE), nrow = length(res), byrow = TRUE)
+    curveFit <- colMeans(res)
+    curveSD <- apply(res, 2, sd)
+    list(fit = curveFit, sd = curveSD, curveMat = res, parMat = mm)
+  })
 
+  ## This is a bit sloppy
+  diffList <- structure(vector("list", length(curveList[[1]])),
+                        names = names(curveList[[1]]))
+  l <- length(diffList)
+  tmp <- unlist(curveList, recursive = FALSE, use.names = FALSE)
+  for (i in seq_len(l)) {
+    diffList[[i]] <- tmp[[i]] - tmp[[i + l]]
+  }
+
+  if (ip) {
+    diffList$sd <- sqrt(apply(curveList[[1]]$curveMat, 2, var) + apply(curveList[[2]]$curveMat, 2, var))
+  } else {
+    diffList$sd <- apply(diffList$curveMat, 2, sd)
+  }
+
+  ## Let's return all that above, and do the diff stuff here (wasted computation if not needed, I guess, but it's only matrix calc)
+  setNames(c(curveList, list(diffList)), c("1", "2", "diff"))
+}
 
 
 
