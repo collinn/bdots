@@ -202,6 +202,9 @@ bdotsBoot <- function(ff, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oleson", 
 
   ## Here, we get bootstraps of the curves
   # diffs computed there now too
+  ## diffList here can be put in recursively defined curveList
+  # it's in here that I think we should also return the t statistic
+  # curveList last element should indicate if paired (which can be decided in non-base case part of curveBooter)
   if(is.null(innerDiff)) {
     curveList <- curveBooter(bdObj2, splitby = outerDiff, N.iter = 1000, curveFun = curveFun) # nice if this is a list with name of Group
   } else {
@@ -277,9 +280,10 @@ curveBooter <- function(Obj, splitby, N.iter, curveFun) {
   })
 
   ## This is a bit sloppy
-  diffList <- structure(vector("list", length(curveList[[1]])),
-                        names = names(curveList[[1]]))
   l <- length(diffList)
+  diffList <- structure(vector("list", length = l,
+                        names = names(curveList[[1]]))
+
   tmp <- unlist(curveList, recursive = FALSE, use.names = FALSE)
   for (i in seq_len(l)) {
     diffList[[i]] <- tmp[[i]] - tmp[[i + l]]

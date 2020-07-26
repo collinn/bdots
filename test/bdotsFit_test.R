@@ -86,7 +86,7 @@ currdata2 <- as.data.table(currdata)
 currdata2 <- currdata2[Subject != 405, ]
 N.iter <- 1000
 
-## About 30 seconds
+## About 32 seconds
 system.time(res.b <- bdotsFit(data = currdata2,
                               subject = "Subject",
                               time = "Time",
