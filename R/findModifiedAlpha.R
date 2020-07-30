@@ -40,7 +40,7 @@ findModifiedAlpha <- function(rho, n, df, alpha = 0.05, errorAcc = 0.001,
   ## Only avoid iteration if min gives acceptable error. Otherwise,
   ## we still want to center this around alphaStar at k
   ## Actually, we can improve on this by avoiding weird assignment all together
-  browser()
+
   ## For now, only iterate with Newton's method + log linearization
   while(errorMin > errorAcc) {
     gradEst <- log(alphaStar_vec[2] / alphaStar_vec[1]) / gradDiff

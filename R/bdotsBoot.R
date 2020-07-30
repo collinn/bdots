@@ -167,7 +167,7 @@ bdotsBooter <- function(dat, N.iter, corMat = NULL) {
 ## I need to work on the wording for this/names to not be confused
 bdObj <- res2 # from bdotsFit_test.R
 bdObj <- res.b; outerDiff = "Group"; innerDiff <- "TrialType"   # bob's data
-bdotsBoot <- function(ff, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oleson", cores = 0, ...) {
+bdotsBoot <- function(ff, bdObj, N.iter = 1000, alpha = 0.05, padj = "oleson", cores = 0, ...) {
 
   if (cores < 1) cores <- detectCores()/2
   ## Could maybe list what was removed
@@ -197,6 +197,7 @@ bdotsBoot <- function(ff, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oleson", 
   outerDiff <- "Group"; innerDiff <- NULL; bdObj2 <- bdObj[TrialType == "M", ]
   outerDiff <- "TrialType"; innerDiff <- NULL; bdObj2 <- bdObj[Group == "LI", ]
   outerDiff <- "Group"; innerDiff <- "TrialType"; bdObj2 <- bdObj
+  innerDiff <- "Group"; outerDiff <- "TrialType"; bdObj2 <- bdObj
 
   ################################################################
 
@@ -205,34 +206,44 @@ bdotsBoot <- function(ff, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oleson", 
   ## diffList here can be put in recursively defined curveList
   # it's in here that I think we should also return the t statistic
   # curveList last element should indicate if paired (which can be decided in non-base case part of curveBooter)
-  if(is.null(innerDiff)) {
-    curveList <- curveBooter(bdObj2, splitby = outerDiff, N.iter = 1000, curveFun = curveFun) # nice if this is a list with name of Group
-  } else {
-    diffList <- split(bdObj, by = outerDiff, drop = TRUE)
-    curveList <- lapply(diffList, curveBooter, splitby = innerDiff, N.iter = 1000, curveFun = curveFun)
-  }
-
-  ## Assume at this point, we have reduced this down to 2 groups (having combined diff if necessary)
-  # if (paired) {
-  #
+  # if(is.null(innerDiff)) {
+  #   curveList <- curveBooter(bdObj2, splitby = outerDiff, N.iter = 1000, curveFun = curveFun) # nice if this is a list with name of Group
+  # } else {
+  #   diffList <- split(bdObj, by = outerDiff, drop = TRUE)
+  #   curveList <- lapply(diffList, curveBooter, splitby = innerDiff, N.iter = 1000, curveFun = curveFun)
   # }
 
+  ## If diff of diff, the innerdiffs will be labeled groupname.diff
+  # with the diff of diff just called "diff"
+  # if not diff of diff, the single diff list is just called diff
+  # so diff is always the key of our analaysis
+  curveList <- curveBooter(bdObj2,
+                           outerDiff = outerDiff,
+                           innerDiff = innerDiff,
+                           N.iter = N.iter,
+                           curveFun = curveFun)
+  length(curveList)
+  names(curveList)
+  str(curveList$diff)
 
+  ## Compute t statistic
+  tval <- curveList[['diff']][['fit']] / curveList[['diff']][['sd']]
+  pval <- 2 * (1 - pt(abs(tval), df = curveList[['diff']][['n']]))
 
-  ################################################################
-  ## Fucking yes. This works.
-  # 1.) Might also need to save parameter matrices?
-  # 2.) I guess we could return list( list(curve1, mat1), list(curve2, mat2))
-  # that's just a lot of data to pass around. But whatever, we can
-  test <- curveBooter(bdObj2, splitby = outerDiff, N.iter = 1000, curveFun = curveFun)
-
-  plot(colMeans(test[["curve1"]][["curveMat"]]))
-  plot(colMeans(test[["curve2"]][["curveMat"]]))
-
-
+  ## pval adjustment
+  # (here's where I need to modify p.adjust to make method oleson)
+  system.time(rho <- ar1Solver(tval))
+  if (TRUE) {
+    ## This is what takes a minute to run
+    # (it's also not in parallel yet)
+    system.time(alphastar <- findModifiedAlpha(rho,
+                                               n = length(tval),
+                                               df = curveList[['diff']][['n']]))
+  }
+  system.time(findModifiedAlpha(rho, n = 100, df = 49))
 }
 
-Obj <- bdObj2; splitby <- outerDiff
+Obj <- bdObj2
 
 ## But let's re-evaluate that, because it might be more
 # sensible to return curve length t, sd length t
@@ -244,27 +255,65 @@ Obj <- bdObj2; splitby <- outerDiff
 # 2. curve2
 #   i. curveMat
 #   ii. parMat
-curveBooter <- function(Obj, splitby, N.iter, curveFun) {
-  oP <- split(Obj, by = splitby,  drop = TRUE)
+## Make make sense to change inner/outer diff
+# The 'n' for diff is associated with the t-statistic, not actual count
+curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
+
+  if(!is.null(innerDiff)) {
+    obj <- split(Obj, by = outerDiff, drop = TRUE)
+    res <- lapply(obj, curveBooter, outerDiff = innerDiff,
+                  N.iter = N.iter, curveFun = curveFun)
+    res <- unlist(res, recursive = FALSE)
+
+    idx <- grep("diff", names(res))
+    if (length(idx) != 2) stop("something weird in curveBooter. Contact author")
+
+    ## diff of diff (length one list)
+    diffList <- Map(function(x, y) {
+      Map(function(a, b) {
+        a - b
+      }, x, y)
+    }, res[idx[1]], res[idx[2]])
+
+    diffList <- diffList[[1]]
+
+    ## snap, we can
+    if (ip <- isPaired(obj)) {
+      diffList$sd <- apply(diffList$curveMat, 2, sd)
+      diffList$n <- nrow(obj[[1]]) - 1
+    } else {
+      diffList$sd <- nopairSD(res[idx])
+      diffList$n <- sum(vapply(obj, nrow, numeric(1))) - 2
+    }
+    diffList$paired <- ip
+
+    ## Maybe first do something to combine these?
+    ## specfically, we should only return a single diff
+
+    return(setNames(c(res, list(diffList)), c(names(res), "diff")))
+  }
+  oP <- split(Obj, by = outerDiff, drop = TRUE)
   if (ip <- isPaired(oP)) {
     cm <- lapply(oP, coef.bdots)
     corMat <- do.call(cor, setNames(cm, c("x", "y")))
   } else {
     corMat <- NULL
   }
+  ## Should investigate how these are different
+  # oh, on the split
   if (!is.null(corMat)) {
     outDiffL <- split(Obj, by = "Subject", drop = TRUE)
     bootPars <- lapply(outDiffL, bdotsBooter, N.iter, corMat)
     meanMat <- parMatSplit(Reduce(`+`,  bootPars)/length(bootPars))
   } else {
-    outDiffL <- split(Obj, by = outerDiff, drop = FALSE)
-    outDiffL <- lapply(outDiffL, split, by = "Subject")
+    outDiffL <- lapply(oP, split, by = "Subject")
     meanMat <- lapply(outDiffL, function(x) {
       bootPars <- lapply(x,  bdotsBooter, N.iter, corMat)
       meanMat <- Reduce(`+`,  bootPars)/length(bootPars)
     })
   }
-  curveList <- lapply(meanMat, function(mm) {
+  curveList <- lapply(seq_along(meanMat), function(i) {
+    mm <- meanMat[[i]]
     parNames <- colnames(mm)
     mmList <- lapply(split(mm, row(mm)), function(x) {
       x <- as.list(x)
@@ -276,27 +325,33 @@ curveBooter <- function(Obj, splitby, N.iter, curveFun) {
     res <- matrix(unlist(res, use.names = FALSE), nrow = length(res), byrow = TRUE)
     curveFit <- colMeans(res)
     curveSD <- apply(res, 2, sd)
-    list(fit = curveFit, sd = curveSD, curveMat = res, parMat = mm)
+    list(fit = curveFit, sd = curveSD, curveMat = res, parMat = mm, n = nrow(oP[[i]]))
   })
 
   ## This is a bit sloppy
-  l <- length(diffList)
-  diffList <- structure(vector("list", length = l,
-                        names = names(curveList[[1]]))
+  nn <- names(curveList[[1]])
+  diffList <- structure(vector("list", length = length(nn) + 1),
+                        names = c(nn, "paired"))
 
+  ## Could probably do the double map here like above
+  # maybe see which is faster?
   tmp <- unlist(curveList, recursive = FALSE, use.names = FALSE)
-  for (i in seq_len(l)) {
-    diffList[[i]] <- tmp[[i]] - tmp[[i + l]]
+  for (i in seq_along(nn)) {
+    diffList[[i]] <- tmp[[i]] - tmp[[i + length(nn)]]
   }
 
   if (ip) {
-    diffList$sd <- sqrt(apply(curveList[[1]]$curveMat, 2, var) + apply(curveList[[2]]$curveMat, 2, var))
-  } else {
     diffList$sd <- apply(diffList$curveMat, 2, sd)
+    diffList$n <- nrow(oP[[1]]) - 1
+  } else {
+    diffList$sd <- nopairSD(curveList)
+    diffList$n <- sum(vapply(oP, nrow, numeric(1))) - 2
   }
+  diffList$paired <- ip
+
 
   ## Let's return all that above, and do the diff stuff here (wasted computation if not needed, I guess, but it's only matrix calc)
-  setNames(c(curveList, list(diffList)), c("1", "2", "diff"))
+  setNames(c(curveList, list(diffList)), c(unique(Obj[[outerDiff]]), "diff"))
 }
 
 

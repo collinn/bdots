@@ -2,12 +2,19 @@
 ## Let's test bdotsFit funcitoin
 
 rm(list = ls())
+library(nlme)
+library(mvtnorm)
+# Not for parallel, I could do clusterEvalQ(cl, source(".."))
 source("~/packages/bdots/R/bdotsFit.R")
 source("~/packages/bdots/R/bdotsFitter.R")
 source("~/packages/bdots/R/parser.R")
 source("~/packages/bdots/R/curveFitter.R")
 source("~/packages/bdots/R/doubleGauss.R")
 source("~/packages/bdots/R/logistic.R")
+source("~/packages/bdots/R/helper.R")
+source("~/packages/bdots/R/effectiveAlpha.R")
+source("~/packages/bdots/R/findModifiedAlpha.R")
+source("~/packages/bdots/R/ar1Solver.R")
 library(nlme) # fuck me, not knowing I was missing this made debugging hard
 
 load("~/bdots/demo.RData")
@@ -75,8 +82,7 @@ system.time(res.l <- bdotsFit(data = ci,
 
 
 ## Bdots for bob's  data
-library(nlme)
-library(mvtnorm)
+
 bobdat <- read.delim("~/bdots/mcmurray_folder/bdots_stuff/example bdots code/data.txt")
 bobdat <- as.data.table(bobdat)
 currdata <- bobdat [bobdat$TrialType == "W" | bobdat$TrialType == "M" , ]
