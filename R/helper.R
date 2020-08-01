@@ -42,10 +42,46 @@ nopairSD <- function(l) {
   s <- Reduce(`+`, s) * sqrt(1/l[[1]]$n + 1/l[[2]]$n)
 }
 
+## Stolen from purrrrrrrr
+vec_depth <- function(x) {
+  if (is.null(x)) {
+    0L
+  } else if (is.atomic(x)) {
+    1L
+  } else if (is.list(x)) {
+    depths <- vapply(x, vec_depth, numeric(1))
+    1L + max(depths, 0L)
+  } else {
+    stop("'x' must be a vector")
+  }
+}
 
+## used for subsetting dt based on bdotsBoot formula
+# takes g(n1, n2, ...) and returns c("g", "n1", "n2", ...)
+bdCall2Subset <- function(x) {
+  if(!is.call(x)) stop(paste0("invalid syntax:", x))
+  x <- vapply(x, deparse1, character(1L))
+  vv <- paste0("val", 1:(length(x) - 1))
+  setNames(x, c("col",))
+}
 
-
-
+## Can't be entirely sure how this generalizes yet
+# since my cases will always be 2 x (2 x (2 x ...( 2 x 2)))
+## Motherfucker, this does work
+# x <- "x"; y <- "y"; z <- "z"
+# ll <- list()
+# ll[[1]] <- list(x, y)
+# ll[[2]] <- list(y, list(z, z, x))
+# ll[[3]] <- list(z, list(x, x), list(y, z, list(x , x)))
+## Also a trillion times faster with rlang::squash. Sad
+## Make sure it definitely returns a list
+unzipList <- function(l) {
+  cc <- vapply(l, is.list, logical(1L))
+  res <- lapply(l[cc], unzipList)
+  res <- c(l[!cc], unlist(res, recursive = FALSE))
+  if (!is.list(res)) res <- list(res)
+  res
+}
 
 
 

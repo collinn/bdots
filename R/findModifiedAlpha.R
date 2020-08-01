@@ -12,7 +12,7 @@
 # grad.diff <- .5; error.acc <- 0.001; cores <- 1; method <- "t"
 
 findModifiedAlpha <- function(rho, n, df, alpha = 0.05, errorAcc = 0.001,
-                              gradDiff = ifelse(cores > 3, 0.5, 0.1), cores = 1,
+                              gradDiff = ifelse(cores > 3, 0.5, 0.1), cores = 3,
                               verbose = FALSE, method = "t") {
 
   ## consequence of pmv* functions
@@ -22,7 +22,8 @@ findModifiedAlpha <- function(rho, n, df, alpha = 0.05, errorAcc = 0.001,
   effectiveAlpha <- effectiveAlpha_f(rho, n, df, method = method)
 
   ## Pg 12 of detecting time-specific differences, FWER alpha
-  minVal <- qt(1 - alpha / 2, df); maxVal <- qt(1 - alpha / 2, df) * 2
+  minVal <- qt(1 - alpha / 2, df)
+  maxVal <- qt(1 - alpha / 2, df) * 2
 
   ## This makes sure that effectiveAlpha.normApprox(k) is in (min.val, max.val)
   while (fwerAlpha(rho, maxVal, n) >= alpha) maxVal <- maxVal * 2
@@ -30,9 +31,12 @@ findModifiedAlpha <- function(rho, n, df, alpha = 0.05, errorAcc = 0.001,
   ## Critical value for desired alpha
   k <- uniroot(function(k) fwerAlpha(rho, k, n) - alpha, interval = c(minVal, maxVal))$root
 
-  ## This can be made in parallel later
-  alphaStar_vec <- vapply(c(k, k - gradDiff, k + gradDiff),
-                          effectiveAlpha, numeric(1))
+  ## This can be made in parallel later (mclapply doesn't work  for windows)
+  # alphaStar_vec <- vapply(c(k, k - gradDiff, k + gradDiff),
+  #                         effectiveAlpha, numeric(1))
+  # alphaStar_vec <- mclapply(c(k, k - gradDiff, k + gradDiff), effectiveAlpha)
+  alphaStar_vec <- mclapply(c(k, k + gradDiff), effectiveAlpha)
+  alphaStar_vec <- unlist(alphaStar_vec, use.names = FALSE)
 
   ## What is the minimized error between this and alpha?
   errorMin <- min(abs(alphaStar_vec - alpha))
@@ -42,11 +46,15 @@ findModifiedAlpha <- function(rho, n, df, alpha = 0.05, errorAcc = 0.001,
   ## Actually, we can improve on this by avoiding weird assignment all together
 
   ## For now, only iterate with Newton's method + log linearization
+  ## That 2 should be a 3 if we do k, k - gd, k + gd
   while(errorMin > errorAcc) {
     gradEst <- log(alphaStar_vec[2] / alphaStar_vec[1]) / gradDiff
-    k <- k - log(alphaStar_vec[1] / alpha) / gradDiff
-    alphaStar_vec <- vapply(c(k, k - gradDiff, k + gradDiff),
-                            effectiveAlpha, numeric(1))
+    k <- k - log(alphaStar_vec[1] / alpha) / gradEst
+    # alphaStar_vec <- vapply(c(k, k - gradDiff, k + gradDiff),
+    #                         effectiveAlpha, numeric(1))
+    # alphaStar_vec <- mclapply(c(k, k - gradDiff, k + gradDiff), effectiveAlpha)
+    alphaStar_vec <- mclapply(c(k, k + gradDiff), effectiveAlpha)
+    alphaStar_vec <- unlist(alphaStar_vec, use.names = FALSE)
     errorMin <- min(abs(alphaStar_vec - alpha))
   }
 

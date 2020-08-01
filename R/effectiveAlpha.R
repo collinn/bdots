@@ -33,8 +33,7 @@
 effectiveAlpha_f <- function(rho, n = 10, df = NULL, method = "norm") {
 
   sigma <- diag(rep(1, n))
-  sigma <- abs(row(sigma) - col(sigma))
-  sigma <- rho ^ sigma
+  sigma <- rho ^ abs(row(sigma) - col(sigma))
 
   ## Determine method, assign functional for pmvtnorm or pmvt
   if(method == "t") {

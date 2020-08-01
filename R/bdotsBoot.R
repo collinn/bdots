@@ -175,6 +175,13 @@ bdotsBoot <- function(ff, bdObj, N.iter = 1000, alpha = 0.05, padj = "oleson", c
     warning("Some observations had NULL gnls fits. These will be removed")
     bdObj <- bdObj[fitCode != 6, ]
   }
+
+  ## This can maybe be two functions
+  prs <- bootParser(ff, bdObj)
+  bdObj2 <- bootSubset(prs, bdObj)
+  innerDiff <- prs[["innerDiff"]]
+  outerDiff <- prs[["outerDiff"]]
+
   time <- attr(bdObj, "time")
 
   ## Get formula and turn into function
@@ -184,22 +191,23 @@ bdotsBoot <- function(ff, bdObj, N.iter = 1000, alpha = 0.05, padj = "oleson", c
   f_args <- paste0(colnames(coef.bdots(bdObj)), collapse = ", ") # + colnames(dat)
   eval(parse(text = paste('curveFun <- function(', f_args, ', time', ') { return(' , f_bod , ')}', sep='')))
 
-  ## Ok, we assume that above, we have parsed formula and have correctly subset our data
-  outerDiff <- "Group"; innerDiff <- "TrialType" # bob data
-  ## If anything would be null, it would be innerDiff
-
-  ################################################################
-  ################################################################
-  ########## Everything above is assumed to be working ########### (it's not, yet)
-  ################################################################
-  ################################################################
-  bdObj <- res.b # bob's data
-  outerDiff <- "Group"; innerDiff <- NULL; bdObj2 <- bdObj[TrialType == "M", ]
-  outerDiff <- "TrialType"; innerDiff <- NULL; bdObj2 <- bdObj[Group == "LI", ]
-  outerDiff <- "Group"; innerDiff <- "TrialType"; bdObj2 <- bdObj
-  innerDiff <- "Group"; outerDiff <- "TrialType"; bdObj2 <- bdObj
-
-  ################################################################
+  # ## Ok, we assume that above, we have parsed formula and have correctly subset our data
+  # outerDiff <- "Group"; innerDiff <- "LookType" # bob data
+  # innerDiff <- "Group"; outerDiff <- "LookType"
+  # ## If anything would be null, it would be innerDiff
+  #
+  # ################################################################
+  # ################################################################
+  # ########## Everything above is assumed to be working ########### (it's not, yet)
+  # ################################################################
+  # ################################################################
+  # bdObj <- res.b # bob's data
+  # outerDiff <- "Group"; innerDiff <- NULL; bdObj2 <- bdObj[TrialType == "M", ]
+  # outerDiff <- "TrialType"; innerDiff <- NULL; bdObj2 <- bdObj[Group == "LI", ]
+  # outerDiff <- "Group"; innerDiff <- "TrialType"; bdObj2 <- bdObj
+  # innerDiff <- "Group"; outerDiff <- "TrialType"; bdObj2 <- bdObj
+  #
+  # ################################################################
 
   ## Here, we get bootstraps of the curves
   # diffs computed there now too
@@ -217,14 +225,15 @@ bdotsBoot <- function(ff, bdObj, N.iter = 1000, alpha = 0.05, padj = "oleson", c
   # with the diff of diff just called "diff"
   # if not diff of diff, the single diff list is just called diff
   # so diff is always the key of our analaysis
-  curveList <- curveBooter(bdObj2,
+  curveList <- curveBooter(bdObj,
                            outerDiff = outerDiff,
                            innerDiff = innerDiff,
                            N.iter = N.iter,
                            curveFun = curveFun)
-  length(curveList)
-  names(curveList)
-  str(curveList$diff)
+  ip <- curveList[['diff']][['paired']]
+  # length(curveList)
+  # names(curveList)
+  # str(curveList$diff)
 
   ## Compute t statistic
   tval <- curveList[['diff']][['fit']] / curveList[['diff']][['sd']]
@@ -232,15 +241,41 @@ bdotsBoot <- function(ff, bdObj, N.iter = 1000, alpha = 0.05, padj = "oleson", c
 
   ## pval adjustment
   # (here's where I need to modify p.adjust to make method oleson)
-  system.time(rho <- ar1Solver(tval))
+  rho <- ar1Solver(tval)
   if (TRUE) {
     ## This is what takes a minute to run
-    # (it's also not in parallel yet)
-    system.time(alphastar <- findModifiedAlpha(rho,
-                                               n = length(tval),
-                                               df = curveList[['diff']][['n']]))
+    # (it's also not in (windows) parallel yet)
+    alphastar <- findModifiedAlpha(rho,
+                                   n = length(tval),
+                                   df = curveList[['diff']][['n']],
+                                   cores = 2)
+    k <- alphastar/alpha
+    adjpval <- pval/k
   }
-  system.time(findModifiedAlpha(rho, n = 100, df = 49))
+
+  sigTime <- bucket.calc(pval <= alphastar, time)
+
+  #bdAttr <- attributes(bdObj)
+  structure(class = "bdotsBootObj",
+            .Data = list(curveList,
+                         alpha = alpha,
+                         adj.alpha = alphastar,
+                         adj.pval = adjpval,
+                         rho = rho,
+                         paired = ip),
+            call = match.call(),
+            bdObjAttr = attributes(bdObj))
+
+  #### Actually, both of these can be computed from the returned object
+  # so let's just make these their own methods for the return value
+  # of bdotsBoot
+
+  ## Add time test later
+
+  ## Add param test later
+
+  ## Add plotting/CI functions later
+
 }
 
 Obj <- bdObj2
@@ -248,7 +283,7 @@ Obj <- bdObj2
 ## But let's re-evaluate that, because it might be more
 # sensible to return curve length t, sd length t
 
-## Returns length 2 nested list (outdated)
+## Returns length 2 nested list (outdated) ((super outdated))
 # 1. curve1
 #   i. curveMat
 #   ii. parMat

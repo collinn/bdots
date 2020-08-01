@@ -1,4 +1,103 @@
 
+deleteLater <- bdObj
+#bdObj <- deleteLater
+
+## This is for parsing formula for bdotsBoot
+## Syntax as follows:
+## LHS can be only response, or it can be diffs, with a group of two elements
+## RHS  MUST contain at least one group with 2 elements and arbitrary number of single element groups
+# y ~ g(n1, n2)
+# diffs(y, g1(n1, n2)) ~ g2(m1, m2)
+# Note: from above 2 lines, length(lhs) can only be 1 or 3
+# ... ~ g1(n1, n2) + g2(m1) + g3(m2) + ...
+
+ff1 <- diffs(y, condition(M,W)) ~ group(DLD, TD) + g2(n1) + g3(m1, m2, m3, m4) + g4(r1)
+ff1 <- diffs(y, TrialType(M,W)) ~ Group(LI, TD)
+ff1 <- y ~ Group(LI, TD) + TrialType(M)
+
+ff <- ff1
+bootParser <- function(ff, bdObj) {
+  if (!inherits(ff, "formula")) stop("Must supply a formula to bdotsBoot")
+
+  ## is this dangerous
+  lhs <- ff[[2]]
+  rhs <- ff[[3]]
+
+  ## Process LHS
+  if(length(lhs) == 1) {
+    resp <- deparse1(lhs)
+    diffs <- NULL
+    inner <- NULL
+  } else if (length(lhs) == 3) {
+    diffs <- deparse1(lhs[[1]])
+    if (!identical(diffs, "diffs")) stop("invalid formula at diffs")
+    resp <- deparse(lhs[[2]]) # don't actually need this
+    inner <- bdCall2Subset(lhs[[3]])
+    if (length(inner) != 3) stop("Must subset by exactly two group values for diff")
+  } else {
+    stop("invalid formula sytax on LHS")
+  }
+
+  ## RHS nicely wrapped in functions
+  ss <- recurToSubset(rhs)
+
+  ## ensure valid syntax for rhs
+  vv <- vapply(ss, length, numeric(1))
+  if ((sum(vv == 3) != 1) | any(vv > 3)) stop("Exactly one group on RHS of formula must have two values")
+
+  ## Get outer group
+  outerDiff <- ss[vv == 3][[1]]["col"]
+
+  ## Prep for subset
+  ww <- lapply(c(list(inner), ss), function(x) {
+    c(x[1], list(x[-1]))
+  })
+  if (is.null(inner)) ww <- ww[-1]
+
+  ## Reserved names from bdObj
+  # this feels precarious as best
+  resNames <- c(attr(bdObj, "names")[1],
+                colnames(bdObj)[(ncol(bdObj) - 3):ncol(bdObj)])
+
+  ## get names
+  subnames <- vapply(ww, `[[`, character(1), 1)
+  subargs <- lapply(ww, `[[`, 2)
+  nn <- intersect(colnames(bdObj), subnames)
+  if (!identical(intersect(subnames, nn), subnames)) stop("Provided group names not in bdObj")
+
+  list(subnames = subnames,
+       subargs = subargs,
+       resNames = resNames,
+       outerDiff = outerDiff,
+       innerDiff = inner[['col']])
+}
+
+
+
+bootSubset <- function(l, bdObj) {
+  subnames <- l[["subnames"]]
+  subargs  <- l[["subargs"]]
+  resNames <- l[['resNames']]
+
+  # ouch (copy expensive)
+  # remove columns we don't want
+  # also, this shit is internal, order of columns doesn't matter
+  # since it's not being returned
+  bd <- subset(bdObj, select = c(resNames, subnames))
+  # ss_vec <- vector("numeric", length = nrow(bd))
+  for(i in seq_along(subnames)) {
+    ss_vec <- bd[[subnames[i]]] %in% subargs[[i]]
+    bd <- bd[ss_vec, ]
+  }
+
+  ## I'm still going to keep order
+  bd[, c(resNames[1], nn, resNames[-1]), with = FALSE]
+}
+
+
+
+
+
 # ff <- diffs(y, condition(M,W)) ~ group(DLD, TD) + g2(n1, n2)
 # ff <- y ~ group(DLD, TD)
 

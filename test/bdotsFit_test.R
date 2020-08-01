@@ -90,6 +90,8 @@ names(currdata)[names(currdata) == 'dx'] <- 'Group'
 #currdata$Curve <- ifelse(currdata$TrialType == "M", 1, 2)
 currdata2 <- as.data.table(currdata)
 currdata2 <- currdata2[Subject != 405, ]
+currdata2 <- currdata2[Subject != 1699, ]
+currdata2 <- currdata2[Subject != 1526, ]
 N.iter <- 1000
 
 ## About 32 seconds
@@ -102,7 +104,7 @@ system.time(res.b <- bdotsFit(data = currdata2,
                               cor = TRUE,
                               refits = 2))
 
-
+head(sort(res.b$R2))
 #tt <- currdata[Subject == 405, ]
 #tt1 <- tt[TrialType == "M", ]
 #tt2 <- tt[TrialType == "W", ]

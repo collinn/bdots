@@ -16,6 +16,7 @@ ar1Solver <- function(y) {
   phiEst <- Re(phiEst[abs(Im(phiEst)) < 0.0001]) # Discard complex roots
   phiEst <- phiEst[phiEst >= 0]
   phiEst <- phiEst[ar1ScoreDerivative(phiEst, y) < 0] # Discard roots where not concave
+  phiEst <- phiEst[phiEst < 1]
   if(length(phiEst) > 1) {
     phiEst <- phiEst[which.max(ar1Loglikelihood(phiEst, y))]
   } else if (length(phiEst) == 0) {
