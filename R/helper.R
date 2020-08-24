@@ -1,10 +1,11 @@
 
 ## Make split retain bdotsObj class
-
-split.bdotsObj <- function(x, ...) {
+# Need to also split data attribute
+split.bdotsObj <- function(x, by, ...) {
     oldClass <- class(x)
+    #grps <- eval(attr(bdObj, "call")[['group']])
     class(x) <- c("data.table", "data.frame")
-    res <- lapply(split(x, ...), function(y) {
+    res <- lapply(split(x, by = by, ...), function(y) {
         class(y) <- oldClass
         y
     })
@@ -56,14 +57,6 @@ vec_depth <- function(x) {
   }
 }
 
-## used for subsetting dt based on bdotsBoot formula
-# takes g(n1, n2, ...) and returns c("g", "n1", "n2", ...)
-bdCall2Subset <- function(x) {
-  if(!is.call(x)) stop(paste0("invalid syntax:", x))
-  x <- vapply(x, deparse1, character(1L))
-  vv <- paste0("val", 1:(length(x) - 1))
-  setNames(x, c("col",))
-}
 
 ## Can't be entirely sure how this generalizes yet
 # since my cases will always be 2 x (2 x (2 x ...( 2 x 2)))

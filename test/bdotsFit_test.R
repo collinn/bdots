@@ -8,6 +8,7 @@ library(mvtnorm)
 source("~/packages/bdots/R/bdotsFit.R")
 source("~/packages/bdots/R/bdotsFitter.R")
 source("~/packages/bdots/R/parser.R")
+source("~/packages/bdots/R/bootParser.R")
 source("~/packages/bdots/R/curveFitter.R")
 source("~/packages/bdots/R/doubleGauss.R")
 source("~/packages/bdots/R/logistic.R")
@@ -15,6 +16,10 @@ source("~/packages/bdots/R/helper.R")
 source("~/packages/bdots/R/effectiveAlpha.R")
 source("~/packages/bdots/R/findModifiedAlpha.R")
 source("~/packages/bdots/R/ar1Solver.R")
+source("~/packages/bdots/R/bucket.R")
+source("~/packages/bdots/R/bootHelper.R")
+source("~/packages/bdots/R/bdotsBoot.R")
+source("~/packages/bdots/R/plotFunctions.R")
 library(nlme) # fuck me, not knowing I was missing this made debugging hard
 
 load("~/bdots/demo.RData")
@@ -29,6 +34,7 @@ rho <-  0.9
 refits <- 0
 cores <-  1
 verbose <-  FALSE
+alpha <- 0.05
 curveType <- c("doubleGauss")
 
 head(data)
@@ -104,10 +110,38 @@ system.time(res.b <- bdotsFit(data = currdata2,
                               cor = TRUE,
                               refits = 2))
 
-head(sort(res.b$R2))
+# head(sort(res.b$R2))
+bdObj <- res.b
 #tt <- currdata[Subject == 405, ]
 #tt1 <- tt[TrialType == "M", ]
 #tt2 <- tt[TrialType == "W", ]
+
+###
+# actually surprised here - about ~ 18 - 24 seconds
+# Ok, but another time it took like k 47 seconds?
+# third time 18?
+# Another 31?
+system.time(boot.res <- bdotsBoot(formula = diffs(y, TrialType(M,W)) ~ Group(LI, TD),
+                      bdObj = res.b,
+                      N.iter = 1000,
+                      alpha = 0.05,
+                      p.adj = "oleson",
+                      cores = 4))
+
+debugonce(bdotsBoot)
+bdBootObj <- boot.res
+rr <- boot.res$curveList
+rr1 <- rr$diff
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,5 +1,5 @@
 
-deleteLater <- bdObj
+#deleteLater <- bdObj
 #bdObj <- deleteLater
 
 ## This is for parsing formula for bdotsBoot
@@ -49,6 +49,10 @@ bootParser <- function(ff, bdObj) {
   outerDiff <- ss[vv == 3][[1]]["col"]
 
   ## Prep for subset
+  # clear case where having inner <-bdCall2Subset OK to be length 1 list
+  # returns a list of length (numargs). Each list element is a list containing
+  # the column subset name and the values (perhaps better as a vector?)
+  # As in, what's wrong with  just c(list(inner), ss) ? Should verify later
   ww <- lapply(c(list(inner), ss), function(x) {
     c(x[1], list(x[-1]))
   })
@@ -103,6 +107,7 @@ bootSubset <- function(l, bdObj) {
 
 ## Get group and subset from something of form grp(n1, n2)
 # needs to be length 1 or 2
+# I think this function is obsolete. Not sure yet
 breakupExpression <- function(ee) {
   if(!is.call(ee)) stop("Argument must be call")
   ee <- vapply(ee, as.character, character(1))

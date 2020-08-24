@@ -1,10 +1,11 @@
 # values of sig are TRUE/FALSE
 #realsig <- sig
 # sig <- realsig
-sig <- c(rep(TRUE, 50), rep(FALSE, 59), sig[110:length(sig)])
+# sig <- c(rep(TRUE, 50), rep(FALSE, 59), sig[110:length(sig)])
 
 ## Determines time regions where difference significant
-bucket <- function(sig, times) {
+# sig are boolean values
+bucket <- function(sig, time) {
   rr <- rle(sig)
   nr <- sum(rr$values) # number of sig regions
   if (nr == 0) return(NULL)

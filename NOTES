@@ -43,7 +43,13 @@ https://stackoverflow.com/questions/27405484/2-curves-simultaneous-nonlinear-reg
 
 (-) instead of checking class  "bdotsObj", make function isBdots. That way, if something is lost while transforming it, we can still recover
 
-(-) Should rewrite split.data.table for split.bdotsObj
+(-) Should rewrite split.data.table for split.bdotsObj <- When doing this, also check to see if the returnX attribute is there. If so, that should be split according to however the bdotsObj is split. Possibly this should extend to subsetting as well, i.e., functions with `[`
+
+(-) If we want to be able to show significant regions for arbitrary collection of objects (for example, for diff of diff, we have 7 total fits, 3 of which constitute a set of differences. If we wanted to make which of these regions were were significant that were not the main analysis, we need to repeat the findModified alpha. FOr example, we do that for diff of diff. But If I want to do sub analysis for LI.W and LI.M WITHIN that bdBootObj, I would want my plots to also show me there where things are significant.
+
+(-) To the above - if we do that, i.e., if the user specifies that that calculation should be done, we should find a way to save it in the bdotsBootObj. We can also 'recommend' the memoise package, in case they wish to view the plots multiple times
+
+
 
 Ideas:
 - Add argument for minimum R2 (i.e., if R2 < 0.8, drop auto correlation and try again)

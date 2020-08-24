@@ -18,6 +18,12 @@ library(parallel)
 
 ## Yo, if we end up having to delete subjects, how do we do a paired t test?
 ## concave is doubleGauss onlly. Surely we can do better
+# returnX - keep data in function output? Used for plots, etc.
+# if NULL, will make determination based on size
+# if FALSE, will have issues if changes made to data in
+# global environment (potentially). For now, I'm going to force it
+# true so that I can make the plot functions. I can deal with not
+# having the data available later
 bdotsFit <- function(data, # dataset
                      subject, # subjects
                      time, # column for time
@@ -28,6 +34,7 @@ bdotsFit <- function(data, # dataset
                      refits = 0,
                      cores = 0, # cores to use, 0 == 50% of available
                      verbose = FALSE,
+                     returnX = NULL,
                      ...) {
 
   if (cores < 1) cores <- detectCores()/2
@@ -116,7 +123,7 @@ bdotsFit <- function(data, # dataset
  res <- parLapply(cl, newdat, bdotsFitter,
                   curveList = curveList,
                   rho = rho, refits = refits,
-                  verbose = verbose)
+                  verbose = FALSE)
  ## This allows us to pass names for verbose
  #system.time(res <- clusterMap(cl, bdotsFitter, newdat, thenames = names(newdat)))
  stopCluster(cl)
@@ -191,7 +198,18 @@ bdotsFit <- function(data, # dataset
    #cbind(dat1, dt_par)
  })
  fitList <- rbindlist(fitList)
+ fitList[, fitCode := factor(fitCode, levels = 0:6)]
  ff <- res[[1]][['ff']]
+
+ ## Return data matrix as well?
+ if (is.null(returnX)) {
+   sz <- object.size(data)
+   if (sz < 1e8L) X <- data
+ } else if (returnX) {
+   X <- data
+ } else {
+   X <- NULL # for now
+ }
 
  ## Class bdots object
 
@@ -234,9 +252,10 @@ bdotsFit <- function(data, # dataset
  res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
                   .Data = fitList,
                   formula = ff,
-                  curveType = curveList,
+                  curveType = names(curveList),
                   call = match.call(),
-                  time = timetest[[1]])
+                  time = timetest[[1]],
+                  X = X)
 
 }
 
