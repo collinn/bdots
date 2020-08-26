@@ -59,7 +59,7 @@ summary.bdotsObj <- function(bdObj, ...) {
 
 }
 
-rr <- summary.bdotsObj(bdObj)
+#rr <- summary.bdotsObj(bdObj)
 
 print.bdotsSummary <- function(x, ...) {
   cat("\nbdotsFit Summary\n\n")
@@ -67,6 +67,32 @@ print.bdotsSummary <- function(x, ...) {
   cat("Formula:", x$formula, "\n")
   cat("Time Range:", paste0("(", paste0(x$timeRange, collapse = ", "), ")"))
   cat(paste0(" [", x$ntime, " points]\n"))
+  cnts <- x$summaries
+  for(i in seq_along(cnts)) {
+    cat(names(cnts)[i], "\n\n")
+    cat("Num Obs: ", cnts[[i]][['nobs']], "\n")
+    cat("Parameter Values: \n")
+    cat(names(cnts[[i]][['pars']]), "\n", cnts[[i]][['pars']], "\n")
+    printFitCount(cnts[i])
+  }
+}
+
+## This takes an actual summaries value
+printFitCount <- function(x) {
+  x <- x[['fitCount']]
+  printLine <- c(paste("AR1,       0.95 <= R2        --", x[1], "\n"),
+                 paste("AR1,       0.80 < R2 <= 0.95 --", x[2], "\n"),
+                 paste("AR1,       R2 < 0.8          --", x[3], "\n"),
+                 paste("Non-AR1,   0.95 <= R2        --", x[4], "\n"),
+                 paste("Non-AR1,   0.8 < R2 <= 0.95  --", x[5], "\n"),
+                 paste("Non-AR1,   R2 < 0.8          --", x[6], "\n"),
+                 paste("No Fit                       --", x[7], "\n"))
+  cat("########################################\n")
+  cat("############### FITS ###################\n")
+  cat("########################################\n")
+  for(i in seq_along(printLine)) {
+    cat(printLine[i])
+  }
 }
 
 ## From original

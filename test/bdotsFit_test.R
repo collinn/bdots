@@ -128,6 +128,16 @@ system.time(boot.res <- bdotsBoot(formula = diffs(y, TrialType(M,W)) ~ Group(LI,
                       p.adj = "oleson",
                       cores = 4))
 
+## Without diff, need to make sure we are subsetting correctly
+# easy to forget to add TrialType(M) or TrialType(W)
+# so be sure to check it
+system.time(boot.res2 <- bdotsBoot(formula = y ~ Group(LI, TD) + TrialType(M),
+                                  bdObj = res.b,
+                                  N.iter = 1000,
+                                  alpha = 0.05,
+                                  p.adj = "oleson",
+                                  cores = 4))
+
 debugonce(bdotsBoot)
 bdBootObj <- boot.res
 rr <- boot.res$curveList
@@ -135,13 +145,22 @@ rr1 <- rr$diff
 
 
 
+plotCompare(boot.res, group = "LI")
+plotCompare(boot.res)
+plotCompare(boot.res, diffs = FALSE)
+
+# > boot.res$sigTime
+# [,1] [,2]
+# [1,]   92 1200
+# [2,] 1472 2500
 
 
+dt <- data.table(x = 9)
 
-
-
-
-
-
-
-
+rr <- structure(.Data = dt, class = class(dt), someatt = "test")
+y <- rr
+f <- function(y) {
+  attributes(y) <- c(attributes(y), list("newat" = "newtest"))
+  y
+}
+f(rr)

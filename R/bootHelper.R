@@ -37,7 +37,7 @@ bdotsBooter <- function(dat, N.iter, corMat = NULL) {
   } else {
     sig <- getVarMat(dat)
     mm <- coef(dat)
-    pars <- rmvnorm(N.iter, mm, sigma = sig)
+    pars <- mvtnorm::rmvnorm(N.iter, mm, sigma = sig)
   }
   colnames(pars) <- rep(colnames(mm), ncol(pars)/ncol(mm))
   pars
@@ -74,6 +74,43 @@ coef.bdotsObj <- function(dat) {
     if (dat[i, ]$fitCode != 6) mm[i, ] <- coef(dat[i, ]$fit[[1]])
   }
   mm
+}
+
+
+## alphaAdjust
+## curveList - returned from curveBooter
+## group - either Group name or Group value, i.e., LI = LI.M/LI.W or W = LI.W/TD.W
+## For right now, group can only be group name (since I would need to recalculate diff for group value)
+# returns:
+# alphastar
+# other stuff too
+alphaAdjust <- function(curveList, p.adj = "oleson", alpha = 0.05, cores, group = NULL) {
+  if (is.null(group)) {
+    curve <- curveList[['diff']]
+  } else {
+    idx <- grep(group, names(curveList))
+    if (length(idx) == 0) stop("Invalid group name")
+    didx <- grep(paste0(group, "\\.diff"), names(curveList[[idx]]))
+    curve <- curveList[[idx]][[didx]]
+  }
+  tval <- curve[["fit"]]/curve[['sd']]
+  pval <- 2 * (1 - pt(abs(tval), df = curve[['n']]))
+
+  ## pval adjustment
+  # (here's where I need to modify p.adjust to make method oleson)
+  rho <- ar1Solver(tval)
+  if (TRUE) {
+    ## This is what takes a minute to run
+    # (35s on Bob's data, not splendid)
+    # (it's also not in (windows) parallel yet)
+    alphastar <- findModifiedAlpha(rho,
+                                   n = length(tval),
+                                   df = curve[['n']],
+                                   cores = cores)
+    k <- alphastar/alpha
+    adjpval <- pval/k
+  }
+  list(pval = pval, adjpval = adjpval, alphastar = alphastar, rho = rho)
 }
 
 
@@ -126,7 +163,7 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
     ## specfically, we should only return a single diff
 
     return(setNames(c(res, list(diffList)), c(names(res), "diff")))
-  }
+  } # start base case
   oP <- split(Obj, by = outerDiff, drop = TRUE)
   if (ip <- isPaired(oP)) {
     cm <- lapply(oP, coef)

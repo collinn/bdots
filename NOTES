@@ -49,6 +49,8 @@ https://stackoverflow.com/questions/27405484/2-curves-simultaneous-nonlinear-reg
 
 (-) To the above - if we do that, i.e., if the user specifies that that calculation should be done, we should find a way to save it in the bdotsBootObj. We can also 'recommend' the memoise package, in case they wish to view the plots multiple times
 
+(-) re bdotsBoot curveList. Instead of having everything sprawled out, we should perhaps have something like list(grp, diff). That is, instead of curveList == (LI.W, LI.M, LI.diff, TD.M, TD.W, TD.diff, diff), perhaps curveList == (LI, TD, diff), with LI == (LI.W, LI.M, LI.diff). But then, if we only have a single group, is it curveList == (LI, diff) with LI == (LI.W, LI.M)? Doing it that way removes internal consistency, and we are left with the same sort of 'conditional' splitting that we had before (conditional in that we can tell by length of curveList or values of curveGroup what happened).
+
 
 
 Ideas:

@@ -36,11 +36,11 @@
 # bdObj <- res2 # from bdotsFit_test.R
 # bdObj <- res.b; outerDiff = "Group"; innerDiff <- "TrialType"   # bob's data
 # formula <- diffs(y, TrialType(M,W)) ~ Group(LI, TD)
-bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, padj = "oleson", cores = 0, ...) {
+bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oleson", cores = 0, ...) {
 
   if (cores < 1) cores <- detectCores()/2
   ## Could maybe list what was removed
-  if(any(bdObj$fitCode == 6)) {
+  if (any(bdObj$fitCode == 6)) {
     warning("Some observations had NULL gnls fits. These will be removed")
     bdObj <- bdObj[fitCode != 6, ] # WARNING: DO NOT MODIFY THIS OBJECT EVER (create idx in attr to determine which are valid for use)
   }
@@ -50,6 +50,8 @@ bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, padj = "oleso
   bdObj <- bootSubset(prs, bdObj)
   innerDiff <- prs[["innerDiff"]] # unnamed character vector
   outerDiff <- prs[["outerDiff"]] # named character vector? should be consistent
+
+  curveGrps <- setNames(prs[['subargs']], prs[['subnames']])
 
   #time <- attr(bdObj, "time")
 
@@ -85,33 +87,54 @@ bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, padj = "oleso
                            N.iter = N.iter,
                            curveFun = curveFun)
   ip <- curveList[['diff']][['paired']] # paired?
+
+  ## make curveList more compact if diff of diff
+  if (!is.null(innerDiff)) {
+    vals <- curveGrps[[outerDiff]]
+    if (length(vals) != 2) stop("Error 987, contact package author")
+    idx1 <- grep(vals[1], names(curveList))
+    idx2 <- grep(vals[2], names(curveList))
+    idxDiff <- grep("^diff$", names(curveList))
+    curveList <- list((curveList[idx1]),
+                 (curveList[idx2]),
+                 (curveList[[idxDiff]]))
+    names(curveList) <- c(vals, "diff")
+    }
+
   # length(curveList)
   # names(curveList)
   # str(curveList$diff)
 
+  ### Below has been replaced with alphaAdjust in bootHelper.R
   ## Compute t statistic
   # diff already set to be the correct values, based on what was determined
   # in the curveList function
   ## Abstract below into own function so that it can be used in plots
-  tval <- curveList[['diff']][['fit']] / curveList[['diff']][['sd']]
-  pval <- 2 * (1 - pt(abs(tval), df = curveList[['diff']][['n']]))
-
-  ## pval adjustment
-  # (here's where I need to modify p.adjust to make method oleson)
-  rho <- ar1Solver(tval)
-  if (TRUE) {
-    ## This is what takes a minute to run
-    # (35s on Bob's data, not splendid)
-    # (it's also not in (windows) parallel yet)
-    alphastar <- findModifiedAlpha(rho,
-                                   n = length(tval),
-                                   df = curveList[['diff']][['n']],
-                                   cores = 2)
-    k <- alphastar/alpha
-    adjpval <- pval/k
-  }
+  # tval <- curveList[['diff']][['fit']] / curveList[['diff']][['sd']]
+  # pval <- 2 * (1 - pt(abs(tval), df = curveList[['diff']][['n']]))
+  #
+  # ## pval adjustment
+  # # (here's where I need to modify p.adjust to make method oleson)
+  # rho <- ar1Solver(tval)
+  # if (TRUE) {
+  #   ## This is what takes a minute to run
+  #   # (35s on Bob's data, not splendid)
+  #   # (it's also not in (windows) parallel yet)
+  #   alphastar <- findModifiedAlpha(rho,
+  #                                  n = length(tval),
+  #                                  df = curveList[['diff']][['n']],
+  #                                  cores = 2)
+  #   k <- alphastar/alpha
+  #   adjpval <- pval/k
+  # }
+  res <- alphaAdjust(curveList, p.adj, alpha, cores)
+  pval <- res[['pval']]
+  rho <- res[['rho']]
+  alphastar <- res[['alphastar']]
+  adjpval <- res[['adjpval']]
   time <- attr(bdObj, "time")
   sigTime <- bucket(pval <= alphastar, time)
+  dod <- ifelse(is.null(innerDiff), FALSE, TRUE)
 
   #bdAttr <- attributes(bdObj)
   structure(class = "bdotsBootObj",
@@ -119,9 +142,13 @@ bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, padj = "oleso
                          alpha = alpha,
                          adj.alpha = alphastar,
                          adj.pval = adjpval,
+                         sigTime = sigTime,
                          rho = rho,
                          paired = ip,
-                         diffs = c(outerDiff, innerDiff)),
+                         diffs = c("outerDiff" = outerDiff,
+                                   "innerDiff" = innerDiff),
+                         curveGroups = curveGrps,
+                         dod = dod),
             call = match.call(),
             bdObjAttr = attributes(bdObj))
 

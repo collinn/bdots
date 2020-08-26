@@ -29,6 +29,7 @@ bootParser <- function(ff, bdObj) {
 
   ## Get outer group
   outerDiff <- ss[vv == 3][[1]]["col"]
+  names(outerDiff) <- NULL
 
   ## Prep for subset
   ww <- lapply(c(list(inner), ss), function(x) {
