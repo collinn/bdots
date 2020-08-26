@@ -22,6 +22,7 @@ summary.bdotsObj <- function(bdObj, ...) {
   formula <- deparse1(attr(bdObj, "formula"))
   time <- attr(bdObj, "time")
   timeRange <- range(time)
+  groups <- attr(bdObj, "groups")
 
   # cheap workaround to reduce size when split
   X <- attr(bdObj, 'X')
@@ -43,14 +44,15 @@ summary.bdotsObj <- function(bdObj, ...) {
   parMean <- colMeans(mm)
   vv <- var(mm)
   fitCount <- table(bdObj[['fitCode']])
-  nobs <- length(unique(bdObj[[subj]]))
+  nobs <- nrow(bdObj)
   totalSummary <- list(nobs = nobs, pars = parMean,
                        varmat = vv, fitCount = fitCount)
   allSummary <- c(total = list(totalSummary), grpSummary)
+  allSummary <- rev(allSummary)
 
   structure(.Data = list(curveType = crvType,
                          formula = formula,
-                         groups = names(grpSummary),
+                         groups = groups,
                          ntime = length(time),
                          timeRange = timeRange,
                          summaries = allSummary),
@@ -61,19 +63,25 @@ summary.bdotsObj <- function(bdObj, ...) {
 
 #rr <- summary.bdotsObj(bdObj)
 
+## Maybe nice to not have this all output at once?
 print.bdotsSummary <- function(x, ...) {
   cat("\nbdotsFit Summary\n\n")
   cat("Curve Type:", x$curveType, "\n")
   cat("Formula:", x$formula, "\n")
   cat("Time Range:", paste0("(", paste0(x$timeRange, collapse = ", "), ")"))
   cat(paste0(" [", x$ntime, " points]\n"))
+  grpNames <- c(makeGroupNameVal(x$groups), "All Fits")
   cnts <- x$summaries
+  cat("\n\n")
   for(i in seq_along(cnts)) {
-    cat(names(cnts)[i], "\n\n")
+    if (i != 1) cat("\n\n")
+    #cat(names(cnts)[i], "\n\n")
+    cat(grpNames[[i]], "\n")
     cat("Num Obs: ", cnts[[i]][['nobs']], "\n")
     cat("Parameter Values: \n")
-    cat(names(cnts[[i]][['pars']]), "\n", cnts[[i]][['pars']], "\n")
-    printFitCount(cnts[i])
+    #cat(names(cnts[[i]][['pars']]), "\n", cnts[[i]][['pars']], "\n")
+    print(cnts[[i]][['pars']])
+    printFitCount(cnts[[i]])
   }
 }
 
@@ -95,15 +103,15 @@ printFitCount <- function(x) {
   }
 }
 
-## From original
-cat("########################################\n")
-cat("############### FITS ###################\n")
-cat("########################################\n")
-cat(paste("AR1,       0.95 <= R2        --", ar1.good, "\n"))
-cat(paste("AR1,       0.80 < R2 <= 0.95 --", ar1.ok, "\n"))
-cat(paste("AR1,       R2 < 0.8          --", ar1.bad, "\n"))
-cat(paste("Non-AR1,   0.95 <= R2        --", nonar1.good, "\n"))
-cat(paste("Non-AR1,   0.8 < R2 <= 0.95  --", nonar1.ok, "\n"))
-cat(paste("Non-AR1,   R2 < 0.8          --", nonar1.bad, "\n"))
-cat(paste("No Fit                       --", nofit, "\n"))
-cat("########################################\n\n")
+# ## From original
+# cat("########################################\n")
+# cat("############### FITS ###################\n")
+# cat("########################################\n")
+# cat(paste("AR1,       0.95 <= R2        --", ar1.good, "\n"))
+# cat(paste("AR1,       0.80 < R2 <= 0.95 --", ar1.ok, "\n"))
+# cat(paste("AR1,       R2 < 0.8          --", ar1.bad, "\n"))
+# cat(paste("Non-AR1,   0.95 <= R2        --", nonar1.good, "\n"))
+# cat(paste("Non-AR1,   0.8 < R2 <= 0.95  --", nonar1.ok, "\n"))
+# cat(paste("Non-AR1,   R2 < 0.8          --", nonar1.bad, "\n"))
+# cat(paste("No Fit                       --", nofit, "\n"))
+# cat("########################################\n\n")
