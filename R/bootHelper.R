@@ -44,39 +44,6 @@ bdotsBooter <- function(dat, N.iter, corMat = NULL) {
 }
 
 
-## getVarMat
-# takes subset data with single observation
-# returns covariance matrix of fit parameters
-getVarMat <- function(dat) {
-  if(nrow(dat) != 1) stop("only for single row of bdotsObj")
-  dat$fit[[1]]$varBeta
-}
-
-
-
-## Extract coef from  bdotsObj
-## uh, this doesn't adress null
-# Ah, mother fucker, that's fitcode 6!
-# this can potentially be made cleaner
-#### Can't replace fit[[1]] since it's unnamed length 1 list. Could name it, I guess
-## Needs to be made generic, address fitcode mentioned above.
-# this needs to be renamed coef.bdObj
-coef.bdotsObj <- function(dat) {
-  #if (!inherits(dat, "bdotsObj")) stop('need bdotsObj')
-  nnfit_v <- which(vapply(dat$fit, function(x) !is.null(x$fit), logical(1))) #dat$fitCode != 6 (change here and somewhere else I remember)
-  if (!length(nnfit_v)) {
-    warning("No models contain valid coefficients")
-    # return(NULL)
-  }
-  mm <- matrix(NA, nrow = nrow(dat), ncol = length(cc <- coef(dat[nnfit_v[1], ]$fit[[1]])))
-  colnames(mm) <- names(cc)
-  for (i in seq_along(1:nrow(mm))) {
-    if (dat[i, ]$fitCode != 6) mm[i, ] <- coef(dat[i, ]$fit[[1]])
-  }
-  mm
-}
-
-
 ## alphaAdjust
 ## curveList - returned from curveBooter
 ## group - either Group name or Group value, i.e., LI = LI.M/LI.W or W = LI.W/TD.W
@@ -131,7 +98,7 @@ alphaAdjust <- function(curveList, p.adj = "oleson", alpha = 0.05, cores, group 
 ## This function is a bit of a bohemeth
 curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
 
-  if(!is.null(innerDiff)) {
+  if (!is.null(innerDiff)) {
     obj <- split(Obj, by = outerDiff, drop = TRUE)
     res <- lapply(obj, curveBooter, outerDiff = innerDiff,
                   N.iter = N.iter, curveFun = curveFun)
@@ -164,6 +131,8 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
 
     return(setNames(c(res, list(diffList)), c(names(res), "diff")))
   } # start base case
+
+  ## Determine correlation matrix, if paired
   oP <- split(Obj, by = outerDiff, drop = TRUE)
   if (ip <- isPaired(oP)) {
     cm <- lapply(oP, coef)
@@ -171,8 +140,8 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
   } else {
     corMat <- NULL
   }
-  ## Should investigate how these are different
-  # oh, on the split
+
+  ## Bootstrap values
   if (!is.null(corMat)) {
     outDiffL <- split(Obj, by = "Subject", drop = TRUE)
     bootPars <- lapply(outDiffL, bdotsBooter, N.iter, corMat)
@@ -180,11 +149,12 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
   } else {
     outDiffL <- lapply(oP, split, by = "Subject")
     meanMat <- lapply(outDiffL, function(x) {
-      bootPars <- lapply(x,  bdotsBooter, N.iter, corMat)
+      bootPars <- lapply(x, bdotsBooter, N.iter, corMat)
       meanMat <- Reduce(`+`,  bootPars)/length(bootPars)
     })
   }
 
+  ## Call curve function on bootstrapped values
   time <- attr(Obj, "time")
   curveList <- lapply(seq_along(meanMat), function(i) {
     mm <- meanMat[[i]]
@@ -194,10 +164,9 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
       x$time <- time
       setNames(x, c(parNames, "time"))
     })
-    ## Note, use this  to get mean and sd for the curves
     res <- lapply(mmList, function(x) {force(x); do.call(curveFun, x)})
     res <- matrix(unlist(res, use.names = FALSE), nrow = length(res), byrow = TRUE)
-    curveFit <- colMeans(res)
+    curveFit <- colMeans(res) # each column is a time point
     curveSD <- apply(res, 2, sd)
     list(fit = curveFit, sd = curveSD, curveMat = res, parMat = mm, n = nrow(oP[[i]]))
   })
@@ -209,6 +178,7 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
 
   ## Could probably do the double map here like above
   # maybe see which is faster?
+  # we also don't need a difference of parameter matrix? that doesn't make sense
   tmp <- unlist(curveList, recursive = FALSE, use.names = FALSE)
   for (i in seq_along(nn)) {
     diffList[[i]] <- tmp[[i]] - tmp[[i + length(nn)]]
@@ -222,7 +192,6 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
     diffList$n <- sum(vapply(oP, nrow, numeric(1))) - 2
   }
   diffList$paired <- ip
-
 
   ## Let's return all that above, and do the diff stuff here (wasted computation if not needed, I guess, but it's only matrix calc)
   setNames(c(curveList, list(diffList)), c(unique(Obj[[outerDiff]]), "diff"))

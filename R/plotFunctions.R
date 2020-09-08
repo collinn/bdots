@@ -134,6 +134,9 @@ plotDiff <- function(bdBootObj, alpha = 0.05, ...) {
 # names(boot.res)
 # names(boot.res2)
 ## This is way too flowery. Just make hard conditions and treat as separte functions for now
+plot.bdotsBootObj <- function(x, ...) {
+  plotCompare(x, ...)
+}
 plotCompare <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...) {
 
   cl <- bdBootObj[['curveList']]
@@ -196,14 +199,14 @@ plotCompare <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...
   if (diffs) {
     oldPar <- par()$mfrow
     on.exit(par(mfrow = oldPar))
-    par(mfrow = c(2, 1))
+    par(mfrow = c(1, 2))
     diffMat <- makePlotCI(diffCurve, alpha)
   }
 
   matplot(x = time, cvMat, lty = rep(c(2, 1, 2), nn),
           type = 'l', col = rep(plotcol, each = 3))
   # set legend placement (?)
-  lgn <- switch(attr(bdObj, "curveType"),
+  lgn <- switch(attr(bdBootObj, "bdObjAttr")[['curveType']],
                 "logistic" = "bottomright",
                 "doubleGauss" = "topright",
                 "topright")

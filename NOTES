@@ -51,6 +51,10 @@ https://stackoverflow.com/questions/27405484/2-curves-simultaneous-nonlinear-reg
 
 (-) re bdotsBoot curveList. Instead of having everything sprawled out, we should perhaps have something like list(grp, diff). That is, instead of curveList == (LI.W, LI.M, LI.diff, TD.M, TD.W, TD.diff, diff), perhaps curveList == (LI, TD, diff), with LI == (LI.W, LI.M, LI.diff). But then, if we only have a single group, is it curveList == (LI, diff) with LI == (LI.W, LI.M)? Doing it that way removes internal consistency, and we are left with the same sort of 'conditional' splitting that we had before (conditional in that we can tell by length of curveList or values of curveGroup what happened).
 
+(-) For deployment of shiny app - https://stackoverflow.com/questions/37830819/developing-shiny-app-as-a-package-and-deploying-it-to-shiny-server
+
+(-) in curveList from bdotsBoot, determine if we actually need to retain curveMat. If we have parMat and time, we can just rebuild it. It takes up quite a bit of memory, which can get expensive passing it around. Then we can abstract away the curve buildilng part of curveBooter, making that function quite a bit simpler on its own
+
 
 
 Ideas:

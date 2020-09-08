@@ -1,13 +1,4 @@
-## Actual bdots fitting function, not exported to user
-
-## We could almost assume that this takes subjectDat <- dat[subject == w/e, ]
-
-## test environment
-#load(file = "~/packages/bdots/data/test_env.RData")
-#dat <- tdat[subject == "2", ]
-
-
-
+## Actual bdots fitt
 ## bdotsFitter takes a dat of a single individual and their curve type
 # It will be simple and robust, and any changes at the subject level
 # can be done here, in one place
@@ -24,10 +15,8 @@
 
 #bdotsFitter(dat = newdat[[1]], curveList = curveList, rho = 0.9)
 
-## This will ultimately not be passed to end user, so I can make more assumptions
-# (with less checking). concave probably shouldn't be passed
-## Definitely not passed to user
-bdotsFitter <- function(dat, curveList, rho, refits = 0,
+
+bdotsFitter <- function(dat, curveList, rho, numRefits = 0,
                         verbose, thenames = NULL, get.cov.only = NULL, ...) {
 
 
@@ -48,6 +37,7 @@ bdotsFitter <- function(dat, curveList, rho, refits = 0,
   ## Obviously will have to change if we change curvetype input
   curveEnv <- makeCurveEnv(curveList)
 
+  # the names of the function to be called
   estCurveFit <- switch(names(curveList),
     doubleGauss = estDgaussCurve,
     logistic = estLogisticCurve #,
@@ -86,6 +76,51 @@ bdotsFitter <- function(dat, curveList, rho, refits = 0,
   list(fit = fit[["fit"]], R2 = R2, fitCode = fitCode, ff = fit[['ff']])
 }
 
+## See if this  works
+bdotsFitter2 <- function(dat, curveType, rho, numRefits = 0,
+                        verbose, thenames = NULL, get.cov.only = NULL,
+                        params = NULL, ...) {
 
+
+  if(any(dat[, .N, by = .(time)]$N > 1)) {
+    warning("Some subjects have multiple observations for unique time. These will be averaged")
+    dat[, y := mean(y), by = .(time)]
+    dat <- unique(dat, by = c("time"))
+  }
+  #curveType <- quote(curveType)
+  print(class(curveType))
+  arggs <- as.list(environment())
+  v <- list(...)
+  m <- dots(...)
+  names(v) <- m
+  arggs <- c(arggs, v)
+  arggs <- compact(arggs)
+  ## Don't like name but w/e
+  for(nn in names(arggs)) {
+    formals(curveType)[[nn]] <- arggs[[nn]]
+  }
+  res <- curveType()
+  ff <- res[['formula']]
+  params <- res[['params']]
+  cF <- curveFitter(dat, ff, params, rho, numRefits, get.cov.only, ...)
+  fit <- list(fit = cF, ff = ff)
+
+
+  ## Practice verbose (put at top)
+  #if (FALSE) message(thenames)
+
+  if (is.null(fit[['fit']])) {
+    return(list(fit = fit[["fit"]], R2 = NA, fitCode = 6, ff = fit[['ff']]))
+  }
+
+  SSE <- sum(resid(fit[['fit']])^2)
+  SSY <- sum((dat$y - mean(dat$y))^2)
+  R2 <- 1 - SSE/SSY
+
+  hasCor <- !is.null(fit[['fit']]$modelStruct$corStruct)
+  fitCode <- 3*(!hasCor) + 1*(R2 < 0.95)*(R2 > 0.8) + 2*(R2 < 0.8)
+
+  list(fit = fit[["fit"]], R2 = R2, fitCode = fitCode, ff = fit[['ff']])
+}
 
 
