@@ -103,15 +103,104 @@ printFitCount <- function(x) {
   }
 }
 
-# ## From original
-# cat("########################################\n")
-# cat("############### FITS ###################\n")
-# cat("########################################\n")
-# cat(paste("AR1,       0.95 <= R2        --", ar1.good, "\n"))
-# cat(paste("AR1,       0.80 < R2 <= 0.95 --", ar1.ok, "\n"))
-# cat(paste("AR1,       R2 < 0.8          --", ar1.bad, "\n"))
-# cat(paste("Non-AR1,   0.95 <= R2        --", nonar1.good, "\n"))
-# cat(paste("Non-AR1,   0.8 < R2 <= 0.95  --", nonar1.ok, "\n"))
-# cat(paste("Non-AR1,   R2 < 0.8          --", nonar1.bad, "\n"))
-# cat(paste("No Fit                       --", nofit, "\n"))
-# cat("########################################\n\n")
+##########################
+
+### Summary for bdotBoot
+summary.bdotsBootObj <- function(bdBootObj, ...) {
+  ## Header info
+  bdCall <- attr(bdBootObj, "call")
+  alphastar <- bdBootObj[['adj.alpha']]
+  sigTime <- bdBootObj[['sigTime']]
+  rho <- bdBootObj[['rho']]
+  dod <- bdBootObj[['dod']]
+  paired <- bdBootObj[['paired']]
+  curveGroup <- bdBootObj[['curveGroups']]
+  formula <- deparse1(attr(bdBootObj, "bdObjAttr")[['formula']])
+  curveType <- attr(bdBootObj, "bdObjAttr")[['curveType']]
+  time <- attr(bdBootObj, "bdObjAttr")[['time']]
+  timeRange <- range(time)
+
+
+  ## group specific info
+  diffs <- bdBootObj[['diffs']]
+  outerDiff <- diffs[['outerDiff']]
+  outDiffVals <- curveGroup[[outerDiff]]
+
+  ## we will always collect outerdiff info
+  # that would just include outerDiff and pair status (already have above)
+  if (dod) {
+    innerDiff <- diffs[['innerDiff']]
+    inDiffVals <- curveGroup[[innerDiff]]
+    innerList <- setNames(vector("list", length = 2), outDiffVals)
+    ## Can safely replace with with lapply
+    for(gp in outDiffVals) {
+      ll <- names(bdBootObj[['curveList']][[gp]])
+      diffidx <- grep("diff", ll)
+      ip <- bdBootObj[['curveList']][[gp]][[diffidx]][['paired']]
+      groups <- list(groups = diffs, vals = ll[-diffidx])
+      innerList[[gp]] <- list(groups = groups, paired = ip)
+    }
+  } else {
+    innerList <- NULL
+  }
+
+  structure(.Data = list(formula = formula,
+                         alphastar = alphastar,
+                         sigTime = sigTime,
+                         rho = rho,
+                         dod = dod,
+                         diffs = diffs,
+                         curveGroup = curveGroup,
+                         paired = paired,
+                         innerList = innerList,
+                         timeRange = timeRange,
+                         ntime = length(time),
+                         curveType = curveType),
+            class = "bdotsBootSummary",
+            call = bdCall)
+
+}
+
+# rr <- summary(bdBootObj)
+# rr <- summary(boot.res2)
+
+
+print.bdotsBootSummary <- function(x, ...) {
+  cat("\nbdotsBoot Summary\n\n")
+  cat("Curve Type:", x$curveType, "\n")
+  cat("Formula:", x$formula, "\n")
+  cat("Time Range:", paste0("(", paste0(x$timeRange, collapse = ", "), ")"))
+  cat(paste0(" [", x$ntime, " points]\n\n"))
+
+  dod <- x[['dod']]
+  cat("Difference of difference:", dod, "\n")
+  cat("Paired t-test:", x[['paired']], "\n")
+  if (dod) {
+    cat("Outer Difference:", x[['diffs']][['outerDiff']], "\n")
+    cat("Inner Difference:", x[['diffs']][['innerDiff']], "\n")
+  } else {
+    cat("Difference:", x[['diffs']][['outerDiff']], "\n")
+  }
+  cat("\n")
+  cat("Alpha adjust method:", "oleson\n")
+  cat("Adjusted Alpha:", x[['alphastar']], "\n")
+  cat("Significant Intervals at adjusted alpha:\n")
+  print(x[['sigTime']])
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

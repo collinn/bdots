@@ -40,6 +40,7 @@ bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oles
 
   if (cores < 1) cores <- detectCores()/2
   ## Could maybe list what was removed
+  ## Also need to remove relevant things from X
   if (any(bdObj$fitCode == 6)) {
     warning("Some observations had NULL gnls fits. These will be removed")
     bdObj <- bdObj[fitCode != 6, ] # WARNING: DO NOT MODIFY THIS OBJECT EVER (create idx in attr to determine which are valid for use)
@@ -135,6 +136,7 @@ bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oles
   time <- attr(bdObj, "time")
   sigTime <- bucket(pval <= alphastar, time)
   dod <- ifelse(is.null(innerDiff), FALSE, TRUE)
+  attr(bdObj, 'X') <- NULL
 
   #bdAttr <- attributes(bdObj)
   structure(class = "bdotsBootObj",
@@ -148,7 +150,8 @@ bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oles
                          diffs = c("outerDiff" = outerDiff,
                                    "innerDiff" = innerDiff),
                          curveGroups = curveGrps,
-                         dod = dod),
+                         dod = dod,
+                         curveFun = curveFun),
             call = match.call(),
             bdObjAttr = attributes(bdObj))
 

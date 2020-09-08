@@ -1,0 +1,178 @@
+---
+title: "bdots state of the union"
+date: "8/28/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(nlme)
+library(mvtnorm)
+# Not for parallel, I could do clusterEvalQ(cl, source(".."))
+source("~/packages/bdots/R/bdotsFit.R")
+source("~/packages/bdots/R/bdotsFitter.R")
+source("~/packages/bdots/R/parser.R")
+source("~/packages/bdots/R/bootParser.R")
+source("~/packages/bdots/R/curveFitter.R")
+source("~/packages/bdots/R/doubleGauss.R")
+source("~/packages/bdots/R/logistic.R")
+source("~/packages/bdots/R/helper.R")
+source("~/packages/bdots/R/effectiveAlpha.R")
+source("~/packages/bdots/R/findModifiedAlpha.R")
+source("~/packages/bdots/R/ar1Solver.R")
+source("~/packages/bdots/R/bucket.R")
+source("~/packages/bdots/R/bootHelper.R")
+source("~/packages/bdots/R/bdotsBoot.R")
+source("~/packages/bdots/R/plotFunctions.R")
+library(nlme) 
+source("~/packages/bdots/R/summaryFunctions.R")
+```
+
+## Introduction
+
+There is still quite a bit to do, and unfortunately I do not think it's at a stage that would at all be useful for user testing. There are still quite a few undocumented or uninformative errors that I am in the process of ironing out. That being said, I wanted to present something to give an update on progress. 
+
+## Fitting
+
+### Fit step
+
+The changing of variables names isn't necessary. I only changed them here as it made it easier for me to reason/think about. 
+```{r, cache = TRUE}
+bobdat <- read.delim("~/bdots/mcmurray_folder/bdots_stuff/example bdots code/data.txt")
+bobdat <- as.data.table(bobdat)
+currdata <- bobdat [bobdat$TrialType == "W" | bobdat$TrialType == "M" , ]
+names(currdata)[names(currdata) == 'dx'] <- 'Group'
+
+## This is not necessary, for convenience below
+currdata2 <- as.data.table(currdata)
+
+## Cause hickups
+currdata2 <- currdata2[Subject != 405, ]
+currdata2 <- currdata2[Subject != 1699, ]
+currdata2 <- currdata2[Subject != 1526, ]
+N.iter <- 1000
+
+## Have not yet changed 'refits'
+fit <- bdotsFit(data = currdata2,
+                subject = "Subject",
+                time = "Time",
+                y = "Looks",
+                group = c("Group", "TrialType"),
+                curve = logistic(),
+                cor = TRUE,
+                refits = 2)
+```
+
+One thing you'll notice here is the use of `curve = logistic()`. If this was to be doubleGauss, which takes a concave argument, one would use `curve = doubleGauss(concave = TRUE)`. The idea, then, is that this argument is itself a function, rather than a character string. This isn't *exactly* how it works yet, but the machinary is set up. Also coming soon is something like `curve = poly(n = N)`.
+
+Of particular interest, though, is that although these functions will be included in the package, there will be information in the documentation on how to use a user-created function. So long as an arbitrary curve function returns a set of values in a specified way (model curve as formula, calculation of parameters based on data), any curve will be able to be used here. 
+
+### Summary information
+
+Summary information is tricky. The idea is that the object returned from summary actually summarizes useful information, which can be used directly by the user. This is more relevant in the bdotsBoot case, as we will look at. As we have a separate method for how this summary prints, we can include whatever details we may ultimately want in the summary object without necessarily displaying it all when printed out. 
+
+```{r, cache = TRUE}
+head(fit)
+
+fit_sum <- summary(fit)
+str(fit_sum)
+fit_sum
+```
+
+
+### Plotting fits
+
+Nothing fancy, just a plot of parameters and fits. The plot for `"fits"` is the default
+
+```{r, cache = TRUE}
+## Plot for parameters
+plot(fit, plotfun = "pars")
+
+## Only look at first 4
+plot(fit[1:4, ], plotfun = "fits")
+```
+
+In regards to the pars, I still need to implement tests between them. However, as it was mentioned previously that the coefficients are important, we have a standard `coef` function that both returns the coefficients, as well as let's us substitute our own in after changing
+
+```{r, cache = TRUE}
+head(coef(fit))
+```
+
+## Boot
+
+### Fitting step
+
+Here, we have a specified formula for how to do specify what we are interested in. Both of these use the same bdotsFit object. In the second fit, we'll notice that we have the additional `+ TrialType(M)`. This is a consequence of `Group(LI, TD)` not being unique (subjects also have a `TrialType(W)`). This allows us to fit everything at once, and then further specify what portions of those fits we want to bootstrap and test. This formula is constructed in such a way that an arbitrary number of groups can exist and still be uniquely identified. 
+
+Internally, the function checks if any sets of differences are paired. This is true for the difference of interest, as well as "inner differences" when using difference of difference. 
+
+```{r, cache = TRUE}
+bootFit <- bdotsBoot(formula = diffs(y, TrialType(M,W)) ~ Group(LI, TD),
+                     bdObj = fit,
+                     N.iter = 1000,
+                     alpha = 0.05,
+                     p.adj = "oleson",
+                     cores = 4)
+
+## Same bdotFit object, but not diff of diff
+bootFit2 <- bdotsBoot(formula = y ~ Group(LI, TD) + TrialType(M),
+                      bdObj = fit,
+                      N.iter = 1000,
+                      alpha = 0.05,
+                      p.adj = "oleson",
+                      cores = 4)
+```
+
+### Summary information
+
+```{r, cache = TRUE}
+boot_sum <- summary(bootFit)
+str(boot_sum)
+boot_sum
+```
+
+And here we can pull out relevant values from the summary object
+
+```{r, cache = TRUE}
+boot_sum$rho
+boot_sum$alphastar
+boot_sum$paired
+```
+
+### Plots
+
+Kinks for these plots aren't entirely worked out. Specifically, you'll notice the axes aren't labeled in an informative way, and the shaded regions cover the plots.
+
+For each of these (and this can be turned off), the fitted curves or fitted differences are on the left, and a plot of the actual difference between the curves is on the right. 
+
+```{r, cache = TRUE}
+plot(bootFit)
+```
+
+Here, in the case of difference of differences, we can examine individual groups. Internally, it is recorded whether or not they are paired observations. Currently, there are no shadded regions indicating significance. This involves an expensive computation, but my plan is to include an option to allow for this kind of sub analysis.
+
+```{r, cache = TRUE}
+plot(bootFit, group = "LI")
+```
+
+## Up next
+
+- Tremendous number of minor things still need worked out
+- Some things are hard-coded for my own ease of use, but this will change. An illustrative example of this can be seen in the printed formulas. Internally, I call the response `y`, which is the argument name to `bdotsFit`, but in practice, the value stored here should match the data provided
+- Plot functions need work
+- testing needs to be establish
+- Investigating fitting two curves for subject at once rather than using covariance matrix in bdotsBoot.
+- No way to handle instances in which subjects may have unequal time values (that is, it assume each subject has observations recorded at the same time). There might be flexibility on this in the future, but I'm not sure yet. 
+- Still no good method for refit
+
+However, on that last point, I have a promising lead. [Here](http://mc-stan.org/rstanarm/reference/launch_shinystan.stanreg.html) is an example of using shiny to interactively perform analysis on MCMC models fit with `rshinystan`. In terms of the wizard that we discussed, I think the most useful thing might be to load this into a shiny environment where the user can see and interact with plots, change variables, etc. and have the updated object returned. My hope is that once this is set up, I can use the core of it to introduce a non-interactive interface that can be used from the console or run as a script while  performing the same high level functions as the shiny interaction would. 
+
+
+
+
+
+
+
+
+
+

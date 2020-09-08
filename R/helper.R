@@ -1,4 +1,36 @@
 
+## getVarMat
+# takes subset data with single observation
+# returns covariance matrix of fit parameters
+getVarMat <- function(dat) {
+  if(nrow(dat) != 1) stop("only for single row of bdotsObj")
+  dat$fit[[1]]$varBeta
+}
+
+
+
+## Extract coef from  bdotsObj
+## uh, this doesn't adress null
+# Ah, mother fucker, that's fitcode 6!
+# this can potentially be made cleaner
+#### Can't replace fit[[1]] since it's unnamed length 1 list. Could name it, I guess
+## Needs to be made generic, address fitcode mentioned above.
+# this needs to be renamed coef.bdObj
+coef.bdotsObj <- function(dat) {
+  #if (!inherits(dat, "bdotsObj")) stop('need bdotsObj')
+  nnfit_v <- which(vapply(dat$fit, function(x) !is.null(x$fit), logical(1))) #dat$fitCode != 6 (change here and somewhere else I remember)
+  if (!length(nnfit_v)) {
+    warning("No models contain valid coefficients")
+    # return(NULL)
+  }
+  mm <- matrix(NA, nrow = nrow(dat), ncol = length(cc <- coef(dat[nnfit_v[1], ]$fit[[1]])))
+  colnames(mm) <- names(cc)
+  for (i in seq_along(1:nrow(mm))) {
+    if (dat[i, ]$fitCode != 6) mm[i, ] <- coef(dat[i, ]$fit[[1]])
+  }
+  mm
+}
+
 ## Make split retain bdotsObj class
 # Need to also split data attribute
 split.bdotsObj <- function(x, by, ...) {
@@ -29,10 +61,15 @@ parMatSplit <- function(x) {
   m2 <- x[, (n+1):(2*n)]
   list(m1, m2)
 }
+###########################################
+#####
+## https://en.wikipedia.org/wiki/Student%27s_t-test
+#####
+### There are a bunch that are possible
 
 ## Get standard deviation for t statistic
 # in unpaired test
-
+## this t-stat is not even close to correct
 nopairSD <- function(l) {
   if(length(l) != 2) stop("contact author with 123")
   s <- lapply(l, function(x) {
@@ -42,7 +79,18 @@ nopairSD <- function(l) {
   })
   s <- Reduce(`+`, s) * sqrt(1/l[[1]]$n + 1/l[[2]]$n)
 }
-
+## I think this is correct, but gives strange fits sometimes
+# nopairSD <- function(l) {
+#   if(length(l) != 2) stop("contact author with 123")
+#   s <- lapply(l, function(x) {
+#     vv <- x[['sd']]^2
+#     n <- x[['n']]
+#     (n-1) * n * vv
+#   })
+#   s <- Reduce(`+`, s) / (l[[1]]$n + l[[2]]$n - 2) * (1/l[[1]]$n + 1/l[[2]]$n)
+#   s <- sqrt(s)
+# }
+###################################
 ## Stolen from purrrrrrrr
 vec_depth <- function(x) {
   if (is.null(x)) {
@@ -77,11 +125,49 @@ unzipList <- function(l) {
 }
 
 
+## Comes up quite a bit, we want to associate
+# group names with group values for summaries and plots
+# function takes a list, first element names, second is values
+# may or may not be split
+# this list item should be named as such
+# l <- list(groups = c("Group", "TrialType"),
+#           vals = c("LI.M", "LI.W", "TD.M", "TD.W"))
+# l <- list(groups = c("Group"), vals = c("LI", "TD"))
+makeGroupNameVal <- function(l) {
+  groups <- l[['groups']]
+  vals <- l[['vals']]
+  vals <- strsplit(vals, "\\.")
+  nn <- lapply(vals, function(x) {
+    paste0(groups, c(": "), x)
+  })
+  nn
+}
+
+## From hadds
+## Names of dots
+dots <- function(...) {
+  eval(substitute(alist(...)))
+}
+compact <- function(x) Filter(Negate(is.null), x)
 
 
-
-
-
+## Capture function arg, build function inside
+curve2Fun <- function(curve) {
+  arggs <- as.list(curve)[-1]
+  cname <- deparse1(as.list(curve)[[1]])
+  cbody <- body(get(cname))
+  cformal <- formals(get(cname))
+  for(nn in names(arggs)) {
+    cformal[[nn]] <- arggs[[nn]]
+  }
+  idx <- which(names(cformal) == "...")
+  ss <- seq_along(cformal)[-idx]
+  cformal <- cformal[c(ss, idx)]
+  w <- function() {}
+  body(w) <- cbody
+  formals(w) <- cformal
+  w
+}
 
 
 

@@ -9,7 +9,7 @@
 # Add argument for minimum cutoffs?
 
 ## If exported to user, need error checking
-curveFitter <- function(dat, ff, params, rho, refits = 0, get.cov.only = NULL, ...) {
+curveFitter <- function(dat, ff, params, rho, numRefits = 0, get.cov.only = NULL, ...) {
 
 
   if (!is.null(get.cov.only) && get.cov.only) {
@@ -22,7 +22,7 @@ curveFitter <- function(dat, ff, params, rho, refits = 0, get.cov.only = NULL, .
                       error = function(e) NULL)
 
       if (is.null(fit)) {
-        attempts <- refits
+        attempts <- numRefits
         while (attempts > 0 & is.null(fit)) {
           attempts <- attempts - 1
           params <- jitter(params)
@@ -37,7 +37,7 @@ curveFitter <- function(dat, ff, params, rho, refits = 0, get.cov.only = NULL, .
       fit <- tryCatch(gnls(eval(ff), data = dat, start = params), error = function(e) NULL)
 
       if (is.null(fit)) {
-        attempts <- refits
+        attempts <- numRefits
         while (attempts > 0 & is.null(fit)) {
           attempts <- attempts - 1
           params <- jitter(params)

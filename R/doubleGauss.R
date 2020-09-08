@@ -99,7 +99,7 @@ dgaussPars <- function(dat, conc) {
 
 ## I guess let's make jitter a numeric argument, since jitter > 0 implies jitter == TRUE
 estDgaussCurve <- function(dat, rho, concave, params = NULL,
-                           get.cov.only = FALSE, refits = 0, ...) {
+                           get.cov.only = FALSE, numRefits = 0, ...) {
 
   if (is.null(params)) {
     params <- dgaussPars(dat, concave)
@@ -121,7 +121,7 @@ estDgaussCurve <- function(dat, rho, concave, params = NULL,
 
   ## In retrospect, this is a bad idea, because then this will be copied
   # in a bunch of different functions, making updates error prone.
-  fit <- curveFitter(dat, ff, params, rho, refits, get.cov.only, ...)
+  fit <- curveFitter(dat, ff, params, rho, numRefits, get.cov.only, ...)
 
   ## I don't need to return this, they can find their own starting parameters with
   # the function above. Plus, it makes it too complicated

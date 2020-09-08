@@ -1,6 +1,4 @@
-library(data.table)
-library(magrittr)
-library(parallel)
+
 
 ## currently, only actually using
 # data.table
@@ -24,6 +22,7 @@ library(parallel)
 # global environment (potentially). For now, I'm going to force it
 # true so that I can make the plot functions. I can deal with not
 # having the data available later
+
 bdotsFit <- function(data, # dataset
                      subject, # subjects
                      time, # column for time
@@ -31,13 +30,15 @@ bdotsFit <- function(data, # dataset
                      group, # groups for subjects
                      curveType = doubleGauss(concave = TRUE),
                      cor = TRUE, # autocorrelation?
-                     refits = 0,
+                     numRefits = 0,
                      cores = 0, # cores to use, 0 == 50% of available
                      verbose = FALSE,
                      returnX = NULL,
                      ...) {
 
   if (cores < 1) cores <- detectCores()/2
+  curveType <- substitute(curveType)
+  curveType <- curve2Fun(curveType)
 
 
   # for removing rho (need to adjust in case it's in (...))
@@ -64,13 +65,13 @@ bdotsFit <- function(data, # dataset
   # hot jesus damn
   dat <- data.table()
   dat$subject <- data[[subject]]
-  dat$time <- data[[time]] %>% as.numeric()
-  dat$y <- data[[y]] %>% as.numeric()
+  dat$time <- as.numeric(data[[time]])
+  dat$y <- as.numeric(data[[y]])
   #group <- c("Group", "LookType")
 
   ## Set group variables in data.tableb+
   for(gg in seq_along(group)) {
-    set(dat, j = group[gg], value = data[[group[gg]]])
+    set(dat, j = group[gg], value = as.character(data[[group[gg]]]))
   }
 
   ## We can quickly check that time is kosher, at least within group divides
@@ -84,63 +85,41 @@ bdotsFit <- function(data, # dataset
   timeSame <- identical(Reduce(intersect, timetest, init = timetest[[1]]),
                         Reduce(union, timetest, init = timetest[[1]]))
   if(!timeSame) warning("Yo, these times are different between groups, and until collin fixes it, that's going to make bdotsBoot wrong-ish")
-  #
-# # for logistic
-#     data(ci)
-#     ci <- as.data.table(ci)
-#     ci <- ci[LookType == "Target", ]
-#     group <- "protocol"
-#     dat <- data.table()
-#     dat$subject <- ci[[subject]]
-#     dat$time <- ci[[time]] %>% as.numeric()
-#     dat$y <- ci[[y]] %>% as.numeric()
-#     for(gg in seq_along(group)) {
-#       set(dat, j = group[gg], value = ci[[group[gg]]])
-#     }
 
 
 
   # Named list with args
   # but look in parser.R to see how to put this in environment (makeCurveEnv)
-  curveList <- curveParser(substitute(curveType))
+  #curveList <- curveParser(substitute(curveType))
   #curveList <- curveParser(quote(doubleGauss(concave = TRUE)))
   #curveList <- curveParser(quote(logistic()))
 
-  ## Set key
-  #setkeyv(dat, c("subject", group)) # ok, but should not be in string?
+
 
  # #  ## if(.platform$OStype == windows)
  # #  ## This allows output to be print to console, possibly not possible in windows
- # # #cl <- makePSOCKcluster(4, outfile = "") # prefer to not have output here
+#cl <- makePSOCKcluster(4, outfile = "") # prefer to not have output here
  cl <- makePSOCKcluster(4)
  ## Ideally, I could clusterEvalQ bdots
  clusterExport(cl, c("curveFitter", "estDgaussCurve", "dgaussPars",
-                     "estLogisticCurve", "logisticPars", "makeCurveEnv"), envir = parent.frame())
+                     "estLogisticCurve", "logisticPars", "makeCurveEnv", "dots", "compact"), envir = parent.frame())
  invisible(clusterEvalQ(cl, library(nlme)))
  #invisible(clusterEvalQ(cl, library(bdots))) # someday
 
  newdat <- split(dat, by = c("subject", group), drop = TRUE) # these needs to not be in string
- res <- parLapply(cl, newdat, bdotsFitter,
-                  curveList = curveList,
-                  rho = rho, refits = refits,
+ # res <- parLapply(cl, newdat, bdotsFitter,
+ #                  curveList = curveList,
+ #                  rho = rho, numRefits = numRefits,
+ #                  verbose = FALSE)
+ res <- parLapply(cl, newdat, bdotsFitter2,
+                  curveType = curveType,
+                  rho = rho, numRefits = numRefits,
                   verbose = FALSE)
  ## This allows us to pass names for verbose
  #system.time(res <- clusterMap(cl, bdotsFitter, newdat, thenames = names(newdat)))
  stopCluster(cl)
 
 
- ## This is for creating the vector of parameter values
- ## Still Not sure what we're going to do with tis
- # ## Some fits may be null, so we want to make sure we
- # ## initialize their data.table below correctly
- # # First, let's find a non-null fit
- # #tt <- which(vapply(replicate(10, NULL), function(x) !is.null(x), logical(1))) # <- length 0 vector
- # nnfit_v <- which(vapply(res, function(x) !is.null(x$fit), logical(1)))
- # if(!length(nnfit_v)) stop("No models successfully fit") # here, which should still return something, but stop for now
- #
- # ## Null fit template for parameters from first fully fit model
- # mat_null <- t(coef(res[[nnfit_v[1]]]$fit))
- # mat_null[] <- NA
 
 
  ## Dude, just store that covariate table they want in a list as well
@@ -176,26 +155,6 @@ bdotsFit <- function(data, # dataset
    dat1$AR1 <- (result[['fitCode']] < 3)
    dat1$fitCode <- result[['fitCode']]
    dat1
-   # set(dat1, i = 1, j = "time", time)
-   # if(!is.null(result[['fit']])) {
-   #   dat1$coef <- list(t(coef(result[['fit']])))
-   # } else {
-   #   dat1$coef <- list(mat_null)
-   # }
-
-   # as.data.table works, but do I REALLY want to
-   # make these a part of my output? They are visual noise that
-   # could be easily fixed with coef(bdotsObj)
-   # test <- structure(dat1, class = c("data.table", "data.frame"),
-   #                   row.names = integer(0),
-   #                   names = colnames(dat1))
-   # ## I bet there is a slick way to do this
-   # test2 <- data.table(colnames(dat1) = dat1)
-
-   # Not sexy, but these aren't large things being copied either
-   # Otherwise, need to do more complicated manuevering to determine
-   # how to make par columns for NULL fits to be rbindlisted below
-   #cbind(dat1, dt_par)
  })
  fitList <- rbindlist(fitList)
  fitList[, fitCode := factor(fitCode, levels = 0:6)]
@@ -210,6 +169,12 @@ bdotsFit <- function(data, # dataset
  } else {
    X <- NULL # for now
  }
+
+ ## Janky for now, but we want a gropuName List
+ tmp <- unique(fitList[, group, with = FALSE])
+ tmp <- names(split(tmp, by = group))
+ groups <- list(groups = group,
+                vals = tmp)
 
  ## Class bdots object
 
@@ -255,6 +220,7 @@ bdotsFit <- function(data, # dataset
                   curveType = names(curveList),
                   call = match.call(),
                   time = timetest[[1]],
+                  groups = groups,
                   X = X)
 
 }

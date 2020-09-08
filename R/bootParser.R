@@ -94,8 +94,9 @@ bdCall2Subset <- function(x) {
 
 ## Should document what this does
 recurToSubset <- function(x) {
-  allnames <- identical(rep("name", length(x)),
-                        vapply(x, class, character(1)))
+  types <- vapply(x, class, character(1))
+  types <- ifelse(types %in% c("name", "numeric"), "name", types)
+  allnames <- identical(rep("name", length(x)), types)
   if (length(x) == 1 | allnames) {
     outer <- bdCall2Subset(x)
   } else {
