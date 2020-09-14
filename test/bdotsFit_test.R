@@ -20,6 +20,7 @@ source("~/packages/bdots/R/bucket.R")
 source("~/packages/bdots/R/bootHelper.R")
 source("~/packages/bdots/R/bdotsBoot.R")
 source("~/packages/bdots/R/plotFunctions.R")
+source("~/packages/bdots/R/summaryFunctions.R")
 library(data.table)
 library(parallel)
 library(nlme)
@@ -62,6 +63,15 @@ system.time(boot.test <- bdotsBoot(formula = diffs(y, LookType(Cohort, Unrelated
                                   p.adj = "oleson",
                                   cores = 4))
 plotCompare(boot.test)
+
+## Doing this, in boot.test2$curveList$Cohort, there are entries for both cohort and unrelated cohort?
+# it's because I grep for "Cohort" which is in "Cohort" AND "Unrelated_Cohort".  Ah, subset of name
+system.time(boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unrelated_Cohort),
+                                   bdObj = res2,
+                                   N.iter = 1000,
+                                   alpha = 0.05,
+                                   p.adj = "oleson",
+                                   cores = 4))
 ## Keep only valid pairs for now
 #res2 <- res[, 1:7]
 
@@ -115,6 +125,9 @@ currdata2 <- as.data.table(currdata)
 currdata2 <- currdata2[Subject != 405, ]
 currdata2 <- currdata2[Subject != 1699, ]
 currdata2 <- currdata2[Subject != 1526, ]
+currdata2 <- currdata2[Subject != 1647, ]
+currdata2 <- currdata2[Subject != 1688, ]
+currdata2 <- currdata2[Subject != 1582, ]
 N.iter <- 1000
 
 ## About 32 seconds

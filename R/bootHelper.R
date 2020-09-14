@@ -57,8 +57,8 @@ alphaAdjust <- function(curveList, p.adj = "oleson", alpha = 0.05, cores, group 
   } else {
     idx <- grep(group, names(curveList))
     if (length(idx) == 0) stop("Invalid group name")
-    didx <- grep(paste0(group, "\\.diff"), names(curveList[[idx]]))
-    curve <- curveList[[idx]][[didx]]
+    d_idx <- grep(paste0(group, "\\.diff"), names(curveList[[idx]]))
+    curve <- curveList[[idx]][[d_idx]]
   }
   tval <- curve[["fit"]]/curve[['sd']]
   pval <- 2 * (1 - pt(abs(tval), df = curve[['n']]))

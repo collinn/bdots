@@ -38,6 +38,7 @@ bdotsFit <- function(data, # dataset
 
   if (cores < 1) cores <- detectCores()/2
   curveType <- substitute(curveType)
+  curveName <- gsub("\\(|\\)", "", deparse1(curveType))
   curveType <- curve2Fun(curveType)
 
 
@@ -217,7 +218,7 @@ bdotsFit <- function(data, # dataset
  res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
                   .Data = fitList,
                   formula = ff,
-                  curveType = names(curveList),
+                  curveType = curveName,
                   call = match.call(),
                   time = timetest[[1]],
                   groups = groups,

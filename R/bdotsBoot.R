@@ -93,8 +93,8 @@ bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oles
   if (!is.null(innerDiff)) {
     vals <- curveGrps[[outerDiff]]
     if (length(vals) != 2) stop("Error 987, contact package author")
-    idx1 <- grep(vals[1], names(curveList))
-    idx2 <- grep(vals[2], names(curveList))
+    idx1 <- grep(paste0("^", vals[1]), names(curveList))
+    idx2 <- grep(paste0("^", vals[2]), names(curveList))
     idxDiff <- grep("^diff$", names(curveList))
     curveList <- list((curveList[idx1]),
                  (curveList[idx2]),
