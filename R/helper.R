@@ -70,26 +70,26 @@ parMatSplit <- function(x) {
 ## Get standard deviation for t statistic
 # in unpaired test
 ## this t-stat is not even close to correct
-nopairSD <- function(l) {
-  if(length(l) != 2) stop("contact author with 123")
-  s <- lapply(l, function(x) {
-    vv <- x[['sd']]^2
-    n <- x[['n']]
-    (n-1) * vv
-  })
-  s <- Reduce(`+`, s) * sqrt(1/l[[1]]$n + 1/l[[2]]$n)
-}
-## I think this is correct, but gives strange fits sometimes
 # nopairSD <- function(l) {
 #   if(length(l) != 2) stop("contact author with 123")
 #   s <- lapply(l, function(x) {
 #     vv <- x[['sd']]^2
 #     n <- x[['n']]
-#     (n-1) * n * vv
+#     (n-1) * vv
 #   })
-#   s <- Reduce(`+`, s) / (l[[1]]$n + l[[2]]$n - 2) * (1/l[[1]]$n + 1/l[[2]]$n)
-#   s <- sqrt(s)
+#   s <- Reduce(`+`, s) * sqrt(1/l[[1]]$n + 1/l[[2]]$n)
 # }
+## I think this is correct, but gives strange fits sometimes
+nopairSD <- function(l) {
+  if(length(l) != 2) stop("contact author with 123")
+  s <- lapply(l, function(x) {
+    vv <- x[['sd']]^2
+    n <- x[['n']]
+    (n-1) * n * vv
+  })
+  s <- Reduce(`+`, s) / (l[[1]]$n + l[[2]]$n - 2) * (1/l[[1]]$n + 1/l[[2]]$n)
+  s <- sqrt(s)
+}
 ###################################
 ## Stolen from purrrrrrrr
 vec_depth <- function(x) {
