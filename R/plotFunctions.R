@@ -69,8 +69,11 @@ plotFits <- function(bdObj, fitCode, gridSize = NULL, ...) {
 
   if (is.null(gridSize)) {
     gridSize <- min(2, sqrt(nrow(X)))
+  } else if (gridSize == "refit") {
+    par(mfrow = c(1, 2))
+  } else {
+    par(mfrow = c(gridSize, gridSize))
   }
-  par(mfrow = c(gridSize, gridSize))
 
   Xs <- split(X, by = splitVars)
 
@@ -93,13 +96,28 @@ plotFits <- function(bdObj, fitCode, gridSize = NULL, ...) {
     obs2 <- paste(obs, collapse = ".")
     obsY <- Xs[[obs2]][[y]]
     fitY <- fitted.values(bdObj[i, ]$fit[[1]])
-    title <- paste(paste0(obs, collapse = " "), "\n fitCode = ", code, ", R2 = ", r2)
+
+    ## Janky fix for update
+    if (gridSize == "refit") {
+      if (i == 1) {
+        title <- paste("Original Fit", "\n fitCode = ", code, ", R2 = ", r2)
+      }
+      if (i == 2) {
+        title <- paste("Updated Fit", "\n fitCode = ", code, ", R2 = ", r2)
+      }
+    } else {
+      title <- paste(paste0(obs, collapse = " "), "\n fitCode = ", code, ", R2 = ", r2)
+    }
+
+
     plot(x = time, y = obsY, lty = 2, lwd = 2, type = 'l',
          ylab = y, main = title, col = 'blue')
     lines(x = time, y = fitY, lty = 1, lwd =2, type = 'l')
     # perhaps change legend based on  plot type?
-    legend(lgn, legend = c("Observed", "Fit"), lty = c(2, 1),
+    legend(lgn, legend = c("Observed", "Model Fit"), lty = c(2, 1),
            lwd = c(2, 2), col = c('blue', 'black'))
+
+
   }
 
 }

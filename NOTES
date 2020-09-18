@@ -55,7 +55,9 @@ https://stackoverflow.com/questions/27405484/2-curves-simultaneous-nonlinear-reg
 
 (-) in curveList from bdotsBoot, determine if we actually need to retain curveMat. If we have parMat and time, we can just rebuild it. It takes up quite a bit of memory, which can get expensive passing it around. Then we can abstract away the curve buildilng part of curveBooter, making that function quite a bit simpler on its own
 
+(-) pressing issue, and perhaps pervasive throughout, is the issue of the original names of the dataset and how they contrast with what i had (time, y, group,. etc). This comes up in plots, formulas, and refits. Right now we have a unsightly mix of transferring around a modified copy of the dataset, but this is NOT ideal at all. Worse, this fucks things up within the curveFunction stuff too. Goddamnit
 
+(-) If bdotsFit made to be recursive, it will be much easier to call and get the exact format I want for bdotsRefit
 
 Ideas:
 - Add argument for minimum R2 (i.e., if R2 < 0.8, drop auto correlation and try again)

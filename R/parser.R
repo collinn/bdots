@@ -11,11 +11,11 @@
 # Note: from above 2 lines, length(lhs) can only be 1 or 3
 # ... ~ g1(n1, n2) + g2(m1) + g3(m2) + ...
 
-ff1 <- diffs(y, condition(M,W)) ~ group(DLD, TD) + g2(n1) + g3(m1, m2, m3, m4) + g4(r1)
-ff1 <- diffs(y, TrialType(M,W)) ~ Group(LI, TD)
-ff1 <- y ~ Group(LI, TD) + TrialType(M)
-
-ff <- ff1
+# ff1 <- diffs(y, condition(M,W)) ~ group(DLD, TD) + g2(n1) + g3(m1, m2, m3, m4) + g4(r1)
+# ff1 <- diffs(y, TrialType(M,W)) ~ Group(LI, TD)
+# ff1 <- y ~ Group(LI, TD) + TrialType(M)
+#
+# ff <- ff1
 bootParser <- function(ff, bdObj) {
   if (!inherits(ff, "formula")) stop("Must supply a formula to bdotsBoot")
 
@@ -190,27 +190,6 @@ bdotsParser <- function(ff) {
 
 }
 
-#bdotsParser(ff <- diffs(y, condition(M,W)) ~ group(DLD, TD) + g2(n1, n2))
-
-## parses things like doubleGauss(concave = TRUE), logistic(), poly(degree = n), etc.
-
-## This version of f/g works
-f <- function(a) { # <- curve parse function
-  #class(a) %>% print()
-  a
-}
-g <- function(a) { # <- bdots, with a = doubleGauss(curve = TRUE)
-  f(substitute(a))
-}
-
-ee <- g(doubleGauss(concave = TRUE, lickmyballs = TRUE, n = 8))
-
-
-# bdotsFit(...) { curveParser(substitute(expr))}
-
-#strsplit(ee, "[\\(\\)]")
-## expr comes in as a call
-expr <- ee
 
 ## This takes expression for curve type
 # i.e., doubleGauss(concave = TRUE)
@@ -308,61 +287,5 @@ curveParser2 <- function(expr) {
   myenv
   #setNames(arggs, curve)
 }
-
-ww2 <- function(a) {
-  curveParser2(substitute(a))
-}
-
-aa <- (ww2(doubleGauss(concave = FALSE, eatmyshitter = TRUE)))
-
-## What we find is that frame_n gives frame of current env
-# sys.frame(frame_n) allows us to list2env in function
-# this shit works with mclapply
-# also works for  parLapply
-# f <- function(ll = 1) {
-#   a <- 2
-#   b <- 3
-#   frame_n <- sys.nframe() # what frame am I in?
-#   list2env(ll, envir = sys.frame(frame_n))
-#   tt <- ls()
-#   mm
-# }
-#
-# h <- function() {
-#   ll <- list(list(m = 1, mm = 2), list(m = 1, mm = 9))
-#   #aa <- mclapply(ll, f)
-#
-#   cl <- makePSOCKcluster(2)
-#   clusterExport(cl, c("ll", "f"))
-#   aa <- parLapply(cl, ll, f)
-#   stopCluster(cl)
-#   aa
-# }
-#
-# (h())
-
-### Can we assign to env and export in parallel? YES
-f <- function(x, ...) {
-  #cat(doggy)
-}
-ww <- function(a) {
-  val <- curveParser(substitute(a))
-  curveType <- names(val)
-  val <- as.list(unlist(val, use.names = FALSE))
-  myenv <- new.env()
-  for(i in seq_along(val)) {
-    #eval(parse(text = val[i]), envir = sys.frame(sys.nframe()))
-    eval(parse(text = val[i]), envir = myenv)
-  }
-
-  cl <- makePSOCKcluster(2) #, outfile = "")
-  clusterExport(cl, c("f"))
-  clusterExport(cl, ls(envir = myenv), envir = myenv) # this will export named  variables in myenv
-  aa <- parLapply(cl, 1:10, f)
-  stopCluster(cl)
-
-}
-(ww(doubleGauss(doggy = "doggy")))
-
 
 
