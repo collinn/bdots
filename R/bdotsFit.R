@@ -112,7 +112,7 @@ bdotsFit <- function(data, # dataset
  #                  curveList = curveList,
  #                  rho = rho, numRefits = numRefits,
  #                  verbose = FALSE)
- res <- parLapply(cl, newdat, bdotsFitter2,
+ res <- parLapply(cl, newdat, bdotsFitter,
                   curveType = curveType,
                   rho = rho, numRefits = numRefits,
                   verbose = FALSE)
@@ -142,6 +142,8 @@ bdotsFit <- function(data, # dataset
  # consider putting it in attributes? This would
  # assist with subsetting and letting them adjust it
  # manually. We will put more thought in this later
+
+ ## This could be a trillion times faster (maybe) with loop and data.table::set
  fitList <- lapply(names(newdat), function(x) {
    result <- res[[x]] # list of length 3
    x <- strsplit(x, "\\.") # list of by variables for newdat
@@ -221,6 +223,7 @@ bdotsFit <- function(data, # dataset
                   curveType = curveName,
                   call = match.call(),
                   time = timetest[[1]],
+                  rho = rho,
                   groups = groups,
                   X = X)
 
