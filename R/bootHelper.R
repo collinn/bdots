@@ -3,6 +3,7 @@
 
 ## bdotsBooter
 # Takes subset dat with iter and corMat, returns
+# More specifically, it takes a bdotsObj
 # N.iter x npars matrix of random draws
 
 # Notes
@@ -18,16 +19,16 @@
 # giving this to jake
 ## very much same issue with logistic (cross is HUGE)
 
-bdotsBooter <- function(dat, N.iter, corMat = NULL) {
+bdotsBooter <- function(bdo, N.iter, corMat = NULL) {
 
   ## for now
-  if (nrow(dat) > 2) stop("something weird in bdotsBooter")
+  if (nrow(bdo) > 2) stop("something weird in bdotsBooter")
 
-  mm <- coef(dat)
+  mm <- coef(bdo)
   ## Can only be one or two (will this be always true?)
   if (!is.null(corMat)) {
-    sig11 <- getVarMat(dat[1, ])
-    sig22 <- getVarMat(dat[2, ])
+    sig11 <- getVarMat(bdo[1, ])
+    sig22 <- getVarMat(bdo[2, ])
     sig12 <- 0 * corMat %*% sqrt((diag(sig11)) %*% t(diag(sig22)))
     sig <- cbind(rbind(sig11, sig12), rbind(t(sig12), sig22))
     # ee <- eigen(sig)$values
@@ -35,8 +36,8 @@ bdotsBooter <- function(dat, N.iter, corMat = NULL) {
     # sig <- Matrix::nearPD(sig, keepDiag = TRUE, eig.tol = ll*1e-2, maxit = 1e7)$mat
     pars <- mvtnorm::rmvnorm(N.iter, mean = c(t(mm)), sigma = sig)
   } else {
-    sig <- getVarMat(dat)
-    mm <- coef(dat)
+    sig <- getVarMat(bdo)
+    mm <- coef(bdo)
     pars <- mvtnorm::rmvnorm(N.iter, mm, sigma = sig)
   }
   colnames(pars) <- rep(colnames(mm), ncol(pars)/ncol(mm))

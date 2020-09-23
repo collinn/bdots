@@ -4,6 +4,8 @@
 bdObj <- res.b
 fitcode <- 1
 
+bdo2 <- bdotsRefit(bdObj, 1)
+
 ## Probably want to create diagnostic information
 # that can be output or saved along with this
 # also probably worth recording which were updated?
@@ -11,103 +13,132 @@ bdotsRefit <- function(bdObj, fitcode = 0, ...) {
   if (is.null(fitcode)) {
     fitcode <- readline(prompt = "fitcode: ")
   }
-  X_orig <- attr(bdObj, "X")
-  attr(bdObj, "X") <- NULL
-  if (is.null(X)) {
+  # X <- attr(bdObj, "X")
+  # attr(bdObj, "X") <- NULL
+  if (is.null(attr(bdObj, "X"))) {
     stop("Dataset must be provided")
   }
 
-  ## Because of factors, which I should really think about removing
-  idx <- which(as.numeric(bdObj$fitCode) >= fitcode + 1)
-  #bdObj <- bdObj[as.numeric(fitCode) >= fitcode + 1, ]
-
-  ## Subset X by selected bdObj
+  ## These uniquely identify each fit
   bdCall <- attr(bdObj, "call")
   nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']]))
-  bdNames <- do.call(paste, c(bdObj[idx, nn, with = FALSE], sep = "-"))
-  XNames <- do.call(paste, c(X_orig[, nn, with = FALSE], sep = "-"))
-  x_idx <- which(XNames %in% bdNames)
-  X <- X_orig[x_idx, ]
 
-  X <- split(X, by = nn)
+  ## Because of factors, which I should really think about removing
+  idx <- which(as.numeric(bdObj$fitCode) >= fitcode + 1)
   bdObj2 <- split(bdObj[idx, ], by = nn)
+  new_bd <- lapply(bdObj2, bdUpdate)
 
-  ## They should be identical, but who knows
-  if (!identical(names(X), names(bdObj2))) {
-    if (intersect(names(X), names(bdObj2)) != names(X)) stop("error 45367")
-    bdObj2 <- bdObj2[sort(names(bdObj2))]
-    X <- X[sort(names(bdObj2))]
+  ## Remove deleted observations
+  # null_idx - which fits were removed
+  # new_bd - compacted new_bd list
+  # rmv_names - names from bd list being removed
+  # rmv_sub_id - Subject identifier of removed
+  # -- this is to provide option to remove all of subject
+  # idx - idx representing position for new_bd list
+  null_idx <- which(vapply(new_bd, is.null, logical(1)))
+  if (length(null_idx) != 0) {
+    new_bd <- compact(new_bd)
+    rmv_names <- names(bdObj2)[null_idx]
+    rmv_sub_id <- vapply(strsplit(rmv_names, "\\."), `[`, character(1), 1)
+    idx <- idx[-null_idx]
   }
 
-  new_bd <- lapply(names(bdObj2), bdUpdate)
+  ## Update original bdObj with changes
   new_bd <- rbindlist(new_bd)
-
-  for (i in seq_len(nrow(test))) {
+  for (i in seq_len(nrow(new_bd))) {
     bdObj[idx[i], ] <- new_bd[i, ]
   }
-  # ## possibly do by names so as not to have to map?
-  # test <- Map(function(bdo, x) {
-  #   # print current status of observation
-  #   # give plot
-  #   # prompt to give set of parameters
-  #   # display new fit/plot
-  #   # keep new pars or reprompt
-  #
-  # }, bdObj, X)
 
-  # then, the results of test will be
-  # used to update the original bdObj
+  ## This is gross
+  if (length(rmv_sub_id) != 0) {
 
+    ## First, get all bdNames, remove those in rmv_names
+    bdNames <- do.call(paste, c(bdObj[, nn, with = FALSE], sep = "."))
+    rmv_idx <- which(bdNames %in% rmv_names)
+    bdObj <- bdObj[-rmv_idx, ]
+
+    ## Now determine which pairs might be left of reduced bdObj
+    bdNames2 <- do.call(paste, c(bdObj[, nn[1], with = FALSE], sep = "."))
+    rmv_pairs <- which(bdNames2 %in% rmv_sub_id)
+
+    if (length(rmv_pairs)) {
+      ll <- length(rmv_sub_id)
+      if (ll < 2) {
+        msg <- paste0("\n1 observation was deleted during the update process.\n",
+                      "This subject has other paired entries in the bdObj dataset.\n",
+                      "Would you like to remove their remaining observations?\n",
+                      "(may be necessary for paired t-test in bdotsBoot)\n")
+      } else {
+        msg <- paste0("\n", ll, " observations were deleted during the update process.\n",
+                     "These subjects have other paired entires in the bdObj dataset.\n",
+                     "Would you like to remove their remaining observations?\n",
+                     "(may be necessary for paired t-test in bdotsBoot)\n")
+      }
+
+      cat(msg)
+      corr_resp <- FALSE
+      while (!corr_resp) {
+        resp <- readline("Remove all associated observations? (Y/n): ")
+        if (resp  %in% c("Y", "n")) {
+          corr_resp <- TRUE
+        } else {
+          cat("Please enter 'Y' or 'n'\n")
+        }
+      }
+      if (resp == "Y") {
+        bdObj <- bdObj[-rmv_pairs, ]
+      }
+    }
+  }
+  bdObj
 }
 
 
-# bdo <- bdObj[[1]]
+# bdo <- bdObj2[[1]]
 # x <- X[[1]]
-# nn <- names(bdObj)[1]
+# nn <- names(bdObj2)[1]
 
 ## A lot of bits of these can be abstracted to functions
 # that way we can just jitter as often as we want (or w/e else)
 # note, this will also be found in bdotsFit too
 # Perhaps throw in  option to "Trash" an observation
-bdUpdate <- function(nn) {
-  ## get whatever
-  bdo <- bdObj2[[nn]]
-  x <- X[[nn]]
-  attr(bdo, "X") <- x
+## Have to use nn, since it's used
+bdUpdate <- function(bdo) {
+
+  # class(bdo) <- c("bdotsObj", class(bdo))
+  # x <- X[[nn]]
+  # attr(bdo, "X") <- x
 
   ## Getting curve function
   bdCall <- attr(bdo, "call")
+  nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']]))
   time <- attr(bdo, "time")
+  rho <- attr(bdo, "rho")
   crvFun <- curve2Fun(bdCall[['curveType']])
 
   ## This is a terrible work around
   #  to get correct names in x for curveFitter
+  x <- attr(bdo, "X")
   set(x, j = c("y", "time"),
       value = x[,c(bdCall[['y']], bdCall[['time']]), with = FALSE])
 
-  rho <- attr(bdo, "rho")
+
+  plot(bdo, gridSize = 1)
+  oldPars <- printRefitUpdateInfo(bdo)
 
   accept <- FALSE
   while (!accept) {
-    plot(bdo, gridSize = 1)
-    r2 <- round(bdo[['R2']], 3)
-    ar1 <- bdo[['AR1']]
-    fc <- bdo[['fitCode']]
-    fit <- bdo[['fit']][[1]]
-    msg <- paste0("Subject: ", nn, "\nR2: ", r2, "\nAR1: ",
-                  as.logical(ar1), "\nrho: ", rho,
-                  "\nfitCode: ", fc, "\n\n")
-    msg <- c(msg, "Model Parameters:\n")
-    cat(msg)
-    print(oldPars <- coef(fit))
 
     ## Maybe add in future ability to change row
     rf_msg <- paste0("\nActions:\n",
-                     "1) Keep as is\n",
+                     "1) Keep original fit\n",
                      "2) Jitter parameters\n",
-                     "3) Adjust parameters manually\n")
+                     "3) Adjust starting parameters manually\n",
+                     "4) Remove AR1 assumption\n",
+                     "5) See original fit metrics\n",
+                     "6) Delete subject")
     cat(rf_msg)
-    resp <- readline("Choose (1-3): ")
+    resp <- readline("Choose (1-6): ")
     if (resp == 1) {
       accept <- TRUE
       break
@@ -115,18 +146,44 @@ bdUpdate <- function(nn) {
       newPars <- jitter(coef(fit))
     } else if (resp == 3) {
       newPars <- oldPars
+      cat("Press Return to keep original value\n")
       for (pname in names(oldPars)) {
         cat("Current value:\n")
         print(oldPars[pname])
-        newPars[pname] <- readline(paste0("New value for ", pname, ": "))
+        tmpval <- readline(paste0("New value for ", pname, ": "))
+        if (!is.na(as.numeric(tmpval))) {
+          newPars[pname] <- tmpval
+        } else if (tmpval != "") {
+          warning("Invalid entry, keeping old value")
+        }
       }
       class(newPars) <- "numeric"
-    }
+    } else if (resp == 4) {
+      rho <- 0
+      newPars <- oldPars
+    } else if (resp == 5) {
+      printRefitUpdateInfo(bdo)
+      next
+    } else if (resp == 6) {
+        corr_resp <- FALSE
+        while (!corr_resp) {
+          dd <- readline("Delete observation? (Y/n): ")
+          if (dd  %in% c("Y", "n")) {
+            corr_resp <- TRUE
+          } else {
+            cat("Please enter 'Y' or 'n'\n")
+          }
+        }
+        if (dd == "Y") {
+          bdo <- NULL
+          break
+        }
+        next
+     }
 
     ## repeat of inside of bdotsFit (make this a function? - yes)
     # then need to update to bdFit as well
     result <- bdotsFitter(dat = x, curveType = crvFun, rho = rho, params = newPars)
-    # Or just copy to preserve relevant bits
 
     new_bdo <- copy(bdo)
     new_bdo$fit <- I(list(result['fit']))
@@ -138,17 +195,35 @@ bdUpdate <- function(nn) {
     attributes(both_bdo) <- attributes(bdo)
     plot(both_bdo, gridSize = "refit")
 
+    cat("Refit Info:\n")
+    printRefitUpdateInfo(new_bdo)
     keep <- readline("Keep new fit? (y/n): ")
     if (length(grep("y", keep, ignore.case = TRUE)) == 1) {
       bdo <- new_bdo
       accept <- TRUE
+    } else {
+      plot(bdo, gridSize = 1)
     }
   }
   bdo
 }
 
 
-
+printRefitUpdateInfo <- function(bdo) {
+  bdCall <- attr(bdo, "call")
+  rho <- attr(bdo, "rho")
+  r2 <- round(bdo[['R2']], 3)
+  ar1 <- bdo[['AR1']]
+  fc <- bdo[['fitCode']]
+  fit <- bdo[['fit']][[1]]
+  subname <- bdo[, eval(bdCall[['subject']]), with = FALSE]
+  msg <- paste0("Subject: ", subname, "\nR2: ", r2, "\nAR1: ",
+                as.logical(ar1), "\nrho: ", rho,
+                "\nfitCode: ", fc, "\n\n")
+  msg <- c(msg, "Model Parameters:\n")
+  cat(msg)
+  print(oldPars <- coef(fit))
+}
 
 
 

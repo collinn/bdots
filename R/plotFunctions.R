@@ -58,7 +58,7 @@ plotFits <- function(bdObj, fitCode, gridSize = NULL, ...) {
   dfname <- deparse1(bdCall$data)
   if (is.null(X) & exists(dfname)) {
     X <- get(dfname)
-  } else if (!exists(dfname)) {
+  } else if (is.null(X) & !exists(dfname)) {
     stop("Cannot find dataset used to construct bdObj, please pass as argument")
   }
 

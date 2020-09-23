@@ -2,10 +2,12 @@
 ## Let's test bdotsFit funcitoin
 
 rm(list = ls())
+library(bdots)
 library(data.table)
 library(parallel)
 library(nlme)
 library(mvtnorm)
+load("~/packages/bdots/data/testRunData.RData")
 # Not for parallel, I could do clusterEvalQ(cl, source(".."))
 source("~/packages/bdots/R/bdotsFit.R")
 source("~/packages/bdots/R/bdotsFitter.R")
@@ -23,7 +25,8 @@ source("~/packages/bdots/R/bootHelper.R")
 source("~/packages/bdots/R/bdotsBoot.R")
 source("~/packages/bdots/R/plotFunctions.R")
 source("~/packages/bdots/R/summaryFunctions.R")
-#load("~/packages/bdots/data/testRunData.RData")
+source("~/packages/bdots/R/bdotsRefit.R")
+
 
 ##############
 
@@ -84,6 +87,7 @@ boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unr
 
 
 ## logistic
+library(bdots)
 data(ci)
 ci <- as.data.table(ci)
 ci <- ci[LookType == "Target", ]
@@ -204,3 +208,10 @@ f <- function(y) {
   y
 }
 f(rr)
+
+boot.res2 <- bdotsBoot(formula = y ~ Group(LI, TD) + TrialType(M),
+                       bdObj = bdo2,
+                       N.iter = 1000,
+                       alpha = 0.05,
+                       p.adj = "oleson",
+                       cores = 4)
