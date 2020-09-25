@@ -54,7 +54,7 @@ plotFits <- function(bdObj, fitCode, gridSize = NULL, ...) {
 
   if (!is.character(y)) stop("Error 123")
 
-  X <- attr(bdObj, "X")
+  X <- attr(bdObj, "X")$X
   dfname <- deparse1(bdCall$data)
   if (is.null(X) & exists(dfname)) {
     X <- get(dfname)

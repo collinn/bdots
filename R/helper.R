@@ -43,45 +43,7 @@ split.bdotsObj <- function(bdo, by, ...) {
   })
   structure(.Data = res, class = c("bdObjList"))
 }
-# split.bdotsObj <- function(bdo, by, ...) {
-#     oldClass <- class(bdo)
-#     X <- attr(bdo, "X")
-#     attr(bdo, "X") <- NULL
-#
-#     if (is.null(X)) {
-#       class(bdo) <- c("data.table", "data.frame")
-#       res <- lapply(split(bdo, by = by, ...), function(y) {
-#           class(y) <- oldClass
-#           y
-#       })
-#       return(structure(.Data = res,
-#                        class = c("bdObjList")))
-#     }
-#
-#     ## In the event X is not null
-#
-#     ## Keep parts of X in this split (bdo already indexed)
-#     bdCall <- attr(bdo, "call")
-#     nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']]))
-#     bdNames <- do.call(paste, c(bdo[, nn, with = FALSE], sep = "."))
-#     XNames <- do.call(paste, c(X[, nn, with = FALSE], sep = "."))
-#     x_idx <- which(XNames %in% bdNames)
-#
-#
-#     class(bdo) <- c("data.table", "data.frame")
-#
-#
-#     ## Works with indexing done as above. Neat
-#     res <- Map(function(y, x) {
-#       class(y) <- oldClass
-#       attr(y, "X") <- x
-#       y
-#     }, split(bdo, by = by, ...), split(X[x_idx, ], by = by, ...))
-#
-#     structure(.Data = res,
-#               class = c("bdObjList"))
-#
-# }
+
 
 ## Otherwise, rbindlist is not a generic
 rbindlist <- function(x, ...) {
@@ -226,6 +188,30 @@ curve2Fun <- function(curve) {
   formals(w) <- cformal
   w
 }
+
+## Pull from attributes names of vars to split
+# data by observation (subject, group)
+getSplitVars <- function(bdo) {
+  bdCall <- attr(bdObj, "call")
+  nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']]))
+  nn
+}
+
+## Correctly subsets dataset for observation
+getSubX <- function(bdo) {
+  X <- setDT(attr(bdo, "X")$X)
+  nn <- getSplitVars(bdo)
+  Xnames <- do.call(paste, X[, nn, with = FALSE])
+  bdNames <- do.call(paste, bdo[, nn, with = FALSE])
+  x_idx <- Xnames %in% bdNames
+  X[x_idx, ]
+}
+
+## Takes value from bdotsFitter
+# returns as appropriate DT
+bdFit2DT <- function()
+
+
 
 
 

@@ -143,7 +143,7 @@ res.b <- bdotsFit(data = currdata2,
                               time = "Time",
                               y = "Looks",
                               group = c("Group", "TrialType"),
-                              curve = logistic(),
+                              curveType = logistic(),
                               cor = TRUE,
                               numRefits = 2)
 
