@@ -7,6 +7,7 @@ library(data.table)
 library(parallel)
 library(nlme)
 library(mvtnorm)
+library(pryr)
 load("~/packages/bdots/data/testRunData.RData")
 # Not for parallel, I could do clusterEvalQ(cl, source(".."))
 source("~/packages/bdots/R/bdotsFit.R")
@@ -179,7 +180,8 @@ boot.res2 <- bdotsBoot(formula = y ~ Group(LI, TD) + TrialType(M),
                                   cores = 4)
 
 
-save(res2, boot.test, boot.test2, boot.res, res.b, res.l, boot.l, file = c("testRunData.RData"))
+save(res2, boot.test, boot.test2, boot.res, res.b, res.l, boot.l,
+     file = c("~/packages/bdots/data/testRunData.RData"))
 
 
 #debugonce(bdotsBoot)
