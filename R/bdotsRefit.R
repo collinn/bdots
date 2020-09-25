@@ -1,10 +1,10 @@
 
 # bdObj - object from bdotsFit
 # fitCode - min code for refit, i.e.,  fitCode = 3 will do 3:6
-bdObj <- res.b
-fitcode <- 1
+#bdObj <- res.b
+#fitcode <- 1
 
-bdo2 <- bdotsRefit(bdObj, 1)
+#bdo2 <- bdotsRefit(bdObj, 1)
 
 ## Probably want to create diagnostic information
 # that can be output or saved along with this
@@ -15,7 +15,7 @@ bdotsRefit <- function(bdObj, fitcode = 0, ...) {
   }
   # X <- attr(bdObj, "X")
   # attr(bdObj, "X") <- NULL
-  if (is.null(attr(bdObj, "X"))) {
+  if (is.null(attr(bdObj, "X")$X)) {
     stop("Dataset must be provided")
   }
 
@@ -118,7 +118,7 @@ bdUpdate <- function(bdo) {
 
   ## This is a terrible work around
   #  to get correct names in x for curveFitter
-  x <- attr(bdo, "X")
+  x <- attr(bdo, "X")$X
   set(x, j = c("y", "time"),
       value = x[,c(bdCall[['y']], bdCall[['time']]), with = FALSE])
 
