@@ -23,6 +23,8 @@
 # true so that I can make the plot functions. I can deal with not
 # having the data available later
 
+## Add key to bdObj and X
+
 bdotsFit <- function(data, # dataset
                      subject, # subjects
                      time, # column for time
@@ -64,6 +66,8 @@ bdotsFit <- function(data, # dataset
   # god that seems so obvious. So what if I have to pass subject, time, y, to cl? (group will already be split)
   # by retaining their full data.frame/data.table, they can do whatever they want in their own functions
   # hot jesus damn
+
+  #### !!!! use setDT here instead
   dat <- data.table()
   dat$subject <- data[[subject]]
   dat$time <- as.numeric(data[[time]])
@@ -173,6 +177,9 @@ bdotsFit <- function(data, # dataset
    X <- NULL # for now
  }
 
+ X_env <- new.env(parent = emptyenv())
+ X_env$X <- X
+
  ## Janky for now, but we want a gropuName List
  tmp <- unique(fitList[, group, with = FALSE])
  tmp <- names(split(tmp, by = group))
@@ -225,7 +232,7 @@ bdotsFit <- function(data, # dataset
                   time = timetest[[1]],
                   rho = rho,
                   groups = groups,
-                  X = X)
+                  X = X_env)
 
 }
 

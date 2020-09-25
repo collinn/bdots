@@ -120,6 +120,11 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
   hasCor <- !is.null(fit[['fit']]$modelStruct$corStruct)
   fitCode <- 3*(!hasCor) + 1*(R2 < 0.95)*(R2 > 0.8) + 2*(R2 < 0.8)
 
+  ## This is an UNREASONABLY large object. makes up most of size of bdobject
+  if (hasCor) {
+    attr(fit[['fit']]$modelStruct$corStruct, "factor") <- NULL
+  }
+
   list(fit = fit[["fit"]], R2 = R2, fitCode = fitCode, ff = fit[['ff']])
 }
 

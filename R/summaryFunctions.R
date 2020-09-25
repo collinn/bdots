@@ -25,9 +25,8 @@ summary.bdotsObj <- function(bdObj, ...) {
   groups <- attr(bdObj, "groups")
 
   # cheap workaround to reduce size when split
-  X <- attr(bdObj, 'X')
-  on.exit(attr(bdObj, 'X') <- X)
-  attr(bdObj, 'X') <- NULL
+  X <- attr(bdObj, 'X')$X
+  #attr(bdObj, 'X')$X <- NULL
 
   ## Length of this is number of grp permutations fit
   # names of are names of those group permutations
