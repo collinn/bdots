@@ -4,11 +4,14 @@
 #bdObj <- res.b
 #fitcode <- 1
 
-#bdo2 <- bdotsRefit(bdObj, 1)
+debugonce(bdotsRefit)
+debugonce(bdUpdate)
+bdo2 <- bdotsRefit(bdObj, 1)
 
 ## Probably want to create diagnostic information
 # that can be output or saved along with this
 # also probably worth recording which were updated?
+
 bdotsRefit <- function(bdObj, fitcode = 0, ...) {
   if (is.null(fitcode)) {
     fitcode <- readline(prompt = "fitcode: ")
@@ -115,10 +118,11 @@ bdUpdate <- function(bdo) {
   time <- attr(bdo, "time")
   rho <- attr(bdo, "rho")
   crvFun <- curve2Fun(bdCall[['curveType']])
+  fit <- bdo[['fit']][[1]]
 
   ## This is a terrible work around
   #  to get correct names in x for curveFitter
-  x <- attr(bdo, "X")$X
+  x <- setDT(attr(bdo, "X")$X)
   set(x, j = c("y", "time"),
       value = x[,c(bdCall[['y']], bdCall[['time']]), with = FALSE])
 
