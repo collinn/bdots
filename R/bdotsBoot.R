@@ -41,6 +41,10 @@ bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oles
   if (cores < 1) cores <- detectCores()/2
   ## Could maybe list what was removed
   ## Also need to remove relevant things from X
+  ## looking back at refit function here, we  need a function
+  # that takes an expression, returns subject IDS for which that
+  # expression is true, and then removes all of that subject
+  # (including observations that did not meet that expression)
   if (any(bdObj$fitCode == 6)) {
     warning("Some observations had NULL gnls fits. These will be removed")
     bdObj <- bdObj[fitCode != 6, ] # WARNING: DO NOT MODIFY THIS OBJECT EVER (create idx in attr to determine which are valid for use)
@@ -136,7 +140,7 @@ bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oles
   time <- attr(bdObj, "time")
   sigTime <- bucket(pval <= alphastar, time)
   dod <- ifelse(is.null(innerDiff), FALSE, TRUE)
-  attr(bdObj, 'X') <- NULL
+  #attr(bdObj, 'X')$X <- NULL
 
   #bdAttr <- attributes(bdObj)
   structure(class = "bdotsBootObj",
