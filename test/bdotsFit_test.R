@@ -38,13 +38,11 @@ time <- "Time"
 subject <- "Subject"
 y <- "Fixations"
 concave <-  TRUE
-conc <- TRUE
 rho <-  0.9
 numRefits <- 0
 cores <-  1
 verbose <-  FALSE
 alpha <- 0.05
-curveType <- c("doubleGauss")
 
 #head(data)
 
@@ -62,6 +60,7 @@ res <- bdotsFit(data = cohort_unrelated,
                 verbose = FALSE)
 res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
 
+# debugonce(bdotsBoot)
 boot.test <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
                                   bdObj = res2,
                                   N.iter = 1000,
@@ -172,6 +171,12 @@ system.time(boot.res <- bdotsBoot(formula = diffs(Looks, TrialType(M,W)) ~ Group
 ## Without diff, need to make sure we are subsetting correctly
 # easy to forget to add TrialType(M) or TrialType(W)
 # so be sure to check it
+## having 'y' in formula still works?
+## YEAH because it's never actually used
+## Mabe this would be simpler if it was either
+# ~ Group(LI, TD) + TrialType(M)
+# diffs(TrialType(M,W)) ~ Group(LI, TD)
+#  nice to add option on not including (LI, TD) if there are only two
 boot.res2 <- bdotsBoot(formula = y ~ Group(LI, TD) + TrialType(M),
                                   bdObj = res.b,
                                   N.iter = 1000,
@@ -179,8 +184,7 @@ boot.res2 <- bdotsBoot(formula = y ~ Group(LI, TD) + TrialType(M),
                                   p.adj = "oleson",
                                   cores = 4)
 
-
-save(res2, boot.test, boot.test2, boot.res, res.b, res.l, boot.l,
+save(res2, boot.test, boot.test2, boot.res, res.b, res.l, boot.l, boot.res2,
      file = c("~/packages/bdots/data/testRunData.RData"))
 
 

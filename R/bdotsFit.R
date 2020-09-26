@@ -60,8 +60,10 @@ bdotsFit <- function(data, # dataset
     }
   }
 
-
+  ## Factors eff things up
   dat <- setDT(data)
+  dat[, (group) := lapply(.SD, as.character), .SDcols = group]
+
 
   ## We can quickly check that time is kosher, at least within group divides
   ## Would need to verify this is we planned on doing paired stuff?
@@ -163,6 +165,11 @@ bdotsFit <- function(data, # dataset
  #ff <- res[[1]][['ff']]
 
  ## Return data matrix as well?
+ ## Two things here
+ # don't make X AND data, even if at the end, unneccesary size
+ # if size too large, "get" name of data, and store that
+ # then `getSubX` can either give the actual data set
+ # or it can find it in the globalenv and use it there.
  if (is.null(returnX)) {
    sz <- object.size(data)
    if (sz < 1e8L) X <- data
