@@ -65,7 +65,9 @@ bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oles
   ff <- attr(bdObj, "formula")
   f_bod <- deparse1(ff[[3]]) # would be cool to get f_args from this instead
   f_args <- paste0(colnames(coef(bdObj)), collapse = ", ") # + colnames(dat)
-  eval(parse(text = paste('curveFun <- function(', f_args, ', time', ') { return(' , f_bod , ')}', sep='')))
+  eval(parse(text = paste('curveFun <- function(', f_args, ', ',
+                          attr(bdObj, "call")$time, ') { return(' , f_bod , ')}',
+                          sep='')))
 
 
   # ################################################################

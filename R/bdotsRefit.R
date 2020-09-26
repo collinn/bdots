@@ -4,9 +4,9 @@
 #bdObj <- res.b
 #fitcode <- 1
 
-debugonce(bdotsRefit)
-debugonce(bdUpdate)
-bdo2 <- bdotsRefit(bdObj, 1)
+# debugonce(bdotsRefit)
+# debugonce(bdUpdate)
+# bdo2 <- bdotsRefit(bdObj, 1)
 
 ## Probably want to create diagnostic information
 # that can be output or saved along with this
