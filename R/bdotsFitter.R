@@ -106,7 +106,7 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
 #                   rho = rho, numRefits = numRefits,
 #                   verbose = FALSE, splitVars = splitVars,
 #                   datVarNames = datVarNames)
-#
+# #
 # rr <- tt$fit[[1]]
 #
 #
