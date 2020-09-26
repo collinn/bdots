@@ -50,7 +50,7 @@ curveType <- c("doubleGauss")
 
 
 ## was missing concave smh
-res <- bdotsFit(cohort_unrelated,
+res <- bdotsFit(data = cohort_unrelated,
                 subject = "Subject",
                 time = "Time",
                 y = "Fixations",
@@ -62,7 +62,7 @@ res <- bdotsFit(cohort_unrelated,
                 verbose = FALSE)
 res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
 
-boot.test <- bdotsBoot(formula = diffs(y, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
+boot.test <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
                                   bdObj = res2,
                                   N.iter = 1000,
                                   alpha = 0.05,
@@ -138,14 +138,14 @@ currdata2 <- currdata2[Subject != 1582, ]
 N.iter <- 1000
 
 ## About 32 seconds
-res.b <- bdotsFit(data = currdata2,
+system.time(res.b <- bdotsFit(data = currdata2,
                               subject = "Subject",
                               time = "Time",
                               y = "Looks",
                               group = c("Group", "TrialType"),
                               curveType = logistic(),
                               cor = TRUE,
-                              numRefits = 2)
+                              numRefits = 2))
 
 #debugonce(bdotsFit)
 
@@ -162,12 +162,12 @@ res.b <- bdotsFit(data = currdata2,
 # Another 31?
 ## Something about the diff function is very wrong
 # should investigate nopairSD in helper.R
-boot.res <- bdotsBoot(formula = diffs(y, TrialType(M,W)) ~ Group(LI, TD),
+system.time(boot.res <- bdotsBoot(formula = diffs(Looks, TrialType(M,W)) ~ Group(LI, TD),
                       bdObj = res.b,
                       N.iter = 1000,
                       alpha = 0.05,
                       p.adj = "oleson",
-                      cores = 4)
+                      cores = 4))
 
 ## Without diff, need to make sure we are subsetting correctly
 # easy to forget to add TrialType(M) or TrialType(W)

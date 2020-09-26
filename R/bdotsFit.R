@@ -43,6 +43,11 @@ bdotsFit <- function(data, # dataset
   curveName <- gsub("\\(|\\)", "", deparse1(curveType))
   curveType <- curve2Fun(curveType)
 
+  ## Variable names on the dataset
+  datVarNames <- c(y = y, subject = subject, time = time, group = group)
+  if (!all(datVarNames %in% names(data))) {
+    stop("need more specific error. Either subject, time, y, or group is not in dataset")
+  }
 
   # for removing rho (need to adjust in case it's in (...))
   # Should verify that we don't have rho set and cor = FALSE
@@ -56,28 +61,7 @@ bdotsFit <- function(data, # dataset
   }
 
 
-  ## Cheat around DT reference, conditionally set key for subset
-  ## Need to consider if they pass in their own curveFunction
-  ## Can possibly avoid this set, as was done below
-  # and get rid of magrittr
-  ## For doubleGauss
-  ## Names actually might not matter if I don't make bdotsFitter public
-  ## Ummmm... how about dat <- as.data.table(data), which makes a copy, not reference
-  # god that seems so obvious. So what if I have to pass subject, time, y, to cl? (group will already be split)
-  # by retaining their full data.frame/data.table, they can do whatever they want in their own functions
-  # hot jesus damn
-
-  #### !!!! use setDT here instead
-  dat <- data.table()
-  dat$subject <- data[[subject]]
-  dat$time <- as.numeric(data[[time]])
-  dat$y <- as.numeric(data[[y]])
-  #group <- c("Group", "LookType")
-
-  ## Set group variables in data.tableb+
-  for(gg in seq_along(group)) {
-    set(dat, j = group[gg], value = as.character(data[[group[gg]]]))
-  }
+  dat <- setDT(data)
 
   ## We can quickly check that time is kosher, at least within group divides
   ## Would need to verify this is we planned on doing paired stuff?
@@ -86,32 +70,31 @@ bdotsFit <- function(data, # dataset
   ## For now, let's just PRAY that they are all equal. We just need it to drop
   # into bdotsBoot.
   timetest <- split(dat, by = group, drop = TRUE)
-  timetest <- lapply(timetest, function(x) unique(x$time))
+  timetest <- lapply(timetest, function(x) unique(x[[time]]))
   timeSame <- identical(Reduce(intersect, timetest, init = timetest[[1]]),
                         Reduce(union, timetest, init = timetest[[1]]))
-  if(!timeSame) warning("Yo, these times are different between groups, and until collin fixes it, that's going to make bdotsBoot wrong-ish")
+  if (!timeSame) warning("Yo, these times are different between groups, and until collin fixes it, that's going to make bdotsBoot wrong-ish")
 
-
-
-  # Named list with args
-  # but look in parser.R to see how to put this in environment (makeCurveEnv)
-  #curveList <- curveParser(substitute(curveType))
-  #curveList <- curveParser(quote(doubleGauss(concave = TRUE)))
-  #curveList <- curveParser(quote(logistic()))
+  ## This shuld work inside function. Let's check
+  if (any(dat[, .N, by = c(subject, time, group)]$N > 1)) {
+    warning("Some subjects have multiple observations for unique time. These will be averaged")
+    yval <- deparse(substitute(y))
+    dat[, substitute(y) := mean(get(y)), by = c(subject, time, group)]
+    dat <- unique(dat, by = c(subject, time, group))
+  }
 
 
 
  # #  ## if(.platform$OStype == windows)
  # #  ## This allows output to be print to console, possibly not possible in windows
-#cl <- makePSOCKcluster(4, outfile = "") # prefer to not have output here
  cl <- makePSOCKcluster(4)
  ## Ideally, I could clusterEvalQ bdots
- clusterExport(cl, c("curveFitter", "estDgaussCurve", "dgaussPars",
-                     "estLogisticCurve", "logisticPars", "makeCurveEnv", "dots", "compact"), envir = parent.frame())
+ clusterExport(cl, c("curveFitter", "makeCurveEnv", "dots", "compact"), envir = parent.frame())
  invisible(clusterEvalQ(cl, library(nlme)))
  #invisible(clusterEvalQ(cl, library(bdots))) # someday
 
- newdat <- split(dat, by = c("subject", group), drop = TRUE) # these needs to not be in string
+ splitVars <- c(subject, group)
+ newdat <- split(dat, by = splitVars, drop = TRUE) # these needs to not be in string
  # res <- parLapply(cl, newdat, bdotsFitter,
  #                  curveList = curveList,
  #                  rho = rho, numRefits = numRefits,
@@ -119,13 +102,22 @@ bdotsFit <- function(data, # dataset
  res <- parLapply(cl, newdat, bdotsFitter,
                   curveType = curveType,
                   rho = rho, numRefits = numRefits,
-                  verbose = FALSE)
+                  verbose = FALSE,
+                  splitVars = splitVars,
+                  datVarNames = datVarNames)
  ## This allows us to pass names for verbose
  #system.time(res <- clusterMap(cl, bdotsFitter, newdat, thenames = names(newdat)))
  stopCluster(cl)
 
 
+ ## See, I don't like this bc hypothetically could be length 0
+ # alternative is making logistic() more complicated
+ ff <- attr(res[[1]], "formula")
+ fitList <- rbindlist(res, fill = TRUE)
 
+ ## I maybe don't like this here. But we can add it on
+ # in the summary if necessary
+ fitList[, fitCode := factor(fitCode, levels = 0:6)]
 
  ## Dude, just store that covariate table they want in a list as well
  # and that can be it's own class if need be
@@ -148,24 +140,27 @@ bdotsFit <- function(data, # dataset
  # manually. We will put more thought in this later
 
  ## This could be a trillion times faster (maybe) with loop and data.table::set
- fitList <- lapply(names(newdat), function(x) {
-   result <- res[[x]] # list of length 3
-   x <- strsplit(x, "\\.") # list of by variables for newdat
+ # fitList <- lapply(names(newdat), function(x) {
+ #   result <- res[[x]] # list of length 3
+ #   x <- strsplit(x, "\\.") # list of by variables for newdat
+ #
+ #   dat1 <- as.data.table(matrix(x[[1]], ncol = length(x[[1]])))
+ #   names(dat1) <-  c(subject, group)
+ #
+ #
+ #   #set(dat1, j = "fit", value = result[['fit']])
+ #   dat1$fit <- I(list(result['fit']))
+ #   dat1$R2 <- result[['R2']]
+ #   dat1$AR1 <- (result[['fitCode']] < 3)
+ #   dat1$fitCode <- result[['fitCode']]
+ #   dat1
+ # })
+ # fitList <- rbindlist(fitList)
+ #
 
-   dat1 <- as.data.table(matrix(x[[1]], ncol = length(x[[1]])))
-   names(dat1) <-  c(subject, group)
+ #fitList <- bdFit2DT(res)
 
-
-   #set(dat1, j = "fit", value = result[['fit']])
-   dat1$fit <- I(list(result['fit']))
-   dat1$R2 <- result[['R2']]
-   dat1$AR1 <- (result[['fitCode']] < 3)
-   dat1$fitCode <- result[['fitCode']]
-   dat1
- })
- fitList <- rbindlist(fitList)
- fitList[, fitCode := factor(fitCode, levels = 0:6)]
- ff <- res[[1]][['ff']]
+ #ff <- res[[1]][['ff']]
 
  ## Return data matrix as well?
  if (is.null(returnX)) {

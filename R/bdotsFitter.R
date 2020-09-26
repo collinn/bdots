@@ -15,16 +15,24 @@
 
 
 ## See if this  works
+# splitVars used later to add name to what this returns (in attribute)
+## And actually, this thing should just return a finished DT
 bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
                         verbose, thenames = NULL, get.cov.only = NULL,
-                        params = NULL, ...) {
+                        params = NULL, splitVars = NULL,
+                        datVarNames = NULL, ...) {
 
 
-  if(any(dat[, .N, by = .(time)]$N > 1)) {
-    warning("Some subjects have multiple observations for unique time. These will be averaged")
-    dat[, y := mean(y), by = .(time)]
-    dat <- unique(dat, by = c("time"))
-  }
+  ## This has been moved into bdotsFit
+  # if(any(dat[, .N, by = .(time)]$N > 1)) {
+  #   warning("Some subjects have multiple observations for unique time. These will be averaged")
+  #   dat[, y := mean(y), by = .(time)]
+  #   dat <- unique(dat, by = c("time"))
+  # }
+
+  ## variables used for subsetting dat
+  y <- datVarNames[['y']]
+  time <- datVarNames[['time']]
 
   #curveType <- quote(curveType)
   #print(class(curveType))
@@ -41,30 +49,68 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
   res <- curveType()
   ff <- res[['formula']]
   params <- res[['params']]
-  cF <- curveFitter(dat, ff, params, rho, numRefits, get.cov.only, ...)
-  fit <- list(fit = cF, ff = ff)
+  fit <- curveFitter(dat, ff, params, rho, numRefits, get.cov.only, ...)
+  #fit <- list(fit = cF, ff = ff)
 
 
   ## Practice verbose (put at top)
   #if (FALSE) message(thenames)
 
-  if (is.null(fit[['fit']])) {
-    return(list(fit = fit[["fit"]], R2 = NA, fitCode = 6, ff = fit[['ff']]))
+  # if (is.null(fit)) {
+  #   return(list(fit = fit, R2 = NA, fitCode = 6, ff = ff)
+  # }
+  #
+  if (is.null(fit)) {
+    fn <- do.call(c, dat[1, splitVars, with = FALSE])
+    dt <- as.data.table(matrix(c(fn, c("fit", "R2", "AR1", "fitCode")),
+                               ncol = length(fn) + 4))
+    names(dt) <- c(names(fn), c("fit", "R2", "AR1", "fitCode"))
+    dt$fit <- I(list(NULL))
+    dt$R2 <- NA
+    dt$AR1 <- FALSE
+    dt$fitCode <- 6
+    attr(dt, "formula") <- ff
+    return(dt)
   }
 
-  SSE <- sum(resid(fit[['fit']])^2)
-  SSY <- sum((dat$y - mean(dat$y))^2)
+  SSE <- sum(resid(fit)^2)
+  SSY <- sum((dat[[y]] - mean(dat[[y]]))^2)
   R2 <- 1 - SSE/SSY
 
-  hasCor <- !is.null(fit[['fit']]$modelStruct$corStruct)
+  hasCor <- !is.null(fit$modelStruct$corStruct)
   fitCode <- 3*(!hasCor) + 1*(R2 < 0.95)*(R2 > 0.8) + 2*(R2 < 0.8)
 
   ## This is an UNREASONABLY large object. makes up most of size of bdobject
   if (hasCor) {
-    attr(fit[['fit']]$modelStruct$corStruct, "factor") <- NULL
+    attr(fit$modelStruct$corStruct, "factor") <- NULL
   }
 
-  list(fit = fit[["fit"]], R2 = R2, fitCode = fitCode, ff = fit[['ff']])
+  ## Make return DT
+  fn <- do.call(c, dat[1, splitVars, with = FALSE])
+  dt <- as.data.table(matrix(c(fn, c("fit", "R2", "AR1", "fitCode")),
+                             ncol = length(fn) + 4))
+  names(dt) <- c(names(fn), c("fit", "R2", "AR1", "fitCode"))
+  dt$fit <- I(list(fit))
+  dt$R2 <- R2
+  dt$AR1 <- (fitCode < 3)
+  dt$fitCode <- fitCode
+
+  ## Cleanest way to get formula, for now
+  attr(dt, "formula") <- ff
+  dt
 }
+
+# #
+#  debugonce(bdotsFitter)
+# tt <- bdotsFitter(newdat[[1]], curveType = doubleGauss,
+#                   rho = rho, numRefits = numRefits,
+#                   verbose = FALSE, splitVars = splitVars,
+#                   datVarNames = datVarNames)
+#
+# rr <- tt$fit[[1]]
+#
+#
+# ff <- rr$call
+# zz <- ff[[2]]
 
 

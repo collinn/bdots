@@ -208,8 +208,25 @@ getSubX <- function(bdo) {
 }
 
 ## Takes value from bdotsFitter
-# returns as appropriate DT
-bdFit2DT <- function()
+# returns an appropriate DT
+## WE SHOULDN'T NEED THIS
+# fitObj <- res[[1]]
+# bdFit2DT <- function(fitObjs) {
+#   fitList <- lapply(fitObjs, function(fitObj) {
+#     fn <- fitObj$fitName
+#     dat <- as.data.table(matrix(c(fn, c("fit", "R2", "AR1", "fitCode")),
+#                                 ncol = length(fn) + 4))
+#     names(dat) <- c(names(fn), c("fit", "R2", "AR1", "fitCode"))
+#     dat$fit <- I(list(fitObj['fit']))
+#     dat$R2 <- fitObj[['R2']]
+#     dat$AR1 <- (fitObj[['fitCode']] < 3)
+#     dat$fitCode <- fitObj[['fitCode']]
+#     dat
+#   })
+#   fitList <- rbindlist(fitList)
+#   fitList[, fitCode := factor(fitCode, levels = 0:6)]
+#   fitList
+# }
 
 
 

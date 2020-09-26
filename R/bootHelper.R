@@ -157,13 +157,14 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
 
   ## Call curve function on bootstrapped values
   time <- attr(Obj, "time")
+  timeName <- attr(Obj, "call")$time
   curveList <- lapply(seq_along(meanMat), function(i) {
     mm <- meanMat[[i]]
     parNames <- colnames(mm)
     mmList <- lapply(split(mm, row(mm)), function(x) {
       x <- as.list(x)
-      x$time <- time
-      setNames(x, c(parNames, "time"))
+      x[[timeName]] <- time
+      setNames(x, c(parNames, timeName))
     })
     res <- lapply(mmList, function(x) {force(x); do.call(curveFun, x)})
     res <- matrix(unlist(res, use.names = FALSE), nrow = length(res), byrow = TRUE)
