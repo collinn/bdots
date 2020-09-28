@@ -1,19 +1,5 @@
 
 
-## currently, only actually using
-# data.table
-# parallel
-# nlme
-
-
-
-
-# pair verbose with message
-
-## Need to not make my own names for this (i.e., y, subject, time)
-
-
-
 ## Yo, if we end up having to delete subjects, how do we do a paired t test?
 ## concave is doubleGauss onlly. Surely we can do better
 # returnX - keep data in function output? Used for plots, etc.
@@ -41,7 +27,7 @@ bdotsFit <- function(data, # dataset
   if (cores < 1) cores <- detectCores()/2
   curveType <- substitute(curveType)
   curveName <- gsub("\\(|\\)", "", deparse1(curveType))
-  curveType <- curve2Fun(curveType)
+  curveType <- curve2Fun(curveType) # this function has an environment with a lot of stuff in it
 
   ## Variable names on the dataset
   datVarNames <- c(y = y, subject = subject, time = time, group = group)
@@ -160,9 +146,7 @@ bdotsFit <- function(data, # dataset
  # fitList <- rbindlist(fitList)
  #
 
- #fitList <- bdFit2DT(res)
 
- #ff <- res[[1]][['ff']]
 
  ## Return data matrix as well?
  ## Two things here
@@ -183,6 +167,7 @@ bdotsFit <- function(data, # dataset
  X_env$X <- X
 
  ## Janky for now, but we want a gropuName List
+ ## TOO janky. Fix this ASAP
  tmp <- unique(fitList[, group, with = FALSE])
  tmp <- names(split(tmp, by = group))
  groups <- list(groups = group,
