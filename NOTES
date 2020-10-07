@@ -59,5 +59,7 @@ https://stackoverflow.com/questions/27405484/2-curves-simultaneous-nonlinear-reg
 
 (-) If bdotsFit made to be recursive, it will be much easier to call and get the exact format I want for bdotsRefit
 
+(-) Should make fitCode not a factor, but then add it as factor ONLY in summary where it is used. 
+
 Ideas:
 - Add argument for minimum R2 (i.e., if R2 < 0.8, drop auto correlation and try again)

@@ -12,7 +12,11 @@
 # that can be output or saved along with this
 # also probably worth recording which were updated?
 
-bdotsRefit <- function(bdObj, fitcode = 0, ...) {
+# Probably should also give option to refit by
+# subject ID. OR. Take a subset of bdots object, refit and then
+# merge it back in with full set
+
+bdotsRefit <- function(bdObj, fitcode = 1, ...) {
   if (is.null(fitcode)) {
     fitcode <- readline(prompt = "fitcode: ")
   }
