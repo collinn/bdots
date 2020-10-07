@@ -99,6 +99,9 @@ res.l <- bdotsFit(data = ci,
                               curveType = logistic(),
                               cor = TRUE,
                               numRefits = 2)
+
+tt <- bdotsRefit(res.l)
+
 boot.l <- bdotsBoot(formula = y ~ protocol(CI, NH),
                                   bdObj = res.l,
                                   N.iter = 1000,

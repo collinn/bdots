@@ -89,7 +89,7 @@ plotFits <- function(bdObj, fitCode, gridSize = NULL, ...) {
 
   # should also make sure that axes are all the same
   for (i in seq_len(nrow(bdObj))) {
-    code <- as.integer(bdObj[i, ]$fitCode)
+    code <- as.integer(bdObj[i, ]$fitCode) - 1 # Since these are saved as factor
     r2 <- round(as.numeric(bdObj[i, ]$R2), 3)
     if (code == 6) next
     obs <- unlist(bdObj[i, splitVars, with = FALSE])
