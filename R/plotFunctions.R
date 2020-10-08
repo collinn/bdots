@@ -1,11 +1,27 @@
-
-## Top part of this file are methods for plot.bdotsObj
-## Bottom part of file are methods for plot.bdotsBootObj
-
-## Generic currently works. Hurray
-## Need to do some sort of match.call here for plotfun
-# option to print to file?
+#' Plot a bdotsFit object
+#'
+#' Plot individual fits or model fit parameters from an object of class
+#' 'bdotsObj'. These functions are not very stable
+#'
+#' @param bdObj An object of class 'bdotsObj' returned from \code{bdotsFit}
+#' @param fitCode Currently not used
+#' @param gridSize Length one numeric indicating size of plot grid. Default is
+#' 2x2. For right now, they are square
+#' @param plotfun Plot either subject fits or model parameters with "fits" or "pars"
+#'
+#' @details Right now, these functions are very unstable and expected to change.
+#' The largest current issue is with the placement of the legend, which cannot
+#' be adjusted. If you are running into issues with seeing things correctly, try
+#' making the "Plots" window in RStudio larger before running this function
+#' @import data.table
+#' @export
 plot.bdotsObj <- function(bdObj, fitCode, gridSize = NULL, plotfun = "fits", ...) {
+  ## Top part of this file are methods for plot.bdotsObj
+  ## Bottom part of file are methods for plot.bdotsBootObj
+
+  ## Generic currently works. Hurray
+  ## Need to do some sort of match.call here for plotfun
+  # option to print to file?
   if (plotfun == 'fits') {
     plotFits(bdObj, fitCode, gridSize, ...)
   } else if (plotfun == 'pars') {
@@ -14,13 +30,6 @@ plot.bdotsObj <- function(bdObj, fitCode, gridSize = NULL, plotfun = "fits", ...
     stop("Invalid plotfun type. See ?plot.bdotsObj")
   }
 }
-
-#plot(bdObj, plotfun = "pars")
-#plot(bdObj, plotfun = "fits")
-
-# plot.bdotsBootObj <- function(...)
-
-
 
 # so  plot(class, args) is how it will all look in the end
 # add option for them to set own grid
@@ -40,11 +49,13 @@ plotPars <- function(bdObj, ...) {
   }
 }
 
-## This plots fitted vs obs curves
-# include other things to subset here
-# fitcode, group, etc or arg to add data'
-# or to set par
+
 plotFits <- function(bdObj, fitCode, gridSize = NULL, ...) {
+
+  ## This plots fitted vs obs curves
+  # include other things to subset here
+  # fitcode, group, etc or arg to add data'
+  # or to set par
 
   ## do subsetting here
 
@@ -122,14 +133,8 @@ plotFits <- function(bdObj, fitCode, gridSize = NULL, ...) {
 
 }
 
-#####################################################
 
-## For now, only focus on plotting the 'diff' portion
-# but later add elements to look at inner/outer diff  separately
 
-# plot.bdotsBootObj <- function(...)
-#curveList <- bdBootObj[['curveList']]
-# idk if I actually need this
 plotDiff <- function(bdBootObj, alpha = 0.05, ...) {
   diff <- bdBootObj[['curveList']][['diff']]
   mm <- makePlotCI(diff, alpha)
@@ -138,23 +143,34 @@ plotDiff <- function(bdBootObj, alpha = 0.05, ...) {
           col = c('grey', 'black', 'gray'))
 }
 
-# Fuck yeah, this is cool
-# diffs indicate if we should also plot the difference in addition to curves
-# group indicates which group, in the case we do diffs of diff
-# should also have an argument to alpha adjust for diff of diff. Because we may
-# end up with LI.M, LI.W and LI.diff, but we don't have significant regions for them.
-# it should definitely be an argument since that computation is expensive.
-# should perhaps consider if there is a way to add new_alphastar to a specific
-# group instead of using memoization. Mmm. But can't do that inside of a function
-# could possibly do it if they do bdBootObj <- plot(bdBootObj)
-# names(boot.res[['curveList']])
-# names(boot.res2[['curveList']])
-# names(boot.res)
-# names(boot.res2)
-## This is way too flowery. Just make hard conditions and treat as separte functions for now
-plot.bdotsBootObj <- function(x, ...) {
-  plotCompare(x, ...)
+#' Plot for object of class bdotsBootObj
+#'
+#' Allows a number of different but also unstable option for plotting an object
+#' of class bdotsBoot
+#'
+#' @param bdBootObj An object of class bdotsBootObj
+#' @param alpha Significance level for plotting shaded regions
+#' @param diffs Boolean to plot "difference of difference" curve
+#' @param group Specify group to plot if difference of difference was used
+#'
+#'
+#' @details Use with care
+#' @import data.table
+#' @export
+plot.bdotsBootObj <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...) {
+  # Fuck yeah, this is cool
+  # diffs indicate if we should also plot the difference in addition to curves
+  # group indicates which group, in the case we do diffs of diff
+  # should also have an argument to alpha adjust for diff of diff. Because we may
+  # end up with LI.M, LI.W and LI.diff, but we don't have significant regions for them.
+  # it should definitely be an argument since that computation is expensive.
+  # should perhaps consider if there is a way to add new_alphastar to a specific
+  # group instead of using memoization. Mmm. But can't do that inside of a function
+  # could possibly do it if they do bdBootObj <- plot(bdBootObj)
+  ## This is way too flowery. Just make hard conditions and treat as separte functions for now
+  plotCompare(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...)
 }
+
 plotCompare <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...) {
 
   cl <- bdBootObj[['curveList']]
@@ -247,8 +263,9 @@ plotCompare <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...
   }
 }
 
-## Add option to change colors later
+
 bucketPlot <- function(sigTime, ylim = c(0, 0.9), ...) {
+  ## Add option to change colors later
   if(!is.null(sigTime)) {
     yellow <- rgb(255, 255, 0, alpha = 70, maxColorValue = 255)
     gray <- "gray44"
@@ -260,9 +277,9 @@ bucketPlot <- function(sigTime, ylim = c(0, 0.9), ...) {
   }
 }
 
-#cl <- diff
-## This should take in an object of curveList i.e., 'diff', 'LI.M', etc.
+
 makePlotCI <- function(cl, alpha = 0.05, ...) {
+  ## This should take in an object of curveList i.e., 'diff', 'LI.M', etc.
   tv <- qt(1 - alpha / 2, cl[['n']] - 1)
   fit <- cl[['fit']]
   sd <- cl[['sd']]

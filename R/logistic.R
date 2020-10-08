@@ -1,46 +1,9 @@
-# pdf for logistic function
-# logistic_f()
-
-# logisticPars <- function(dat, y, time) {
-#   time <- dat[[y]]
-#   y <- dat[[time]]
-#
-#   mini <- min(y)
-#   peak <- max(y)
-#   r <- (peak - mini)
-#   cross <- time[which.min(abs(0.5*r - y))]
-#
-#   # slope
-#   q75 <- .75 * r + mini
-#   q25 <- .25 * r + mini
-#   time75 <- time[which.min(abs(q75 - y))]
-#   time25 <- time[which.min(abs(q25 - y))]
-#   slope <- (q75 - q25) / (time75 - time25)
-#
-#   return(c(mini = mini, peak = peak, slope = slope, cross = cross))
-# }
-#
-# estLogisticCurve <- function(dat, rho, params = NULL,
-#                               get.cov.only = FALSE, numRefits = FALSE, ...) {
-#
-#   if (is.null(params)) {
-#     params <- logisticPars(dat)
-#   } else {
-#     if (length(params) != 4) stop("logistic requires 4 parameters be specified for refitting")
-#     if (!all(names(params) %in% c("mini", "peak", "slope", "cross"))) {
-#       stop("logistic parameters for refitting must be correctly labeled")
-#     }
-#   }
-#
-#   ff <- quote(y ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (time)) / (peak - mini))))
-#
-#   fit <- curveFitter(dat, ff, params, rho, numRefits, get.cov.only, ...)
-#   return(list(fit = fit, ff = ff))
-# }
-
-## Example of function to be passed to bdotsFit
-# don't need refits, rho, or anythign else bc we will just
-# call curveFitter separately
+#' Logistic curve function for nlme
+#'
+#' Logistic function used in fitting nlme curve for observations
+#'
+#' @details \code{y ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (time)) / (peak - mini)))}
+#' @export
 logistic <- function(dat, y, time, params = NULL, ...) {
 
   # if (getFormulaOnly) {

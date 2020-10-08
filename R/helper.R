@@ -168,6 +168,7 @@ makeGroupNameVal <- function(l) {
 dots <- function(...) {
   eval(substitute(alist(...)))
 }
+
 compact <- function(x) Filter(Negate(is.null), x)
 
 

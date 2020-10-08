@@ -1,18 +1,14 @@
-## Need summary functions for bdotsObj (from bdotsFit) and bdotsBootObj
-## BUT here's the thing. We need a summary that constructs the information
-# but then a print method specifically for that summary
-
-## Why is the above true? Because the summary function *should* perform
-# all of the summary methods that a user may want. Consequently, the use of
-# this information is what should determine the value of the object returned
-# by the summary function. How it is actually displayed, as visual information
-# not to be further processed, is why we employ the print method as well
-
-## bdotsObj
-# Number of unique subjects
-# Subjects in each group
-# classification of fits
-# info about parameters
+#' Summary for bdotsObj
+#'
+#' Provides summary information for bdotsObj
+#'
+#' @param bdObj An object of class bdotsObj
+#'
+#' @value Returns an object of class "bdotsSummary". There is some summarized
+#' information included if assigned to an object, i.e., `summ <- summary(bdObj)`
+#' then `str(summ)`
+#'
+#' @export
 
 summary.bdotsObj <- function(bdObj, ...) {
   bdCall <- attr(bdObj, "call")
@@ -60,9 +56,12 @@ summary.bdotsObj <- function(bdObj, ...) {
 
 }
 
-#rr <- summary.bdotsObj(bdObj)
 
-## Maybe nice to not have this all output at once?
+#' Print bdotsObj Summary
+#'
+#' That's pretty much it. This is a print method, so there is likely
+#' not much need to call it directly
+#' @export
 print.bdotsSummary <- function(x, ...) {
   cat("\nbdotsFit Summary\n\n")
   cat("Curve Type:", x$curveType, "\n")
@@ -82,9 +81,12 @@ print.bdotsSummary <- function(x, ...) {
     print(cnts[[i]][['pars']])
     printFitCount(cnts[[i]])
   }
+
+  # return invisibly
+  invisible(x)
 }
 
-## This takes an actual summaries value
+
 printFitCount <- function(x) {
   x <- x[['fitCount']]
   printLine <- c(paste("AR1,       0.95 <= R2        --", x[1], "\n"),
@@ -104,7 +106,18 @@ printFitCount <- function(x) {
 
 ##########################
 
-### Summary for bdotBoot
+#' Summary for bdotsBootObj
+#'
+#' Provides summary information for bdotsBootObj
+#'
+#' @param bdBootObj An object of class bdotsObj
+#' @param Ignored for now
+#'
+#' @value Returns an object of class "bdotsBootSummary". There is some summarized
+#' information included if assigned to an object, i.e., `summ <- summary(bdBootObj)`
+#' then `str(summ)`
+#'
+#' @export
 summary.bdotsBootObj <- function(bdBootObj, ...) {
   ## Header info
   bdCall <- attr(bdBootObj, "call")
@@ -160,10 +173,15 @@ summary.bdotsBootObj <- function(bdBootObj, ...) {
 
 }
 
-# rr <- summary(bdBootObj)
-# rr <- summary(boot.res2)
 
 
+#' Print bdotsBoot Summary
+#'
+#' That's pretty much it. This is a print method, so there is likely
+#' not much need to call it directly
+#' @param x generic name, but this will be an object of bdotsBootSummary
+#'
+#' @export
 print.bdotsBootSummary <- function(x, ...) {
   cat("\nbdotsBoot Summary\n\n")
   cat("Curve Type:", x$curveType, "\n")
@@ -186,6 +204,8 @@ print.bdotsBootSummary <- function(x, ...) {
   cat("Significant Intervals at adjusted alpha:\n")
   print(x[['sigTime']])
 
+  ## Return the summary invisibly
+  invisible(x)
 }
 
 

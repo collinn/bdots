@@ -1,42 +1,78 @@
+#' Create bootstrapped curves from bdotsObj
+#'
+#' Creates bootstrapped curves and performs alpha adjustment. Can perform
+#' "difference of difference" for nested comparisons
+#'
+#' @param formula See details.
+#' @param bdObj An object of class 'bdotsObj'
+#' @param N.iter Number of iterations of bootstrap to draw
+#' @param alpha Significance level
+#' @param p.adj Adjustment to make to pvalues for significance. Will be able to
+#' use anything from \code{p.adjust} function, but for now, just "oleson"
+#' @param cores Number of cores to use in parallel. Default is zero, which
+#' uses half of what is available.
+#'
+#' @details The formula is the only tricky part of this. There will be a minor
+#' update to how it works in the future.  The three parts we will examine here
+#' are Groups, the LHS, and the RHS. This is incompelete below, but is detailed
+#' in the original vignette sent out
+#'
+#' ## Groups
+#'
+#' To be confusing, we use "groups" in two senses here. The first use, which we
+#' will denote with captial "G" Group, indicates the column name of the dataset
+#' representing one of the variables by which we will distinguish categories of
+#' observations. Lowercase "g" group will be the values in this column.
+#'
+#' ## LHS
+#'
+#' If we are comparing two groups, we will just use the name of the outcome, i.e.,
+#' `y ~` .
+#'
+#' @return  Object of class 'bdotsBootObj'
+#'
+#' @import data.table
+#' @export
 
-## Additional notes saved at bottom
-
-## Outside function used
-## located in bootHelper.R
-# bdotsBooter - gets random sample for subject
-# getVarMat - return parameter covariance matrix for observation
-# coef.bdots - returns coefficient for observations
-# curveBooter - monolithic function that fits/generates the curves
-
-
-## Outline
-# bdotsBoot
-# 1. parse formula and make appropriate subsets to bdotsOjb
-# 2. All we need to retain are `compareGroup` and `diffGroup`, if not NULL
-# 3. If diffGroup, we next need to decide if drawing from multivariate
-#  i. split bdotsObj into diffgroup1 and diffgroup2
-#  ii. See if subject identifiers are unique or repeated
-#  iii. If unique, bootstraps not correlated, but yes paired t-test
-#  iv. If repeated, bootstraps ARE correlated (bivariate normal), no pair t-test
-# 4. If diffGroup NULL, check if IDs are repeated
-#   i. If yes, draw bivariate normal, paired t-test
-#   ii. If no, standard draw, no paired t-test
-# Get p-value adjustments
-# find significant regions
-# finish
-
-### Somewhere, I need to verify order is the same for all of these once they are
-# split up, i.e., split by Group, want Cohort always in first row, unrelated in second
-
-## Once this is done, I need to confirm with bob that i have diffs right (fuck this is hard)
-# one thing i could do is run the analysis and verify it matches his with what i have
-## yo, he goes over this in Cognition paper. Nice
-## could make an additional "tests" arguments that could find spots, time, or param
-## I need to work on the wording for this/names to not be confused
-# bdObj <- res2 # from bdotsFit_test.R
-# bdObj <- res.b; outerDiff = "Group"; innerDiff <- "TrialType"   # bob's data
-# formula <- diffs(y, TrialType(M,W)) ~ Group(LI, TD)
 bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oleson", cores = 0, ...) {
+
+  ## Additional notes saved at bottom
+
+  ## Outside function used
+  ## located in bootHelper.R
+  # bdotsBooter - gets random sample for subject
+  # getVarMat - return parameter covariance matrix for observation
+  # coef.bdots - returns coefficient for observations
+  # curveBooter - monolithic function that fits/generates the curves
+
+
+  ## Outline
+  # bdotsBoot
+  # 1. parse formula and make appropriate subsets to bdotsOjb
+  # 2. All we need to retain are `compareGroup` and `diffGroup`, if not NULL
+  # 3. If diffGroup, we next need to decide if drawing from multivariate
+  #  i. split bdotsObj into diffgroup1 and diffgroup2
+  #  ii. See if subject identifiers are unique or repeated
+  #  iii. If unique, bootstraps not correlated, but yes paired t-test
+  #  iv. If repeated, bootstraps ARE correlated (bivariate normal), no pair t-test
+  # 4. If diffGroup NULL, check if IDs are repeated
+  #   i. If yes, draw bivariate normal, paired t-test
+  #   ii. If no, standard draw, no paired t-test
+  # Get p-value adjustments
+  # find significant regions
+  # finish
+
+  ### Somewhere, I need to verify order is the same for all of these once they are
+  # split up, i.e., split by Group, want Cohort always in first row, unrelated in second
+
+  ## Once this is done, I need to confirm with bob that i have diffs right (fuck this is hard)
+  # one thing i could do is run the analysis and verify it matches his with what i have
+  ## yo, he goes over this in Cognition paper. Nice
+  ## could make an additional "tests" arguments that could find spots, time, or param
+  ## I need to work on the wording for this/names to not be confused
+  # bdObj <- res2 # from bdotsFit_test.R
+  # bdObj <- res.b; outerDiff = "Group"; innerDiff <- "TrialType"   # bob's data
+  # formula <- diffs(y, TrialType(M,W)) ~ Group(LI, TD)
 
   if (cores < 1) cores <- detectCores()/2
   ## Could maybe list what was removed
@@ -171,41 +207,43 @@ bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oles
 
   ## Add plotting/CI functions later
 
+
+  ### Notes
+
+  ## This is the parent function file, but for now, we are going to focus on a single subject
+  # what will likely happen (or maybe makes sense), in parent function, do
+  # 1) subset based on diff(y, group1(n1, n2)) ~ group2(m1, m2) + group3(w1) (or variant)
+  # so that at most, each subject may have 2 curves, and we then look between groups. At any rate
+  # the subject level boot function will determine PAIR and DIFFS but what is present in the
+  # subsetted dataset
+  # 2) (these are train of thought) - bdotsBoot(bdotObj, ) { datSub <- bdotObj[sub = 1, ]; bdotBootSub(datSub)}
+  # 3) here, first, then, is the bdotBootSub (but better named), bdotsBooter?
+
+  #### This is FALSE ####
+  #### But I'll leave it so I know why ####
+  ## if sdat has 4 rows, its diffs and pair
+  # if sdat has 2 rows, have to check diffGroup/fitGroup
+  # if one row, nothing to be done, just boot that bitch
+  #############################################
+  ## In truth, we could have background noise/no background noise (within subject)
+  # then response type cohort/rhyme
+  # Ah, but it doesn't make sense to have that be the case and also have subjects be learning disabled, not disabled
+  # will have to think on this more
+  ## Any group subsets that are length one (diff(y, cond(M, W)) ~ g1(n1, n2) + g2(m1)) will be subset
+  # before being passed on, so that g2(m2), for example, won't be present
+
+  ## This is what formula to bdotsBoot might look like
+  #bdotsParser(ff <- diffs(y, condition(M,W)) ~ group(DLD, TD) + g2(n1))
+  # Above formula means - within group(DLD) and group(TD), find condition(W) - condition(M).
+  # call this difference DLD_condDiff and TD_condDiff. Then, take DLD_condDiff - TD_condDiff <- difference of differences
+  # if DIFFS = FALSE, it would just be y ~ group(DLD, TD), meaning bootstrap DLD and TD, then take differences
+
+
+
+
+
+
 }
-
-
-### Notes
-
-## This is the parent function file, but for now, we are going to focus on a single subject
-# what will likely happen (or maybe makes sense), in parent function, do
-# 1) subset based on diff(y, group1(n1, n2)) ~ group2(m1, m2) + group3(w1) (or variant)
-# so that at most, each subject may have 2 curves, and we then look between groups. At any rate
-# the subject level boot function will determine PAIR and DIFFS but what is present in the
-# subsetted dataset
-# 2) (these are train of thought) - bdotsBoot(bdotObj, ) { datSub <- bdotObj[sub = 1, ]; bdotBootSub(datSub)}
-# 3) here, first, then, is the bdotBootSub (but better named), bdotsBooter?
-
-#### This is FALSE ####
-#### But I'll leave it so I know why ####
-## if sdat has 4 rows, its diffs and pair
-# if sdat has 2 rows, have to check diffGroup/fitGroup
-# if one row, nothing to be done, just boot that bitch
-#############################################
-## In truth, we could have background noise/no background noise (within subject)
-# then response type cohort/rhyme
-# Ah, but it doesn't make sense to have that be the case and also have subjects be learning disabled, not disabled
-# will have to think on this more
-## Any group subsets that are length one (diff(y, cond(M, W)) ~ g1(n1, n2) + g2(m1)) will be subset
-# before being passed on, so that g2(m2), for example, won't be present
-
-## This is what formula to bdotsBoot might look like
-#bdotsParser(ff <- diffs(y, condition(M,W)) ~ group(DLD, TD) + g2(n1))
-# Above formula means - within group(DLD) and group(TD), find condition(W) - condition(M).
-# call this difference DLD_condDiff and TD_condDiff. Then, take DLD_condDiff - TD_condDiff <- difference of differences
-# if DIFFS = FALSE, it would just be y ~ group(DLD, TD), meaning bootstrap DLD and TD, then take differences
-
-
-
 
 
 
