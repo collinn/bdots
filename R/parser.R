@@ -234,29 +234,29 @@ makeCurveEnv <- function(val) {
 }
 
 
-
-## It's important that we call with substitute in function
-ww <- function(a) {
-  curveParser(substitute(a))
-}
-
-(ww(doubleGauss(concave = FALSE, eatmyshitter = TRUE)))
-### Lets test that output
-# Shit yes, this evaluates everything and returns environment
-ww <- function(a) {
-  val <- curveParser(substitute(a))
-  curveType <- names(val)
-  val <- as.list(unlist(val, use.names = FALSE))
-  myenv <- new.env()
-  for(i in seq_along(val)) {
-    #eval(parse(text = val[i]), envir = sys.frame(sys.nframe()))
-    eval(parse(text = val[i]), envir = myenv)
-  }
-  myenv
-}
-
-## This returns an environment
-aa <- (ww(doubleGauss(concave = FALSE, eatmyshitter = TRUE)))
+#
+# ## It's important that we call with substitute in function
+# ww <- function(a) {
+#   curveParser(substitute(a))
+# }
+#
+# (ww(doubleGauss(concave = FALSE, eatmyshitter = TRUE)))
+# ### Lets test that output
+# # Shit yes, this evaluates everything and returns environment
+# ww <- function(a) {
+#   val <- curveParser(substitute(a))
+#   curveType <- names(val)
+#   val <- as.list(unlist(val, use.names = FALSE))
+#   myenv <- new.env()
+#   for(i in seq_along(val)) {
+#     #eval(parse(text = val[i]), envir = sys.frame(sys.nframe()))
+#     eval(parse(text = val[i]), envir = myenv)
+#   }
+#   myenv
+# }
+#
+# ## This returns an environment
+# aa <- (ww(doubleGauss(concave = FALSE, eatmyshitter = TRUE)))
 
 ## Maybe I can combien this all in one place
 curveParser2 <- function(expr) {

@@ -1,15 +1,31 @@
-
-
-## Yo, if we end up having to delete subjects, how do we do a paired t test?
-## concave is doubleGauss onlly. Surely we can do better
-# returnX - keep data in function output? Used for plots, etc.
-# if NULL, will make determination based on size
-# if FALSE, will have issues if changes made to data in
-# global environment (potentially). For now, I'm going to force it
-# true so that I can make the plot functions. I can deal with not
-# having the data available later
-
-## Add key to bdObj and X
+#' Fit nlme curves to grouped observations
+#'
+#' Creates observation level curves to use in bdotsBoot
+#'
+#' @param data Dataset used
+#' @param subject Column name of dataset containing subject identifiers
+#' @param time Column name containing time variable
+#' @param y Column name containing outcome of interest
+#' @param group Character vector containing column names of groups. Can be
+#' greater than one
+#' @param curveType See details/vignette
+#' @param cor Boolean. Autocorrelation?
+#' @param numRefits Integer indicating number of attempts to fit an observation
+#' if the first attemp fails
+#' @param verbose currently not used
+#' @param returnX Boolean. Return data with bdObj? Ignore for now. There will be
+#' a way around this later, but for now, if this is FALSE, things won't work
+#' @param ... Secret
+#'
+#' @return Object of class 'bdotsObj', inherits from data.table
+#'
+#' @details This is step one of the three step bdots process. Things should be
+#' more or less straight forward. The only tricky part involves curveType. For now
+#' know that one can use doubleGauss(concave = TRUE/FALSE) or logistic(). Should
+#' be passed in as a function. See the vignette on customizing this
+#'
+#' @import data.table
+#' @export
 
 bdotsFit <- function(data, # dataset
                      subject, # subjects

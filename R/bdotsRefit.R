@@ -1,21 +1,17 @@
-
-# bdObj - object from bdotsFit
-# fitCode - min code for refit, i.e.,  fitCode = 3 will do 3:6
-#bdObj <- res.b
-#fitcode <- 1
-
-# debugonce(bdotsRefit)
-# debugonce(bdUpdate)
-# bdo2 <- bdotsRefit(bdObj, 1)
-
-## Probably want to create diagnostic information
-# that can be output or saved along with this
-# also probably worth recording which were updated?
-
-# Probably should also give option to refit by
-# subject ID. OR. Take a subset of bdots object, refit and then
-# merge it back in with full set
-
+#' Refit Observations Returned from bdotsFit
+#'
+#'
+#'
+#' @param bdObj An object of class 'bdotsObj' returned from \code{bdotsFit}
+#' @param fitcode A length one numeric indicating observations to refit. See Details
+#'
+#' @return Returns bdObj with updated fit
+#'
+#' @details fitcode indicates lower bound on observations to refit. For example,
+#' if \code{fitcode = 4}, \code{bdotsRefit} will prompt user to refit all
+#' observations with fitCode = 4, 5, 6.
+#' @import data.table
+#' @export
 bdotsRefit <- function(bdObj, fitcode = 1, ...) {
   if (is.null(fitcode)) {
     fitcode <- readline(prompt = "fitcode: ")
