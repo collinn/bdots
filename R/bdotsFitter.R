@@ -1,28 +1,32 @@
-## Actual bdots fitt
-## bdotsFitter takes a dat of a single individual and their curve type
-# It will be simple and robust, and any changes at the subject level
-# can be done here, in one place
-
-## Actually, this function CAN be exported. Once the person knows which thing
-# failed, they can inspect it OR they can take names from that list and just pass
-# their own subset portion of the dataset to do it themselves.
-# The modularity of this is coming along nicely, I think
-# for(i in seq_along(newdat)) {
-#   bdotsFitter(newdat[[i]])
-# }
-#
-#bdotsFitter(dat = newdat[[1]], "doubleGauss", concave, rho = 0.9, verbose = FALSE)
-
-
-## See if this  works
-# splitVars used later to add name to what this returns (in attribute)
-## And actually, this thing should just return a finished DT
+#' Fits Individual Subject Curve
+#'
+#' The one subject version of bdotsFit
+#'
+#' @import data.table
 bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
                         verbose, thenames = NULL, get.cov.only = NULL,
                         params = NULL, splitVars = NULL,
                         datVarNames = NULL, ...) {
 
+  ## Actual bdots fitt
+  ## bdotsFitter takes a dat of a single individual and their curve type
+  # It will be simple and robust, and any changes at the subject level
+  # can be done here, in one place
 
+  ## Actually, this function CAN be exported. Once the person knows which thing
+  # failed, they can inspect it OR they can take names from that list and just pass
+  # their own subset portion of the dataset to do it themselves.
+  # The modularity of this is coming along nicely, I think
+  # for(i in seq_along(newdat)) {
+  #   bdotsFitter(newdat[[i]])
+  # }
+  #
+  #bdotsFitter(dat = newdat[[1]], "doubleGauss", concave, rho = 0.9, verbose = FALSE)
+
+
+  ## See if this  works
+  # splitVars used later to add name to what this returns (in attribute)
+  ## And actually, this thing should just return a finished DT
   ## This has been moved into bdotsFit
   # if(any(dat[, .N, by = .(time)]$N > 1)) {
   #   warning("Some subjects have multiple observations for unique time. These will be averaged")

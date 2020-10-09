@@ -1,16 +1,8 @@
-## Replacement for find.mod.alpha
-## jury is out still on whether or not this should be exported to user
-## since we can just as easily wrap it in p.adjust and return the modified
-## alpha value as an attribute, because, really, who needs it directly?
-
-## For Testing ##
-# x <- numeric(500)
-# x[1] <- rnorm(1)
-# for(i in 2:500) x[i] <- rnorm(1, x[i - 1] * .9, 1 - .9 ^ 2)
-# rho.est <- ar(x, FALSE, order.max = 1)$ar
-# rho <- rho.est; n <- 500; df <- 49; verbose <- FALSE; alpha <- 0.05;
-# grad.diff <- .5; error.acc <- 0.001; cores <- 1; method <- "t"
-
+#' Find modified alpha
+#'
+#' find modified alpha
+#'
+#' @import parallel
 findModifiedAlpha <- function(rho, n, df, alpha = 0.05, errorAcc = 0.001,
                               gradDiff = ifelse(cores > 3, 0.5, 0.1), cores = 3,
                               verbose = FALSE, method = "t") {
@@ -61,6 +53,19 @@ findModifiedAlpha <- function(rho, n, df, alpha = 0.05, errorAcc = 0.001,
   out <- pt(k, df, lower.tail = FALSE) * 2
 
   out
+
+  ## Replacement for find.mod.alpha
+  ## jury is out still on whether or not this should be exported to user
+  ## since we can just as easily wrap it in p.adjust and return the modified
+  ## alpha value as an attribute, because, really, who needs it directly?
+
+  ## For Testing ##
+  # x <- numeric(500)
+  # x[1] <- rnorm(1)
+  # for(i in 2:500) x[i] <- rnorm(1, x[i - 1] * .9, 1 - .9 ^ 2)
+  # rho.est <- ar(x, FALSE, order.max = 1)$ar
+  # rho <- rho.est; n <- 500; df <- 49; verbose <- FALSE; alpha <- 0.05;
+  # grad.diff <- .5; error.acc <- 0.001; cores <- 1; method <- "t"
 }
 
 

@@ -1,16 +1,21 @@
-## Curve fitter
-# not exported to user
-# called from estDgauss, estLogisitc, etc, w/e functions are available
-# BC FUCK, THE USER CAN PASS THEIR OWN FORMULA FOR GLNS
-
-## all of these arguments must be filled in
-## If this isn't working for them, in bdotsFit, there can be a (...) argument
-# where they can copy this function out, change it, then pass it back in (functional shit is so cool)
-# Add argument for minimum cutoffs?
-
-## If exported to user, need error checking
+#' Curve Fitter
+#'
+#' Used in bdotsFit
+#'
+#' @import data.table
+#' @import nlme
 curveFitter <- function(dat, ff, params, rho, numRefits = 0, get.cov.only = NULL, ...) {
+  ## Curve fitter
+  # not exported to user
+  # called from estDgauss, estLogisitc, etc, w/e functions are available
+  # BC FUCK, THE USER CAN PASS THEIR OWN FORMULA FOR GLNS
 
+  ## all of these arguments must be filled in
+  ## If this isn't working for them, in bdotsFit, there can be a (...) argument
+  # where they can copy this function out, change it, then pass it back in (functional shit is so cool)
+  # Add argument for minimum cutoffs?
+
+  ## If exported to user, need error checking
 
   if (!is.null(get.cov.only) && get.cov.only) {
     fit <- gnls(eval(ff), start = params, data = dat,

@@ -1,2 +1,3 @@
 ^bdots\.Rproj$
 ^\.Rproj\.user$
+^\data\.+$

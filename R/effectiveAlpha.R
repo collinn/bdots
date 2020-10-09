@@ -30,6 +30,7 @@
 # so let's make this a functional instead.
 ## no longer takes k as argument, but return functional that does
 ## benefit here is we only have to c om pute sigma once (since rho never changes)
+#' @import mvtnorm
 effectiveAlpha_f <- function(rho, n = 10, df = NULL, method = "norm") {
 
   sigma <- diag(rep(1, n))
@@ -71,6 +72,7 @@ effectiveAlpha_f <- function(rho, n = 10, df = NULL, method = "norm") {
 ## Returns effective alpha, given number of tests and correlation coefficient
 ## Also, there is no reason this shouldn't take scalar values
 ## (the original went about this recursively)
+#' @import mvtnorm
 fwerAlpha <- function(rho, k, n = 10) {
   p1 <- 2 * pnorm(k) - 1 # int_{-k}^k f(x) dx, f ~ N(0, 1)
   mean <- c(0, 0)

@@ -61,6 +61,7 @@ res <- bdotsFit(data = cohort_unrelated,
 res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
 
 # debugonce(bdotsBoot)
+#debugonce(curveBooter)
 boot.test <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
                                   bdObj = res2,
                                   N.iter = 1000,
