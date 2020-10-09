@@ -4,7 +4,7 @@
 \alias{bdotsRefit}
 \title{Refit Observations Returned from bdotsFit}
 \usage{
-bdotsRefit(bdObj, fitcode = 1, ...)
+bdotsRefit(bdObj, fitCode = 1, ...)
 }
 \arguments{
 \item{bdObj}{An object of class 'bdotsObj' returned from \code{bdotsFit}}
@@ -18,7 +18,7 @@ Returns bdObj with updated fit
 Refit Observations Returned from bdotsFit
 }
 \details{
-fitcode indicates lower bound on observations to refit. For example,
-if \code{fitcode = 4}, \code{bdotsRefit} will prompt user to refit all
+fitCode indicates lower bound on observations to refit. For example,
+if \code{fitCode = 4}, \code{bdotsRefit} will prompt user to refit all
 observations with fitCode = 4, 5, 6.
 }

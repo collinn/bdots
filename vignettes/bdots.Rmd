@@ -1,0 +1,28 @@
+---
+title: "bdots"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{bdots}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(bdots)
+```
+
+## Quick Vignette
+
+First, a development version of this package can be installed directly from github with the following code:
+
+```{r, eval=FALSE}
+library(devtools)
+install_github("collinn/bdots")
+```

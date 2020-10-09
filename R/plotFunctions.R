@@ -79,7 +79,7 @@ plotFits <- function(bdObj, fitCode, gridSize = NULL, ...) {
   on.exit(par(mfrow = oldPar))
 
   if (is.null(gridSize)) {
-    gridSize <- min(2, sqrt(nrow(X)))
+    gridSize <- 2
   } else if (gridSize == "refit") {
     par(mfrow = c(1, 2))
   } else {
@@ -100,7 +100,7 @@ plotFits <- function(bdObj, fitCode, gridSize = NULL, ...) {
 
   # should also make sure that axes are all the same
   for (i in seq_len(nrow(bdObj))) {
-    code <- as.integer(bdObj[i, ]$fitCode) - 1 # Since these are saved as factor
+    code <- bdObj[i, ]$fitCode
     r2 <- round(as.numeric(bdObj[i, ]$R2), 3)
     if (code == 6) next
     obs <- unlist(bdObj[i, splitVars, with = FALSE])
@@ -168,7 +168,7 @@ plot.bdotsBootObj <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NUL
   # group instead of using memoization. Mmm. But can't do that inside of a function
   # could possibly do it if they do bdBootObj <- plot(bdBootObj)
   ## This is way too flowery. Just make hard conditions and treat as separte functions for now
-  plotCompare(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...)
+  plotCompare(bdBootObj, alpha, diffs, group, ...)
 }
 
 plotCompare <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...) {

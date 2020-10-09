@@ -122,7 +122,7 @@ bdotsFit <- function(data, # dataset
 
  ## I maybe don't like this here. But we can add it on
  # in the summary if necessary
- fitList[, fitCode := factor(fitCode, levels = 0:6)]
+ #fitList[, fitCode := factor(fitCode, levels = 0:6)]
 
  ## Dude, just store that covariate table they want in a list as well
  # and that can be it's own class if need be

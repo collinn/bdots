@@ -1,18 +1,355 @@
 ---
 title: "bdots"
 date: "10/9/2020"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Quick Vignette
+# Installation
+
+This is a slightly longer document, but I've done my best to be concise where I can. I have tested at least what is included here on all of the major operating systems, but of course, things going wrong should be considered the norm for now. 
 
 First, a development version of this package can be installed directly from github with the following code:
 
 ```{r, eval=FALSE}
-library(devtools)
-install_github("collinn/bdots")
+install.packages("devtools")
+devtools::install_github("collinn/bdots")
+
 ```
+
+```{r, echo = FALSE, inclue = FALSE}
+suppressPackageStartupMessages(library(bdots)) 
+```
+
+Included in the package are the `ci` dataset from the original `bdots` package, as well as the four datasets that Brad had previously done his demo on (they appear to be subsets of the same datset, but they include different columns?). In addition to the data that was found in Bob's lab directory (not included here), `ci` and `cohort_unrelated` are the primary datasets that have been used to test things 
+
+# Fitting Step
+
+Let's begin this time exploring a dataset using the `doubleGauss` curve
+
+```{r, cache = TRUE}
+suppressPackageStartupMessages(library(bdots)) 
+data(demo)
+head(cohort_unrelated)
+
+fit <- bdotsFit(data = cohort_unrelated,
+                subject = "Subject",
+                time = "Time",
+                y = "Fixations",
+                group = c("Group", "LookType"),
+                curveType = doubleGauss(concave = TRUE),
+                cor = TRUE,
+                numRefits = 2,
+                cores = 0,
+                verbose = FALSE)
+```
+
+
+As before, `fit` is an object that inherits from class `data.table`, so we are able to manipulate it as such. [Here is the link](https://cran.r-project.org/web/packages/data.table/vignettes/) for some of that information, but you can otherwise treat it largely as you would a `data.frame`, with a few major differences. The summary function is also the same as before, though my concern is that the output is a little bit "long". I'll be thinking  of ways to make it more concise
+
+```{r}
+## Looks like data.table
+head(fit)
+
+## Smells like data.table
+fit[Subject == 1, ]
+
+## Looks like we need a summary of the summary
+summary(fit)
+```
+
+Also similar to before are the `coef` method, as well as two plot methods
+
+```{r}
+## Can also do this on subsets, i.e., coef(fit[LookType == "Cohort", ])
+head(coef(fit))
+
+## This is the default, though sometimes gridSize doesn't register as it should
+## unless specified
+plot(fit[1:4, ], plotfun = "fits", gridSize = 2)
+
+## This is the second option for class `bdotsObj`
+plot(fit, plotfun = "pars")
+```
+
+There are not yet any functions to statistically test difference of parameters between the two groups. However, using a combination of `coef` and `data.table` subsetting, you can do a poor man's version
+
+```{r}
+mu1 <- coef(fit[Group == 50 & LookType == "Cohort", ])[, "mu"]
+mu2 <- coef(fit[Group == 65 & LookType == "Cohort", ])[, "mu"]
+
+hist(mu1)
+hist(mu2)
+
+t.test(mu1, mu2, paired = TRUE)
+```
+
+# Refit Step
+
+Currently, this is done interactively through the console. The arguments here include the `bdotsObj` that we wish to refit, as well as a numeric fit code Recall that 0 indicates $R^2 > 0.95$ as well as AR1, 6 indicates no fit, and the other numbers are the stages inbetween. The `fitCode` argument accepts an integer $n$ and prompts the user to refit all observations with fitCode $\geq n$
+
+The default value is `fitCode = 1`, prompting a refit of all observations the weren't in the top class. There isn't a way to demonstate this in markdown, so the code below is not evaluated. 
+
+```{r, eval = FALSE}
+fit <- bdotsRefit(fit, fitCode = 1)
+```
+
+Suppose we have a hypothetical case with `Subject ID = 1` that has a fit in two groups, `A` and `B`, and suppose further that the fit for `A` was successful, while `B` was not. If the user elects to remove the observation for `Subject = 1, Group = B`, they will be prompted at the end to also remove the observation for `A`, despite it having successfully fit. If only one was fit, the groups would then be imbalanced, and the bootstrap step would determine that the two groups are not paired.
+
+As we want to keep that balance for now, I will just subset this with subject IDs that had decent fits in both groups
+
+```{r}
+rmv <- fit[fitCode == 6, Subject]
+fit <- fit[!(Subject %in% rmv), ]
+```
+
+This, amongst other things related to the refit process, will be formalized into a function soon. 
+
+# Bootstrap
+
+Finally, we have the bootstrapping step. This is perhaps the trickiest bit, and I plan on simplifying the formula as detailed here They aren't major changes, but I didn't want to disassemble what was already there before getting this out. 
+
+The general formula will look something like this
+
+```{r, eval = FALSE}
+## Only one grouping variable in dataset, take bootstrapped difference
+Outcome ~ Group1(value1, value2)
+
+## More than one grouping variable in difference, must specify unique value
+Outcome ~ Group1(value1, value2) + Group2(value3)
+
+## Difference of difference. Here, outer difference is Group1, inner is Group2
+diffs(Outcome, Group2(value3, value4)) ~ Group1(value1, value2)
+
+## Same as above if three or more grouping variables
+diffs(Outcome, Group2(value3, value4)) ~ Group1(value1, value2) + Group3(value5)
+```
+
+My proposed simplifications are as follows
+
+```{r, eval = FALSE}
+## Outcome is implied, so we could remove it
+~ Group1(value1, value2)
+
+## If there are only two values in a grouping variable, it should be implied
+## In other words, only take argument when it is ambiguous
+~ Group1
+~ Group1 + Group2(value3)
+
+## Both of above would make diff of diff much cleaner and easier to interpret
+diffs(Group2) ~ Group1
+```
+
+For terminology, outer diff refers to the primary difference of interest. In other words, for a "diff of diff" could also be expressed as "outer diff of inner diffs". This is maybe only relevant in the output summary.
+
+For this particular dataset, we have four unique subsets by two grouping variables
+
+```{r}
+with(fit, table(Group, LookType))
+```
+ From this, we may be interested in a number of things
+ 
+ 1. Bootstrapped difference within single group
+ 3. Bootstrapped difference of difference between two groups
+ 
+Let's begin with the first case, where we are interested in the difference between Group 50 and Group 65 where LookType is equal to Cohort
+
+```{r, cache = TRUE}
+boot1 <- bdotsBoot(formula = Fixation ~ Group(50, 65) + LookType(Cohort),
+                   bdObj = fit,
+                   N.iter = 1000,
+                   alpha = 0.05,
+                   p.adj = "oleson",
+                   cores = 4)
+```
+
+Presently, `p.adj = "oleson"` is the only option that works. However, it will ultimately be able to take any argument that can be supplied to `p.adjust` ("holm", "hochberg", "fdr", etc.) . The package will also export it's own `p.adjust` function that allows one to make the given adjustment for an arbitrary collection of pvalues.  
+
+This function also may be a bit slow for now: the parallel components inside of it use `mclapply` which is not available on Windows. I'll make updating this a priority. 
+
+From this, we have a useful summary function, as well as plotting functions
+
+```{r}
+## Summary object useful in it's own right
+(smry <- summary(boot1))
+str(smry)
+
+## Standard plot
+plot(boot1)
+```
+
+Difference of difference function works the same way. 
+
+```{r, cache = TRUE}
+boot2 <- bdotsBoot(formula = diffs(Fixation, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
+                   bdObj = fit,
+                   N.iter = 1000,
+                   alpha = 0.05,
+                   p.adj = "oleson",
+                   cores = 4)
+
+summary(boot2)
+```
+
+```{r}
+plot(boot2)
+```
+```{r}
+## Confusingly, group takes values of outer diff grouping variables
+## You'll also notice the legends, which are the bane of my existence
+plot(boot2, group = "65")
+```
+```{r}
+## Here, we remove the diffs curve
+plot(boot2, group = "50", diffs = FALSE)
+```
+
+In general, these plot functions are pretty unstable, and so I don't recommend trying to do anything fancy with them just yet. Here's what we can look to for coming attractions
+
+- Plots done not in base R
+- Ability to determine significant regions for subanalysis
+- Plots for inner diff curves (since they are already fit)
+
+In a later, more comprehensive document, I will walk through the structure of the `bdotsBootObj` to show how one can use the bootstrapped data to make their own plots/analyses.
+
+
+# New bit
+
+This is a part of the `bdots` package that I think is pretty neat. It will take some massaging to make it more user friendly, but I don't think that's more than a hop and a skip away.
+
+We saw in the fitting stage that we passed the argument `curveType = doubleGauss(concave = TRUE)`. Presently, both `doubleGauss` and `logistic` are functions exported by the package. As the `logistic` function doesn't take any additional parameters, it can be passed simply as `logistic()`, whereas the `doubleGauss()` takes an argument for concavity, which must be passed by the user. In actuality, though, these functions (and all curve fitting functions) will take a collection of other arguments. Below, we see that in addition to an argument for concavity, `doubleGauss` takes arguments for `dat`, `y`, `time`, and `params = NULL`. Within the fitting process, this function is passed the additional values based on the arguments given to `bdotsFit`, where `y` and `time` are character vectors, and `dat` is a subset of the dataset for a unique subject ID within a given group. `params` here is set to NULL, but is used to pass specific starting parameter values during the refit process.
+
+```{r}
+print(doubleGauss)
+```
+
+There are two things that must occur within this function
+
+1. Be able to return parameter values, either from having them passed in, or generated by the data
+2.  Be able to return a formula based on the outcome, time, and the parameter values
+
+You'll note in the code above for example that the parameters are created with the `dgaussPars` function (though I could have done this without a function if need be). Within it, I was able to subset my dataset with the `y` and `time` variables passed in from the function. Similarly, in returning the formula, I had to use both the `str2lang` function, as well as `bquote` to be able to put the correct values in the expression. All of these were necessary for generality. 
+
+*However*, if a user wanted to make their own function and had no interest in generalizability, they would already know these values, and could skip a lot of this work. If I already know the values for `y` and `time` in my dataset, I can ignore the arguments passed in and punch them in directly. Notice the change in the subsetting process in `dgaussPars`, as well as the change in the assignment to the formula to `ff`
+
+```{r}
+doubleGauss2 <- function (dat, params = NULL, concave = TRUE, ...) 
+{
+    dgaussPars <- function(dat, conc = concave) {
+        time <- dat[["Time"]]
+        y <- dat[["Fixations"]]
+        mu <- ifelse(conc, time[which.max(y)], time[which.min(y)])
+        ht <- ifelse(conc, max(y), min(y))
+        base1 <- ifelse(conc, min(y[time < mu]), max(y[time < 
+            mu]))
+        base2 <- ifelse(conc, min(y[time > mu]), max(y[time > 
+            mu]))
+        y1 <- y - base1
+        y1 <- rev(y1[time <= mu])
+        time1 <- rev(time[time <= mu])
+        totalY1 <- sum(y1)
+        sigma1 <- mu - time1[which.min(abs((pnorm(1) - pnorm(-1)) * 
+            totalY1 - cumsum(y1)))]
+        y2 <- y - base2
+        y2 <- y2[time >= mu]
+        time2 <- time[time >= mu]
+        totalY2 <- sum(y2)
+        sigma2 <- time2[which.min(abs((pnorm(1) - pnorm(-1)) * 
+            totalY2 - cumsum(y2)))] - mu
+        return(c(mu = mu, ht = ht, sig1 = sigma1, sig2 = sigma2, 
+            base1 = base1, base2 = base2))
+    }
+    if (is.null(params)) {
+        params <- dgaussPars(dat, concave)
+    }
+    else {
+        if (length(params) != 6) 
+            stop("doubleGauss requires 6 parameters be specified for refitting")
+        if (!all(names(params) %in% c("mu", "ht", "sig1", "sig2", 
+            "base1", "base2"))) {
+            stop("doubleGauss parameters for refitting must be correctly labeled")
+        }
+    }
+
+    ff <- bquote(Fixations ~ (Time < mu) * (exp(-1 * (Time - 
+        mu)^2/(2 * sig1^2)) * (ht - base1) + base1) + (mu <= 
+        Time) * (exp(-1 * (Time - mu)^2/(2 * sig2^2)) * 
+        (ht - base2) + base2))
+    return(list(formula = ff, params = params))
+}
+
+same_fit_different_day <- bdotsFit(data = cohort_unrelated,
+                                   subject = "Subject",
+                                   time = "Time",
+                                   y = "Fixations",
+                                   group = c("Group", "LookType"),
+                                   curveType = doubleGauss2(concave = TRUE),
+                                   cor = TRUE,
+                                   numRefits = 2,
+                                   cores = 0,
+                                   verbose = FALSE)
+```
+
+While I don't yet have the option to set a seed, we can roughly verify their functional identicalness by examining the fitted coefficients
+
+```{r}
+## Original fit
+head(coef(fit))
+
+## "New" fit
+head(coef(same_fit_different_day))
+```
+
+Neat! Oh, and don't forget the `...` argument in the construction of the curve function. It's a bit of a sloppy way to handle it, but what basically happens is everything is scooped up in a local environment and thrown into the function. I plan on tightening this up in the future to avoid potential collisions, but this is what allowed for the greatest flexibility at the moment. 
+
+
+# What's Next
+
+Clearly, there is quite a bit that remains to be done. Here's a short list of what's on my radar
+
+- I need to make a `write.csv` equivalent for putting out these results. 
+- The refit step isn't very sharp and a bit awkward to use. There are a host of functions associated with this that need to be created
+  - Deleted all paired observations where one fails to fit
+  - Allow greater flexibility in how these are updated
+  - Subsetting and merging `bdotsFit` objects nonexistent
+  - I still think this would be super cool to do in shiny
+- Plot functions are pitiful + all of the other places I made comments within the document describing something that needed to be updated/changed
+- When you do find an error, you can count on it be uninformative. I've at least tried to attach a number messages where I anticipate a possibility of this happening (something along the lines of "error 4827". I punched in random strings so that I could find it with a quick search if/when it came up)
+- Documentation isn't great. All of the functions used here have something in the `?help` section, but it may not be much
+- No formal testing suite
+- There is a wealth of information and ideas in theBob's matlab code that has yet to be mined including different curve functions and better ways to construct parameter values
+
+I'll continue work on this with a current update every other week or so. I don't expect anything too terribly exciting, but you could run the `devtools::github_install` every now and again, and it will reinstall if there are any changes between the local and master copy. I won't update versions between updates for now, but I will note any major changes in a changelog on the git repo, as well as notes in the startup messages when loading the package. 
+
+All of that being said, there should at least be enough set up now for there to be stuff to break. I would like to have knocked out a good bit of the stuff above before making any attempts to repost on CRAN. That will also mean postponing more intensive vignettes or walkthroughs until I have something that I am confident will be a bit more stable. 
+
+That's what I've got for now. Questions, comments, and concerns are always welcome. When do you come across a bug or error, you can go to the package [github page](https://github.com/collinn/bdots) which has an area where issues/tickets can be submitted and labeled as either bugs/feature requests/etc. This helps me stay organized, but you are also welcome to email me directly with anything you might have. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
