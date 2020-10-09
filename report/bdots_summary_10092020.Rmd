@@ -8,4 +8,11 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Quick Vignette
+
+First, a development version of this package can be installed directly from github with the following code:
+
+```{r, eval=FALSE}
+library(devtools)
+install_github("collinn/bdots")
+```
