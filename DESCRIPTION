@@ -2,15 +2,14 @@ Package: bdots
 Type: Package
 Title: Bootstrapped Differences of Time Series
 Version: 0.1.30
-Date: 2019-11-18
+Date: 2020-10-09
 Author: Michael Seedorff, Jacob Oleson, Grant Brown, Joseph Cavanaugh, and Bob McMurray
 Maintainer: Jacob Oleson <jacob-oleson@uiowa.edu>
 Depends: R (>= 3.5.0), data.table
 Imports: nlme, mvtnorm, parallel
-LazyData: FALSE
+LazyData: TRUE
 Description: Analyze differences among time series curves with p-value adjustment for multiple comparisons introduced in Oleson et al (2015) <DOI:10.1177/0962280215607411>.
 License: GPL (>= 3)
 NeedsCompilation: no
 Encoding: UTF-8
-Packaged: 2020-02-27 19:06:55 UTC; bloeffler
 RoxygenNote: 7.1.1
