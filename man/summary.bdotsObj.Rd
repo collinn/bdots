@@ -9,6 +9,11 @@
 \arguments{
 \item{bdObj}{An object of class bdotsObj}
 }
+\value{
+Returns an object of class "bdotsSummary". There is some summarized
+information included if assigned to an object, i.e., `summ <- summary(bdObj)`
+then `str(summ)`
+}
 \description{
 Provides summary information for bdotsObj
 }

@@ -18,6 +18,12 @@ getVarMat <- function(dat) {
 #### Can't replace fit[[1]] since it's unnamed length 1 list. Could name it, I guess
 ## Needs to be made generic, address fitcode mentioned above.
 # this needs to be renamed coef.bdObj
+#' Extract bdotsFit Moedel Coefficients
+#'
+#' Returns coefficient matrix for bdotsFit object
+#'
+#' @param dat A bdotsObj
+#' @export
 coef.bdotsObj <- function(dat) {
   #if (!inherits(dat, "bdotsObj")) stop('need bdotsObj')
   nnfit_v <- which(vapply(dat$fit, function(x) !is.null(x$fit), logical(1))) #dat$fitCode != 6 (change here and somewhere else I remember)
@@ -35,6 +41,7 @@ coef.bdotsObj <- function(dat) {
 
 ## Make split retain bdotsObj class
 # Need to also split data attribute
+#' @export
 split.bdotsObj <- function(bdo, by, ...) {
   oldAttr <- attributes(bdo)
   res <- lapply(data.table:::split.data.table(bdo, by = by, ...), function(x) {
@@ -46,14 +53,17 @@ split.bdotsObj <- function(bdo, by, ...) {
 
 
 ## Otherwise, rbindlist is not a generic
+#' @export
 rbindlist <- function(x, ...) {
   UseMethod("rbindlist")
 }
 
+#' @export
 rbindlist.list <- function(x, ...) {
   data.table::rbindlist(x, ...)
 }
 
+#' @export
 rbindlist.bdObjList <- function(bdo, ...) {
   oldAttr <- attributes(bdo[[1]])
   class(bdo) <- "list"

@@ -4,7 +4,7 @@
 #'
 #' @param bdObj An object of class bdotsObj
 #'
-#' @value Returns an object of class "bdotsSummary". There is some summarized
+#' @return Returns an object of class "bdotsSummary". There is some summarized
 #' information included if assigned to an object, i.e., `summ <- summary(bdObj)`
 #' then `str(summ)`
 #'
@@ -113,7 +113,7 @@ printFitCount <- function(x) {
 #' @param bdBootObj An object of class bdotsObj
 #' @param Ignored for now
 #'
-#' @value Returns an object of class "bdotsBootSummary". There is some summarized
+#' @return Returns an object of class "bdotsBootSummary". There is some summarized
 #' information included if assigned to an object, i.e., `summ <- summary(bdBootObj)`
 #' then `str(summ)`
 #'

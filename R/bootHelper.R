@@ -18,7 +18,7 @@
 # for now, I will leave it. I  will try to come up with my own solution before
 # giving this to jake
 ## very much same issue with logistic (cross is HUGE)
-
+#' @import mvtnorm
 bdotsBooter <- function(bdo, N.iter, corMat = NULL) {
 
   ## for now
@@ -136,8 +136,8 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
   ## Determine correlation matrix, if paired
   oP <- split(Obj, by = outerDiff, drop = TRUE)
   if (ip <- isPaired(oP)) {
-    cm <- lapply(oP, coef)
-    corMat <- do.call("cor", setNames(cm, c("x", "y")))
+    cmat <- lapply(oP, coef)
+    corMat <- do.call("cor", setNames(cmat, c("x", "y")))
   } else {
     corMat <- NULL
   }

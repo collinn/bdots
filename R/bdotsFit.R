@@ -25,6 +25,7 @@
 #' be passed in as a function. See the vignette on customizing this
 #'
 #' @import data.table
+#' @import parallel
 #' @export
 
 bdotsFit <- function(data, # dataset
@@ -91,10 +92,10 @@ bdotsFit <- function(data, # dataset
 
  # #  ## if(.platform$OStype == windows)
  # #  ## This allows output to be print to console, possibly not possible in windows
- cl <- makePSOCKcluster(4)
+ cl <- makePSOCKcluster(cores)
  ## Ideally, I could clusterEvalQ bdots
- clusterExport(cl, c("curveFitter", "makeCurveEnv", "dots", "compact"), envir = parent.frame())
- invisible(clusterEvalQ(cl, library(nlme)))
+ #clusterExport(cl, c("curveFitter", "makeCurveEnv", "dots", "compact"), envir = parent.frame())
+ invisible(clusterEvalQ(cl, {library(nlme); library(bdots)}))
  #invisible(clusterEvalQ(cl, library(bdots))) # someday
 
  splitVars <- c(subject, group)

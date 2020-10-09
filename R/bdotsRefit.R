@@ -28,6 +28,10 @@ bdotsRefit <- function(bdObj, fitcode = 1, ...) {
 
   ## Because of factors, which I should really think about removing
   idx <- which(as.numeric(bdObj$fitCode) >= fitcode + 1)
+  if (length(idx) == 0) {
+    message("All observations have fitCode = 0. Nothing to refit :)")
+    return(bdObj)
+  }
   bdObj2 <- split(bdObj[idx, ], by = nn)
   new_bd <- lapply(bdObj2, bdUpdate)
 

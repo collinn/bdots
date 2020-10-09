@@ -47,6 +47,7 @@ bootParser <- function(ff, bdObj) {
 
   ## Get outer group
   outerDiff <- ss[vv == 3][[1]]["col"]
+  names(outerDiff) <- NULL
 
   ## Prep for subset
   # clear case where having inner <-bdCall2Subset OK to be length 1 list
@@ -95,7 +96,7 @@ bootSubset <- function(l, bdObj) {
   }
 
   ## I'm still going to keep order
-  bd[, c(resNames[1], nn, resNames[-1]), with = FALSE]
+  bd[, c(resNames[1], subnames, resNames[-1]), with = FALSE]
 }
 
 

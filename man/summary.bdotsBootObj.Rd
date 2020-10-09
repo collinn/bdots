@@ -11,6 +11,11 @@
 
 \item{Ignored}{for now}
 }
+\value{
+Returns an object of class "bdotsBootSummary". There is some summarized
+information included if assigned to an object, i.e., `summ <- summary(bdBootObj)`
+then `str(summ)`
+}
 \description{
 Provides summary information for bdotsBootObj
 }
