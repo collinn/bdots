@@ -29,16 +29,16 @@ summary.bdotsObj <- function(bdObj, ...) {
   # values are number of each fit code
   grpSummary <- lapply(split(bdObj, by = grps, drop = TRUE), function(x) {
     mm <- coef(x)
-    parMean <- colMeans(mm)
-    vv <- var(mm)
-    fitCount <- table(x[['fitCode']])
+    parMean <- colMeans(mm, na.rm = TRUE)
+    vv <- var(mm, na.rm = TRUE)
+    fitCount <- table(factor(x[['fitCode']], levels = 0:6))
     nobs <- length(unique(x[[subj]]))
     list(nobs = nobs, pars = parMean, varmat = vv, fitCount = fitCount)
   })
   mm <- coef(bdObj)
-  parMean <- colMeans(mm)
-  vv <- var(mm)
-  fitCount <- table(bdObj[['fitCode']])
+  parMean <- colMeans(mm, na.rm = TRUE)
+  vv <- var(mm, na.rm = TRUE)
+  fitCount <- table(factor(bdObj[['fitCode']], levels = 0:6))
   nobs <- nrow(bdObj)
   totalSummary <- list(nobs = nobs, pars = parMean,
                        varmat = vv, fitCount = fitCount)

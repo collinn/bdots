@@ -7,14 +7,14 @@
 #'
 #' @return Returns bdObj with updated fit
 #'
-#' @details fitcode indicates lower bound on observations to refit. For example,
-#' if \code{fitcode = 4}, \code{bdotsRefit} will prompt user to refit all
+#' @details fitCode indicates lower bound on observations to refit. For example,
+#' if \code{fitCode = 4}, \code{bdotsRefit} will prompt user to refit all
 #' observations with fitCode = 4, 5, 6.
 #' @import data.table
 #' @export
-bdotsRefit <- function(bdObj, fitcode = 1, ...) {
-  if (is.null(fitcode)) {
-    fitcode <- readline(prompt = "fitcode: ")
+bdotsRefit <- function(bdObj, fitCode = 1, ...) {
+  if (is.null(fitCode)) {
+    fitCode <- readline(prompt = "fitCode: ")
   }
   # X <- attr(bdObj, "X")
   # attr(bdObj, "X") <- NULL
@@ -27,7 +27,8 @@ bdotsRefit <- function(bdObj, fitcode = 1, ...) {
   nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']]))
 
   ## Because of factors, which I should really think about removing
-  idx <- which(as.numeric(bdObj$fitCode) >= fitcode + 1)
+  fitcode <- fitCode
+  idx <- which(bdObj$fitCode >= fitcode)
   if (length(idx) == 0) {
     message("All observations have fitCode = 0. Nothing to refit :)")
     return(bdObj)
