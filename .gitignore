@@ -2,3 +2,7 @@
 *.RData
 inst/doc
 report/*
+*.rdb
+*.rdx
+*.html
+*.png
