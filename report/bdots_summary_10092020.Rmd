@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Installation
 
-This is a slightly longer document, but I've done my best to be concise where I can. I have tested at least what is included here on all of the major operating systems, but of course, things going wrong should be considered the norm for now. 
+This is a slightly longer document, but I've done my best to be concise where I can. I have tested at least what is included here on Windows 10 and Linux (my Mac is too old to support the new operating system, so I haven't been able to verify there). There is one function on here that I have used that is in R 4.0.0, so as of this exact moment, that is required. If either of you are running an older version, I can make an adjustment for it to run R 3.5.0, and likely will for the version going forward. 
 
 First, a development version of this package can be installed directly from github with the following code:
 
@@ -22,12 +22,13 @@ install.packages("devtools")
 devtools::install_github("collinn/bdots")
 
 ```
+Though on Windows, you may also need to install `Rtools` from CRAN to compile from source. 
 
 ```{r, echo = FALSE, inclue = FALSE}
 suppressPackageStartupMessages(library(bdots)) 
 ```
 
-Included in the package are the `ci` dataset from the original `bdots` package, as well as the four datasets that Brad had previously done his demo on (they appear to be subsets of the same datset, but they include different columns?). In addition to the data that was found in Bob's lab directory (not included here), `ci` and `cohort_unrelated` are the primary datasets that have been used to test things 
+Included in the package are the `ci` dataset from the original `bdots` package, as well as the four datasets that Brad had previously done his demo on (they appear to be subsets of the same dataset, but they include different columns?). In addition to the data that was found in Bob's lab directory (not included here), `ci` and `cohort_unrelated` are the primary datasets that have been used to test things 
 
 # Fitting Step
 
@@ -84,6 +85,7 @@ There are not yet any functions to statistically test difference of parameters b
 mu1 <- coef(fit[Group == 50 & LookType == "Cohort", ])[, "mu"]
 mu2 <- coef(fit[Group == 65 & LookType == "Cohort", ])[, "mu"]
 
+par(mfrow = c(1, 2))
 hist(mu1)
 hist(mu2)
 
@@ -236,7 +238,7 @@ There are two things that must occur within this function
 
 You'll note in the code above for example that the parameters are created with the `dgaussPars` function (though I could have done this without a function if need be). Within it, I was able to subset my dataset with the `y` and `time` variables passed in from the function. Similarly, in returning the formula, I had to use both the `str2lang` function, as well as `bquote` to be able to put the correct values in the expression. All of these were necessary for generality. 
 
-*However*, if a user wanted to make their own function and had no interest in generalizability, they would already know these values, and could skip a lot of this work. If I already know the values for `y` and `time` in my dataset, I can ignore the arguments passed in and punch them in directly. Notice the change in the subsetting process in `dgaussPars`, as well as the change in the assignment to the formula to `ff`
+*However*, if a user wanted to make their own function and had no interest in generalizability, they would already know these values, and could skip a lot of this work. If I already know the values for `y` and `time` in my dataset, I can ignore the arguments passed in and punch them in directly. For example, in this dataset, we know that `y` is `Fixations` and `time` is `Time` in our original data matrix. Notice the change in the subsetting process in `dgaussPars`, as well as the change in the assignment to the formula to `ff`
 
 ```{r}
 doubleGauss2 <- function (dat, params = NULL, concave = TRUE, ...) 
