@@ -3,7 +3,8 @@ Type: Package
 Title: Bootstrapped Differences of Time Series
 Version: 0.1.30
 Date: 2020-10-09
-Author: Michael Seedorff, Jacob Oleson, Grant Brown, Joseph Cavanaugh, and Bob McMurray
+Author: Michael Seedorff, Jacob Oleson, Grant Brown,
+      Joseph Cavanaugh, and Bob McMurray
 Maintainer: Jacob Oleson <jacob-oleson@uiowa.edu>
 Depends: R (>= 4.0.0), data.table
 Imports: nlme, mvtnorm, parallel
@@ -15,5 +16,5 @@ Encoding: UTF-8
 RoxygenNote: 7.1.1
 Suggests: 
     knitr,
-    rmarkdown
+    rmarkdown, tinytest
 VignetteBuilder: knitr
