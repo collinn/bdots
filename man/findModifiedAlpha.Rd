@@ -11,7 +11,7 @@ findModifiedAlpha(
   alpha = 0.05,
   errorAcc = 0.001,
   gradDiff = ifelse(cores > 3, 0.5, 0.1),
-  cores = 3,
+  cores = 0,
   verbose = FALSE,
   method = "t"
 )

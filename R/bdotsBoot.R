@@ -81,9 +81,9 @@ bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oles
   # that takes an expression, returns subject IDS for which that
   # expression is true, and then removes all of that subject
   # (including observations that did not meet that expression)
-  if (any(bdObj$fitCode == 6)) {
-    warning("Some observations had NULL gnls fits. These will be removed")
-    bdObj <- bdObj[fitCode != 6, ] # WARNING: DO NOT MODIFY THIS OBJECT EVER (create idx in attr to determine which are valid for use)
+  if (any(bdObj[['fitCode']] == 6)) {
+    warning("Some observations had NULL gnls fits. These and their pairs will be removed")
+    bdObj <- bdRemove(bdObj, fitCode = 6, removePairs = TRUE)
   }
 
   ## This can maybe be two functions
@@ -97,13 +97,28 @@ bdotsBoot <- function(formula, bdObj, N.iter = 1000, alpha = 0.05, p.adj = "oles
   #time <- attr(bdObj, "time")
 
   ## Get formula and turn into function
-  # be warry of name this time
-  ff <- attr(bdObj, "formula")
-  f_bod <- deparse1(ff[[3]]) # would be cool to get f_args from this instead
-  f_args <- paste0(colnames(coef(bdObj)), collapse = ", ") # + colnames(dat)
-  eval(parse(text = paste('curveFun <- function(', f_args, ', ',
-                          attr(bdObj, "call")$time, ') { return(' , f_bod , ')}',
-                          sep='')))
+  # be wary of name this time
+  # ff <- attr(bdObj, "formula")
+  # f_bod <- deparse1(ff[[3]]) # would be cool to get f_args from this instead
+  # f_args <- paste0(colnames(coef(bdObj)), collapse = ", ") # + colnames(dat)
+  # eval(parse(text = paste('curveFun <- function(', f_args, ', ',
+  #                         attr(bdObj, "call")$time, ') { return(' , f_bod , ')}',
+  #                         sep='')))
+
+  ## This replaces the commented out code above, which threw a NOTE
+  # on the R CMD CHECK for having undefined global variable curveFun
+  ## From adv R, kinda
+  makeCurveFun <- function(bdObj) {
+    time <- attr(bdObj, "call")[['time']]
+    f_bod <- attr(bdObj, "formula")[[3]]
+    f_args <- c(colnames(coef(bdObj)), time)
+    f_args <- setNames(as.pairlist(rep("", length(f_args))), f_args)
+    # f_args <- setNames(as.pairlist(c(f_args, time)), c(f_args, time))
+    eval(call("function", f_args, f_bod), parent.frame())
+  }
+
+
+  curveFun <- makeCurveFun(bdObj)
 
 
   # ################################################################

@@ -7,10 +7,10 @@ Author: Michael Seedorff, Jacob Oleson, Grant Brown,
       Joseph Cavanaugh, and Bob McMurray
 Maintainer: Jacob Oleson <jacob-oleson@uiowa.edu>
 Depends: R (>= 4.0.0), data.table
-Imports: nlme, mvtnorm, parallel
+Imports: nlme, mvtnorm, parallel, stats, graphics, utils
 LazyData: TRUE
 Description: Analyze differences among time series curves with p-value adjustment for multiple comparisons introduced in Oleson et al (2015) <DOI:10.1177/0962280215607411>.
-License: GPL (>= 3)
+License: GPL-3 | file LICENSE
 NeedsCompilation: no
 Encoding: UTF-8
 RoxygenNote: 7.1.1

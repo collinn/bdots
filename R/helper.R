@@ -202,7 +202,7 @@ curve2Fun <- function(curve) {
 
 ## Pull from attributes names of vars to split
 # data by observation (subject, group)
-getSplitVars <- function(bdo) {
+getSplitVars <- function(bdObj) {
   bdCall <- attr(bdObj, "call")
   nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']]))
   nn

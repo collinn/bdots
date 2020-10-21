@@ -26,6 +26,7 @@
 #'
 #' @import data.table
 #' @import parallel
+#' @importFrom utils object.size
 #' @export
 
 bdotsFit <- function(data, # dataset
