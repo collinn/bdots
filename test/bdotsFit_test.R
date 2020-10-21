@@ -10,23 +10,30 @@ library(mvtnorm)
 library(pryr)
 load("~/packages/bdots/data/testRunData.RData")
 # Not for parallel, I could do clusterEvalQ(cl, source(".."))
-source("~/packages/bdots/R/bdotsFit.R")
-source("~/packages/bdots/R/bdotsFitter.R")
-source("~/packages/bdots/R/parser.R")
-source("~/packages/bdots/R/bootParser.R")
-source("~/packages/bdots/R/curveFitter.R")
-source("~/packages/bdots/R/doubleGauss.R")
-source("~/packages/bdots/R/logistic.R")
-source("~/packages/bdots/R/helper.R")
-source("~/packages/bdots/R/effectiveAlpha.R")
-source("~/packages/bdots/R/findModifiedAlpha.R")
-source("~/packages/bdots/R/ar1Solver.R")
-source("~/packages/bdots/R/bucket.R")
-source("~/packages/bdots/R/bootHelper.R")
-source("~/packages/bdots/R/bdotsBoot.R")
-source("~/packages/bdots/R/plotFunctions.R")
-source("~/packages/bdots/R/summaryFunctions.R")
-source("~/packages/bdots/R/bdotsRefit.R")
+
+rfiles <- list.files("~/packages/bdots/R", full.names = TRUE)
+for (ff in rfiles) {
+  source(ff)
+}
+rm(rfiles, ff)
+
+# source("~/packages/bdots/R/bdotsFit.R")
+# source("~/packages/bdots/R/bdotsFitter.R")
+# source("~/packages/bdots/R/parser.R")
+# source("~/packages/bdots/R/bootParser.R")
+# source("~/packages/bdots/R/curveFitter.R")
+# source("~/packages/bdots/R/doubleGauss.R")
+# source("~/packages/bdots/R/logistic.R")
+# source("~/packages/bdots/R/helper.R")
+# source("~/packages/bdots/R/effectiveAlpha.R")
+# source("~/packages/bdots/R/findModifiedAlpha.R")
+# source("~/packages/bdots/R/ar1Solver.R")
+# source("~/packages/bdots/R/bucket.R")
+# source("~/packages/bdots/R/bootHelper.R")
+# source("~/packages/bdots/R/bdotsBoot.R")
+# source("~/packages/bdots/R/plotFunctions.R")
+# source("~/packages/bdots/R/summaryFunctions.R")
+# source("~/packages/bdots/R/bdotsRefit.R")
 
 
 ##############
@@ -88,8 +95,8 @@ boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unr
 
 
 ## logistic
-library(bdots)
-data(ci)
+#library(bdots)
+load("~/packages/bdots/data/ci.RData")
 ci <- as.data.table(ci)
 ci <- ci[LookType == "Target", ]
 res.l <- bdotsFit(data = ci,

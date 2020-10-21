@@ -30,7 +30,7 @@
 # so let's make this a functional instead.
 ## no longer takes k as argument, but return functional that does
 ## benefit here is we only have to c om pute sigma once (since rho never changes)
-#' @import mvtnorm
+# #' @import mvtnorm
 effectiveAlpha_f <- function(rho, n = 10, df = NULL, method = "norm") {
 
   sigma <- diag(rep(1, n))
@@ -43,14 +43,14 @@ effectiveAlpha_f <- function(rho, n = 10, df = NULL, method = "norm") {
       df <- n - 1
     }
     f <- function(k) {
-      out <- 1 - pmvt(lower = -k, upper = k,
+      out <- 1 - mvtnorm::pmvt(lower = -k, upper = k,
                       delta = rep(0, n), df = df, corr = sigma)[1]
       out
     }
   } else {
     if (method != "norm") warning("invalid method supplied, using normal approximation")
     f <- function(k) {
-      out <- 1 - pmvnorm(lower = -k, upper = k,
+      out <- 1 - mvtnorm::pmvnorm(lower = -k, upper = k,
                          mean = rep(0, n), corr = sigma)[1]
     }
   }
@@ -73,13 +73,14 @@ effectiveAlpha_f <- function(rho, n = 10, df = NULL, method = "norm") {
 ## Also, there is no reason this shouldn't take scalar values
 ## (the original went about this recursively)
 #' @import mvtnorm
+#' @importFrom stats pnorm
 fwerAlpha <- function(rho, k, n = 10) {
   p1 <- 2 * pnorm(k) - 1 # int_{-k}^k f(x) dx, f ~ N(0, 1)
   mean <- c(0, 0)
   sigma <- matrix(c(1, rho, rho, 1), ncol = 2)
   p2 <- pmvnorm(lower = c(-k, -k), upper = c(k, k),
                 mean = mean, sigma = sigma,
-                algorithm=GenzBretz(abseps=.Machine$double.eps))[1]
+                algorithm = GenzBretz(abseps = .Machine$double.eps))[1]
   p3 <- p2 / p1
   out <- 1 - p3 ^ (n - 1) * p1
 }

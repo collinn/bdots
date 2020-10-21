@@ -235,6 +235,32 @@ printRefitUpdateInfo <- function(bdo) {
 }
 
 
+## Delete subjects with specified fitCode value
+#' bdots Remove Function
+#'
+#' Remove observations with a specified fitCode and optionally all pairs
+#'
+#' @param bdObj bdots object
+#' @param fitCode max fitCode to retain
+#' @param removePairs Boolean. Remove subject pairs. Default is TRUE to retain t-test
+#'
+#' @details Would be nice if I could give any expression and remove that instead.
+#' But that's maybe not as useful as it sounds
+#' @export
+bdRemove <- function(bdObj, fitCode = 6, removePairs = TRUE) {
+
+  ## Checking for decency
+  fitCode <- min(6, max(fitCode, 1))
+  idx <- bdObj[['fitCode']] >= fitCode
+
+  if (removePairs) {
+    sub <- attr(bdObj, "call")[['subject']]
+    subRmv <- bdObj[[sub]][idx]
+    idx <- bdObj[[sub]] %in% subRmv
+  }
+
+  bdObj[!idx, ]
+}
 
 
 
