@@ -8,7 +8,7 @@
 #' @return Returns an object of class "bdotsSummary". There is some summarized
 #' information included if assigned to an object, i.e., `summ <- summary(bdObj)`
 #' then `str(summ)`
-#'
+#' @export
 summary.bdotsObj <- function(bdObj, ...) {
   bdCall <- attr(bdObj, "call")
   subj <- bdCall$subject
@@ -65,6 +65,7 @@ summary.bdotsObj <- function(bdObj, ...) {
 #'
 #' @details That's pretty much it. This is a print method, so there is likely
 #' not much need to call it directly
+#' @export
 print.bdotsSummary <- function(x, ...) {
   cat("\nbdotsFit Summary\n\n")
   cat("Curve Type:", x$curveType, "\n")
@@ -119,7 +120,7 @@ printFitCount <- function(x) {
 #' @return Returns an object of class "bdotsBootSummary". There is some summarized
 #' information included if assigned to an object, i.e., `summ <- summary(bdBootObj)`
 #' then `str(summ)`
-#'
+#' @export
 summary.bdotsBootObj <- function(bdBootObj, ...) {
   ## Header info
   bdCall <- attr(bdBootObj, "call")

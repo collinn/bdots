@@ -19,7 +19,7 @@ First, a development version of this package can be installed directly from gith
 
 ```{r, eval=FALSE}
 install.packages("devtools")
-devtools::install_github("collinn/bdots")
+devtools::install_github("collinn/bdots@devel")
 
 ```
 Though on Windows, you may also need to install `Rtools` from CRAN to compile from source. 
