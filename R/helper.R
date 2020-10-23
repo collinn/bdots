@@ -9,9 +9,9 @@ getVarMat <- function(dat) {
   dat$fit[[1]]$varBeta
 }
 
-coef <- function(x, ...) {
-  UseMethod("coef")
-}
+# coef <- function(x, ...) {
+#   UseMethod("coef")
+# }
 
 
 ## Extract coef from  bdotsObj

@@ -94,7 +94,7 @@ bdotsFit <- function(data, # dataset
 
  # ## if(.platform$OStype == windows)
  cl <- makePSOCKcluster(cores)
- clusterExport(cl, c("curveFitter", "makeCurveEnv", "dots", "compact"), envir = parent.frame())
+ #clusterExport(cl, c("curveFitter", "makeCurveEnv", "dots", "compact"), envir = parent.frame())
  invisible(clusterEvalQ(cl, {library(nlme); library(bdots)}))
 
  splitVars <- c(subject, group)
