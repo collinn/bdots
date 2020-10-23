@@ -27,6 +27,7 @@ coef <- function(x, ...) {
 #'
 #' @param dat A bdotsObj
 #' @importFrom stats coef
+#' @importFrom nlme coef
 #' @export
 coef.bdotsObj <- function(dat) {
   #if (!inherits(dat, "bdotsObj")) stop('need bdotsObj')
