@@ -2,6 +2,16 @@
 #'
 #' find modified alpha
 #'
+#' @param rho correlation coefficient
+#' @param n number of observations
+#' @param df degrees of freedom if method == "t"
+#' @param alpha starting alpha from which to adjust
+#' @param errorAcc acceptable error for alphastar
+#' @param gradDiff gradient steps in algorithm
+#' @param cores number of cores. Default is zero, or half of what's available
+#' @param verbose will probably remove this
+#' @param method either "t" or "norm"
+#'
 #' @import parallel
 #' @import stats
 findModifiedAlpha <- function(rho, n, df, alpha = 0.05, errorAcc = 0.001,

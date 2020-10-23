@@ -3,7 +3,8 @@
 #'
 #'
 #' @param bdObj An object of class 'bdotsObj' returned from \code{bdotsFit}
-#' @param fitcode A length one numeric indicating observations to refit. See Details
+#' @param fitCode A length one numeric indicating observations to refit. See Details
+#' @param ... not used
 #'
 #' @return Returns bdObj with updated fit
 #'

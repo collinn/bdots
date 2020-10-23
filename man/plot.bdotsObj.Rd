@@ -15,6 +15,8 @@
 2x2. For right now, they are square}
 
 \item{plotfun}{Plot either subject fits or model parameters with "fits" or "pars"}
+
+\item{...}{ignore for now (other args to plot.generic)}
 }
 \description{
 Plot individual fits or model fit parameters from an object of class

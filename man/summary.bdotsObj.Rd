@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{bdObj}{An object of class bdotsObj}
+
+\item{...}{not used}
 }
 \value{
 Returns an object of class "bdotsSummary". There is some summarized

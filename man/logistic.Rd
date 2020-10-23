@@ -6,6 +6,17 @@
 \usage{
 logistic(dat, y, time, params = NULL, ...)
 }
+\arguments{
+\item{dat}{subject data to be used}
+
+\item{y}{outcome variable}
+
+\item{time}{time variable}
+
+\item{params}{\code{NULL} unless user wants to specify starting parameters for gnls}
+
+\item{...}{just in case}
+}
 \description{
 Logistic function used in fitting nlme curve for observations
 }

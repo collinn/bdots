@@ -8,13 +8,12 @@
 #' @param gridSize Length one numeric indicating size of plot grid. Default is
 #' 2x2. For right now, they are square
 #' @param plotfun Plot either subject fits or model parameters with "fits" or "pars"
+#' @param ... ignore for now (other args to plot.generic)
 #'
 #' @details Right now, these functions are very unstable and expected to change.
 #' The largest current issue is with the placement of the legend, which cannot
 #' be adjusted. If you are running into issues with seeing things correctly, try
 #' making the "Plots" window in RStudio larger before running this function
-#' @import data.table
-#' @export
 plot.bdotsObj <- function(bdObj, fitCode, gridSize = NULL, plotfun = "fits", ...) {
   ## Top part of this file are methods for plot.bdotsObj
   ## Bottom part of file are methods for plot.bdotsBootObj
@@ -31,9 +30,15 @@ plot.bdotsObj <- function(bdObj, fitCode, gridSize = NULL, plotfun = "fits", ...
   }
 }
 
+plot <- function(x, ...) {
+  UseMethod("plot")
+}
+
 # so  plot(class, args) is how it will all look in the end
 # add option for them to set own grid
 ## Might be interesting to do by Group?
+
+#' @importFrom graphics par hist
 plotPars <- function(bdObj, ...) {
   cc <- coef(bdObj)
   cn <- colnames(cc)
@@ -49,7 +54,7 @@ plotPars <- function(bdObj, ...) {
   }
 }
 
-
+#' @importFrom graphics par lines legend
 plotFits <- function(bdObj, fitCode, gridSize = NULL, ...) {
 
   ## This plots fitted vs obs curves
@@ -134,7 +139,7 @@ plotFits <- function(bdObj, fitCode, gridSize = NULL, ...) {
 }
 
 
-
+#' @importFrom graphics matplot
 plotDiff <- function(bdBootObj, alpha = 0.05, ...) {
   diff <- bdBootObj[['curveList']][['diff']]
   mm <- makePlotCI(diff, alpha)
@@ -152,11 +157,10 @@ plotDiff <- function(bdBootObj, alpha = 0.05, ...) {
 #' @param alpha Significance level for plotting shaded regions
 #' @param diffs Boolean to plot "difference of difference" curve
 #' @param group Specify group to plot if difference of difference was used
+#' @param ... ignore for now
 #'
 #'
 #' @details Use with care
-#' @import data.table
-#' @export
 plot.bdotsBootObj <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...) {
   # Fuck yeah, this is cool
   # diffs indicate if we should also plot the difference in addition to curves
@@ -171,6 +175,7 @@ plot.bdotsBootObj <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NUL
   plotCompare(bdBootObj, alpha, diffs, group, ...)
 }
 
+#' @importFrom graphics par legend
 plotCompare <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...) {
 
   cl <- bdBootObj[['curveList']]
@@ -263,7 +268,8 @@ plotCompare <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...
   }
 }
 
-
+#' @importFrom grDevices rgb
+#' @importFrom graphics rect lines
 bucketPlot <- function(sigTime, ylim = c(0, 0.9), ...) {
   ## Add option to change colors later
   if(!is.null(sigTime)) {

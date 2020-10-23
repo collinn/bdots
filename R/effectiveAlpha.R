@@ -1,36 +1,15 @@
-## This replaces effectiveAlphaMvNorm and
-## effectiveAlphaMvT, while also allowing rho, k both > 1
-
-## below is what I'm going to call fwerAlpha to differentiate.
-## This is what is described on pg 12 of detecting time-specific differences
-## to determine actual FWER alpha. The distinction/possible confusion for these
-## functions shouldn't matter too much, as they won't be exported for the user
-## but rather will both be contained in some variant of find.mod.alpha (for use in p.adjust)
-
-## To test
-# n <- 10
-# rho <- c(0.9, 0.99)
-# k <- qt(1 - (alpha <- 0.05)/(1:3), df = 9)
-# method <- "norm"
-
-# rh0 = correlation coefficient
-# k = non-critical region (since we take 1 - pmvt(-k, k))
-# n = number observations, df = degrees of freedom for "t"
-# methods = c("norm", "t") for dist to use
-## Returns effective alpha, given number of tests and correlation coefficient
-## The critical value that we need to determine adjusted alpha comes from
-## fwerAlpha. subsequent iterations through find.mod.alpha uses the effectiveAlpha
-# function to verify that that the effective alpha is indeed 0.05 (or whatever)
-# this is iterated through, updating the value k, determined to be the root of
-# fwerAlpha - alpha, with find.alpha.mod finally returning the correct alpha
-# with a call to pt(k that was found, df, etc)
-
-## Adjustment here - as this is only going to be called in `find.mod.alpha`, we
-# can make some assumptoins. 1, rho will never change and 2, we can ensure that length(k) == 1
-# so let's make this a functional instead.
-## no longer takes k as argument, but return functional that does
-## benefit here is we only have to c om pute sigma once (since rho never changes)
-# #' @import mvtnorm
+#' Effective Alpha Functional
+#'
+#' Functional that returns function for computing effective alpha for given
+#' parameters and distribution
+#'
+#' @param rho Correlation coefficient
+#' @param n Number of observations
+#' @param df Degrees of freedom if \code{method = "t"}
+#' @param method Character string. Determines distribution for adjusted alpha
+#' can be either \code{"norm"} for normal distribution or \code{"t"} for t-dist
+#'
+#' @importFrom mvtnorm pmvt pmvnorm
 effectiveAlpha_f <- function(rho, n = 10, df = NULL, method = "norm") {
 
   sigma <- diag(rep(1, n))
@@ -54,24 +33,24 @@ effectiveAlpha_f <- function(rho, n = 10, df = NULL, method = "norm") {
                          mean = rep(0, n), corr = sigma)[1]
     }
   }
-
   f
 }
 
 
-## Pg 12 of detecting time-specific differences, FWER alpha
-## This is 1 - P(I_t)P(I_t|I_{t-1})^{N-1}
-
-# n <- 10
-# rho <- c(0.9, 0.99)
-# k <- qt(1 - (alpha <- 0.05)/(1:3), df = 9)
-
-# rh0 = correlation coefficient
-# k = non-critical region (since we take 1 - pmvt(-k, k))
-# n = number observations
-## Returns effective alpha, given number of tests and correlation coefficient
-## Also, there is no reason this shouldn't take scalar values
-## (the original went about this recursively)
+#' fwerAlpha
+#'
+#' Family wise alpha calculation
+#' @param rho Correlation coefficient
+#' @param k Bounds of non-critical region
+#' @param n Number of observations
+#'
+#' @details Returns effective alpha, given number of tests and the correlation
+#' coefficient. This isn't explicitly checked, but there is no reason this function
+#' should take any non-scalar values. Derivation of this can be found on pg 12
+#' of Jake's 'Detecting time-specific differences'. This function performs the
+#' expression \deqn{1 - P(I_t)P(I_t \ | \ I_{t-1})^{N-1}}
+#'
+#'
 #' @import mvtnorm
 #' @importFrom stats pnorm
 fwerAlpha <- function(rho, k, n = 10) {
@@ -84,38 +63,6 @@ fwerAlpha <- function(rho, k, n = 10) {
   p3 <- p2 / p1
   out <- 1 - p3 ^ (n - 1) * p1
 }
-
-
-## Older version
-# effectiveAlpha <- function(rho, k, n = 10, df = NULL, method = "norm") {
-#
-#   pars <- matrix(c(rep(rho, times = length(k)),
-#                    rep(k, each = length(rho))), ncol = 2)
-#   sigma <- diag(rep(1, n))
-#   sigma <- abs(row(sigma) - col(sigma))
-#   out <- vector("numeric", length = nrow(pars))
-#
-#   if(method == "t") {
-#     if(is.null(df)) {
-#       warning("df not supplied for t distribution, using df = n - 1")
-#       df <- n - 1
-#     }
-#     for(i in seq_len(nrow(pars))) {
-#       pp <- pars[i, ]
-#       out[i] <- 1 - pmvt(lower = -pp[2], upper = pp[2],
-#                          delta = rep(0, n), df = df, corr = pp[1] ^ sigma)[1]
-#     }
-#   } else {
-#     if(method != "norm") warning("invalid method supplied, using normal approximation")
-#
-#     for(i in seq_len(nrow(pars))) {
-#       pp <- pars[i, ]
-#       out[i] <- 1 - pmvnorm(lower = -pp[2], upper = pp[2],
-#                             mean = rep(0, n), corr = pp[1] ^ sigma)[1]
-#     }
-#   }
-#   out
-# }
 
 
 

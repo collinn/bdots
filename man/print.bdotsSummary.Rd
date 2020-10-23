@@ -6,7 +6,15 @@
 \usage{
 \method{print}{bdotsSummary}(x, ...)
 }
+\arguments{
+\item{x}{object to be printed}
+
+\item{...}{not used}
+}
 \description{
+Stuff
+}
+\details{
 That's pretty much it. This is a print method, so there is likely
 not much need to call it directly
 }

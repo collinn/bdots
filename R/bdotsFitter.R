@@ -2,6 +2,18 @@
 #'
 #' The one subject version of bdotsFit
 #'
+#' @param dat data for single subject/group combo
+#' @param curveType this is actually a function. Should rename
+#' @param rho correlation coefficient
+#' @param numRefits number of refit attempts
+#' @param verbose not used
+#' @param thenames not used (but otherwise in conjunction with verbose)
+#' @param get.cov.only holdover from old bdots. Follow up with Jake to see if used
+#' @param params starting parameters, if wanting to add manually
+#' @param splitVars variables used to identify group. Might combine with datVarNames
+#' @param datVarNames character vector indicating reponse and time values
+#' @param ... not used
+#'
 #' @import data.table
 bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
                         verbose, thenames = NULL, get.cov.only = NULL,
@@ -38,32 +50,27 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
   y <- datVarNames[['y']]
   time <- datVarNames[['time']]
 
-  #curveType <- quote(curveType)
-  #print(class(curveType))
   arggs <- as.list(environment())
+
+  ## what I maybe want to make is named_dots
   v <- list(...)
   m <- dots(...)
   names(v) <- m
   arggs <- c(arggs, v)
   arggs <- compact(arggs)
   ## Don't like name but w/e
-  for(nn in names(arggs)) {
+  for(nn in intersect(names(formals(curveType)), names(arggs))) {
     formals(curveType)[[nn]] <- arggs[[nn]]
   }
   res <- curveType()
   ff <- res[['formula']]
   params <- res[['params']]
   fit <- curveFitter(dat, ff, params, rho, numRefits, get.cov.only, ...)
-  #fit <- list(fit = cF, ff = ff)
 
 
   ## Practice verbose (put at top)
   #if (FALSE) message(thenames)
 
-  # if (is.null(fit)) {
-  #   return(list(fit = fit, R2 = NA, fitCode = 6, ff = ff)
-  # }
-  #
   if (is.null(fit)) {
     fn <- do.call(c, dat[1, splitVars, with = FALSE])
     dt <- as.data.table(matrix(c(fn, c("fit", "R2", "AR1", "fitCode")),
@@ -103,18 +110,5 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
   attr(dt, "formula") <- ff
   dt
 }
-
-# #
-#  debugonce(bdotsFitter)
-# tt <- bdotsFitter(newdat[[1]], curveType = doubleGauss,
-#                   rho = rho, numRefits = numRefits,
-#                   verbose = FALSE, splitVars = splitVars,
-#                   datVarNames = datVarNames)
-# #
-# rr <- tt$fit[[1]]
-#
-#
-# ff <- rr$call
-# zz <- ff[[2]]
 
 

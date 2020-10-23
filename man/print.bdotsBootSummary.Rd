@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{x}{generic name, but this will be an object of bdotsBootSummary}
+
+\item{...}{ignored for now}
 }
 \description{
 That's pretty much it. This is a print method, so there is likely

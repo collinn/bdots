@@ -7,7 +7,17 @@
 doubleGauss(dat, y, time, params = NULL, concave = TRUE, ...)
 }
 \arguments{
+\item{dat}{subject data to be used}
+
+\item{y}{outcome variable}
+
+\item{time}{time variable}
+
+\item{params}{\code{NULL} unless user wants to specify starting parameters for gnls}
+
 \item{concave}{Boolean}
+
+\item{...}{just in case}
 }
 \description{
 Double Gauss function used in fitting nlme curve for observations

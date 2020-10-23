@@ -11,6 +11,7 @@
 #' use anything from \code{p.adjust} function, but for now, just "oleson"
 #' @param cores Number of cores to use in parallel. Default is zero, which
 #' uses half of what is available.
+#' @param ... not used
 #'
 #' @details The formula is the only tricky part of this. There will be a minor
 #' update to how it works in the future.  The three parts we will examine here

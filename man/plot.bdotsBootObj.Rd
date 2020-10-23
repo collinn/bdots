@@ -14,6 +14,8 @@
 \item{diffs}{Boolean to plot "difference of difference" curve}
 
 \item{group}{Specify group to plot if difference of difference was used}
+
+\item{...}{ignore for now}
 }
 \description{
 Allows a number of different but also unstable option for plotting an object

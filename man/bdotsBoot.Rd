@@ -28,6 +28,8 @@ use anything from \code{p.adjust} function, but for now, just "oleson"}
 
 \item{cores}{Number of cores to use in parallel. Default is zero, which
 uses half of what is available.}
+
+\item{...}{not used}
 }
 \value{
 Object of class 'bdotsBootObj'

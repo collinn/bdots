@@ -2,6 +2,14 @@
 #'
 #' Used in bdotsFit
 #'
+#' @param dat data used in building curve
+#' @param ff formula used in buildilng curve
+#' @param params starting parameters
+#' @param rho correlation coefficient
+#' @param numRefits number of refit attempts
+#' @param get.cov.only idk that this is actually used
+#' @param ... don't know that this is used, can maybe get rid of it
+#'
 #' @import data.table
 #' @import nlme
 curveFitter <- function(dat, ff, params, rho, numRefits = 0, get.cov.only = NULL, ...) {
