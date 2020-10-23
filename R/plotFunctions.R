@@ -31,9 +31,9 @@ plot.bdotsObj <- function(bdObj, fitCode, gridSize = NULL, plotfun = "fits", ...
   }
 }
 
-plot <- function(x, ...) {
-  UseMethod("plot")
-}
+# plot <- function(x, ...) {
+#   UseMethod("plot")
+# }
 
 # so  plot(class, args) is how it will all look in the end
 # add option for them to set own grid
