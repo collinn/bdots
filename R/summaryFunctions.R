@@ -8,6 +8,8 @@
 #' @return Returns an object of class "bdotsSummary". There is some summarized
 #' information included if assigned to an object, i.e., `summ <- summary(bdObj)`
 #' then `str(summ)`
+#' @import stats
+#' @import nlme
 #' @export
 summary.bdotsObj <- function(bdObj, ...) {
   bdCall <- attr(bdObj, "call")
@@ -213,10 +215,10 @@ print.bdotsBootSummary <- function(x, ...) {
 }
 
 
-
-summary <- function(x, ...)
-  UseMethod("summary")
-
+#
+# summary <- function(x, ...)
+#   UseMethod("summary")
+#
 
 
 
