@@ -17,7 +17,7 @@ This is a slightly longer document, but I've done my best to be concise where I 
 
 First, a development version of this package can be installed directly from github with the following code:
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 install.packages("devtools")
 devtools::install_github("collinn/bdots@devel")
 
