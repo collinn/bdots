@@ -26,8 +26,7 @@ coef <- function(x, ...) {
 #' Returns coefficient matrix for bdotsFit object
 #'
 #' @param dat A bdotsObj
-#' @importFrom stats coef
-#' @importFrom nlme coef
+#' @import stats
 #' @export
 coef.bdotsObj <- function(dat) {
   #if (!inherits(dat, "bdotsObj")) stop('need bdotsObj')
