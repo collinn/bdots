@@ -9,6 +9,9 @@ getVarMat <- function(dat) {
   dat$fit[[1]]$varBeta
 }
 
+coef <- function(x, ...) {
+  UseMethod("coef")
+}
 
 
 ## Extract coef from  bdotsObj
@@ -24,6 +27,7 @@ getVarMat <- function(dat) {
 #'
 #' @param dat A bdotsObj
 #' @importFrom stats coef
+#' @export
 coef.bdotsObj <- function(dat) {
   #if (!inherits(dat, "bdotsObj")) stop('need bdotsObj')
   nnfit_v <- which(vapply(dat$fit, function(x) !is.null(x$fit), logical(1))) #dat$fitCode != 6 (change here and somewhere else I remember)
@@ -39,9 +43,7 @@ coef.bdotsObj <- function(dat) {
   mm
 }
 
-coef <- function(x, ...) {
-  UseMethod("coef")
-}
+
 
 ## Make split retain bdotsObj class
 # Need to also split data attribute
