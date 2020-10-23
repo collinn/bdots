@@ -18,6 +18,29 @@ bdotsFitter(
   ...
 )
 }
+\arguments{
+\item{dat}{data for single subject/group combo}
+
+\item{curveType}{this is actually a function. Should rename}
+
+\item{rho}{correlation coefficient}
+
+\item{numRefits}{number of refit attempts}
+
+\item{verbose}{not used}
+
+\item{thenames}{not used (but otherwise in conjunction with verbose)}
+
+\item{get.cov.only}{holdover from old bdots. Follow up with Jake to see if used}
+
+\item{params}{starting parameters, if wanting to add manually}
+
+\item{splitVars}{variables used to identify group. Might combine with datVarNames}
+
+\item{datVarNames}{character vector indicating reponse and time values}
+
+\item{...}{not used}
+}
 \description{
 The one subject version of bdotsFit
 }

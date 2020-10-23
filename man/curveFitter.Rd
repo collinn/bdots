@@ -6,6 +6,21 @@
 \usage{
 curveFitter(dat, ff, params, rho, numRefits = 0, get.cov.only = NULL, ...)
 }
+\arguments{
+\item{dat}{data used in building curve}
+
+\item{ff}{formula used in buildilng curve}
+
+\item{params}{starting parameters}
+
+\item{rho}{correlation coefficient}
+
+\item{numRefits}{number of refit attempts}
+
+\item{get.cov.only}{idk that this is actually used}
+
+\item{...}{don't know that this is used, can maybe get rid of it}
+}
 \description{
 Used in bdotsFit
 }

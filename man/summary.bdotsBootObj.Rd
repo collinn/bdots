@@ -9,7 +9,7 @@
 \arguments{
 \item{bdBootObj}{An object of class bdotsObj}
 
-\item{Ignored}{for now}
+\item{...}{Ignored for now}
 }
 \value{
 Returns an object of class "bdotsBootSummary". There is some summarized

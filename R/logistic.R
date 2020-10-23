@@ -2,6 +2,12 @@
 #'
 #' Logistic function used in fitting nlme curve for observations
 #'
+#' @param dat subject data to be used
+#' @param y outcome variable
+#' @param time time variable
+#' @param params \code{NULL} unless user wants to specify starting parameters for gnls
+#' @param ... just in case
+#'
 #' @details \code{y ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (time)) / (peak - mini)))}
 #' @export
 logistic <- function(dat, y, time, params = NULL, ...) {

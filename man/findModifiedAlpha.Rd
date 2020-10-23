@@ -16,6 +16,25 @@ findModifiedAlpha(
   method = "t"
 )
 }
+\arguments{
+\item{rho}{correlation coefficient}
+
+\item{n}{number of observations}
+
+\item{df}{degrees of freedom if method == "t"}
+
+\item{alpha}{starting alpha from which to adjust}
+
+\item{errorAcc}{acceptable error for alphastar}
+
+\item{gradDiff}{gradient steps in algorithm}
+
+\item{cores}{number of cores. Default is zero, or half of what's available}
+
+\item{verbose}{will probably remove this}
+
+\item{method}{either "t" or "norm"}
+}
 \description{
 find modified alpha
 }

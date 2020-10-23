@@ -9,7 +9,9 @@ bdotsRefit(bdObj, fitCode = 1, ...)
 \arguments{
 \item{bdObj}{An object of class 'bdotsObj' returned from \code{bdotsFit}}
 
-\item{fitcode}{A length one numeric indicating observations to refit. See Details}
+\item{fitCode}{A length one numeric indicating observations to refit. See Details}
+
+\item{...}{not used}
 }
 \value{
 Returns bdObj with updated fit

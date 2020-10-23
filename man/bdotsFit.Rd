@@ -38,6 +38,8 @@ greater than one}
 \item{numRefits}{Integer indicating number of attempts to fit an observation
 if the first attemp fails}
 
+\item{cores}{number of cores. Default is \code{0}, indicating half cores available}
+
 \item{verbose}{currently not used}
 
 \item{returnX}{Boolean. Return data with bdObj? Ignore for now. There will be

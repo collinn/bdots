@@ -9,6 +9,7 @@
 #' @param group Character vector containing column names of groups. Can be
 #' greater than one
 #' @param curveType See details/vignette
+#' @param cores number of cores. Default is \code{0}, indicating half cores available
 #' @param cor Boolean. Autocorrelation?
 #' @param numRefits Integer indicating number of attempts to fit an observation
 #' if the first attemp fails
@@ -91,28 +92,19 @@ bdotsFit <- function(data, # dataset
 
 
 
- # #  ## if(.platform$OStype == windows)
- # #  ## This allows output to be print to console, possibly not possible in windows
+ # ## if(.platform$OStype == windows)
  cl <- makePSOCKcluster(cores)
- ## Ideally, I could clusterEvalQ bdots
- #clusterExport(cl, c("curveFitter", "makeCurveEnv", "dots", "compact"), envir = parent.frame())
+ clusterExport(cl, c("curveFitter", "makeCurveEnv", "dots", "compact"), envir = parent.frame())
  invisible(clusterEvalQ(cl, {library(nlme); library(bdots)}))
- #invisible(clusterEvalQ(cl, library(bdots))) # someday
 
  splitVars <- c(subject, group)
- newdat <- split(dat, by = splitVars, drop = TRUE) # these needs to not be in string
- # res <- parLapply(cl, newdat, bdotsFitter,
- #                  curveList = curveList,
- #                  rho = rho, numRefits = numRefits,
- #                  verbose = FALSE)
+ newdat <- split(dat, by = splitVars, drop = TRUE)
  res <- parLapply(cl, newdat, bdotsFitter,
                   curveType = curveType,
                   rho = rho, numRefits = numRefits,
                   verbose = FALSE,
                   splitVars = splitVars,
                   datVarNames = datVarNames)
- ## This allows us to pass names for verbose
- #system.time(res <- clusterMap(cl, bdotsFitter, newdat, thenames = names(newdat)))
  stopCluster(cl)
 
 
@@ -121,57 +113,8 @@ bdotsFit <- function(data, # dataset
  ff <- attr(res[[1]], "formula")
  fitList <- rbindlist(res, fill = TRUE)
 
- ## I maybe don't like this here. But we can add it on
- # in the summary if necessary
- #fitList[, fitCode := factor(fitCode, levels = 0:6)]
-
- ## Dude, just store that covariate table they want in a list as well
- # and that can be it's own class if need be
- ## Neat idea - environment to data.table to work with objects like this
- # that are actually environments, but behave like data.table
- # useful!
- ## At some point, need to change the way this returns fit entry as "AsIs" object, nested list
- ## YO, mother-effer. We are doing this to each element of a list with
- # information from that list. In other words, this whole function
- # right here, everything that happens, we can throw that shit
- # into bdotsFitter. It has no place here. Goodness gracious. That's
- # why it'll be important to have the curvefunction pass something that
- # gives us names for the parameters!
- ## Ok, sure, but that messes with renaming c(subject, group)
- # which I don't want to  have to pass to bdotsFitter. I'll leave as is for now.
- ## So, to-do here:
- # remove matrix as attachment to it
- # consider putting it in attributes? This would
- # assist with subsetting and letting them adjust it
- # manually. We will put more thought in this later
-
- ## This could be a trillion times faster (maybe) with loop and data.table::set
- # fitList <- lapply(names(newdat), function(x) {
- #   result <- res[[x]] # list of length 3
- #   x <- strsplit(x, "\\.") # list of by variables for newdat
- #
- #   dat1 <- as.data.table(matrix(x[[1]], ncol = length(x[[1]])))
- #   names(dat1) <-  c(subject, group)
- #
- #
- #   #set(dat1, j = "fit", value = result[['fit']])
- #   dat1$fit <- I(list(result['fit']))
- #   dat1$R2 <- result[['R2']]
- #   dat1$AR1 <- (result[['fitCode']] < 3)
- #   dat1$fitCode <- result[['fitCode']]
- #   dat1
- # })
- # fitList <- rbindlist(fitList)
- #
-
-
-
- ## Return data matrix as well?
- ## Two things here
- # don't make X AND data, even if at the end, unneccesary size
- # if size too large, "get" name of data, and store that
- # then `getSubX` can either give the actual data set
- # or it can find it in the globalenv and use it there.
+ ## If too large, should get "name" of data
+ # and option to call it from global env
  if (is.null(returnX)) {
    sz <- object.size(data)
    if (sz < 1e8L) X <- data
@@ -214,21 +157,6 @@ bdotsFit <- function(data, # dataset
     # II) input your own starting parameters (as matrix)
        # a) must be same dimension as refits doing
 
- ## Returned object is just a data.table with attributes
- # this will make it significantly easier to work with/substitute
- # it will also keep formula/curveType with subsets
- ## Add number of parameters so that we know we are plotting last p columns
-
- ## We can extract this SUPER easily since it's named with
- # mod <- attr(res, "call")$curveType to get logistic(), poly(n), etc.,
- ## one thing to keep in mind with putting parameters in attributes
- # is retaining them upon subset
- ## Shit, yo, just make my own `[.bdotsObj` that inherits from data.table
- # preserves the matrix
- # same thing to be on lookout for when merging
- # rbind.bdotsObj == stop("don't do this, use merge")
- # shit, yo, could also use `makeActiveBinding()`
- # at some point, just consider R4 objects <- hard no on this
  res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
                   .Data = fitList,
                   formula = ff,

@@ -96,7 +96,7 @@ boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unr
 
 ## logistic
 #library(bdots)
-load("~/packages/bdots/data/ci.RData")
+load("~/packages/bdots/data/ci.rda")
 ci <- as.data.table(ci)
 ci <- ci[LookType == "Target", ]
 res.l <- bdotsFit(data = ci,
