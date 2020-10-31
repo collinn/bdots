@@ -25,20 +25,21 @@ getVarMat <- function(dat) {
 #'
 #' Returns coefficient matrix for bdotsFit object
 #'
-#' @param dat A bdotsObj
+#' @param object A bdotsObj
+#' @param ... not used
 #' @import stats
 #' @export
-coef.bdotsObj <- function(dat) {
+coef.bdotsObj <- function(object, ...) {
   #if (!inherits(dat, "bdotsObj")) stop('need bdotsObj')
-  nnfit_v <- which(vapply(dat$fit, function(x) !is.null(x$fit), logical(1))) #dat$fitCode != 6 (change here and somewhere else I remember)
+  nnfit_v <- which(vapply(object$fit, function(x) !is.null(x$fit), logical(1))) #dat$fitCode != 6 (change here and somewhere else I remember)
   if (!length(nnfit_v)) {
     warning("No models contain valid coefficients")
     # return(NULL)
   }
-  mm <- matrix(NA, nrow = nrow(dat), ncol = length(cc <- coef(dat[nnfit_v[1], ]$fit[[1]])))
+  mm <- matrix(NA, nrow = nrow(object), ncol = length(cc <- coef(object[nnfit_v[1], ]$fit[[1]])))
   colnames(mm) <- names(cc)
   for (i in seq_along(1:nrow(mm))) {
-    if (dat[i, ]$fitCode != 6) mm[i, ] <- coef(dat[i, ]$fit[[1]])
+    if (object[i, ]$fitCode != 6) mm[i, ] <- coef(object[i, ]$fit[[1]])
   }
   mm
 }
@@ -82,7 +83,7 @@ rbindlist.default <- function(x, ...) {
 #' @param bdo bdotsObject
 #' @param ... for compatability with data.table
 #'
-#' @export
+#'
 rbindlist.bdObjList <- function(bdo, ...) {
   oldAttr <- attributes(bdo[[1]])
   class(bdo) <- "list"

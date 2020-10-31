@@ -2,7 +2,7 @@
 #'
 #' Provides summary information for bdotsObj
 #'
-#' @param bdObj An object of class bdotsObj
+#' @param object An object of class bdotsObj
 #' @param ... not used
 #'
 #' @return Returns an object of class "bdotsSummary". There is some summarized
@@ -11,7 +11,8 @@
 #' @import stats
 #' @import nlme
 #' @export
-summary.bdotsObj <- function(bdObj, ...) {
+summary.bdotsObj <- function(object, ...) {
+  bdObj <- object
   bdCall <- attr(bdObj, "call")
   subj <- bdCall$subject
   grps <- eval(bdCall$group)
@@ -116,14 +117,15 @@ printFitCount <- function(x) {
 #'
 #' Provides summary information for bdotsBootObj
 #'
-#' @param bdBootObj An object of class bdotsObj
+#' @param object An object of class bdotsObj
 #' @param ... Ignored for now
 #'
 #' @return Returns an object of class "bdotsBootSummary". There is some summarized
 #' information included if assigned to an object, i.e., `summ <- summary(bdBootObj)`
 #' then `str(summ)`
 #' @export
-summary.bdotsBootObj <- function(bdBootObj, ...) {
+summary.bdotsBootObj <- function(object, ...) {
+  bdBootObj <- object
   ## Header info
   bdCall <- attr(bdBootObj, "call")
   alphastar <- bdBootObj[['adj.alpha']]
