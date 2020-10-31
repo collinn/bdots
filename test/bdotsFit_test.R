@@ -8,7 +8,7 @@ library(parallel)
 library(nlme)
 library(mvtnorm)
 library(pryr)
-load("~/packages/bdots/data/testRunData.RData")
+#load("~/packages/bdots/data/testRunData.RData")
 # Not for parallel, I could do clusterEvalQ(cl, source(".."))
 
 rfiles <- list.files("~/packages/bdots/R", full.names = TRUE)

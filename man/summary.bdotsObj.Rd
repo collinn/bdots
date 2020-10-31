@@ -4,10 +4,10 @@
 \alias{summary.bdotsObj}
 \title{Summary for bdotsObj}
 \usage{
-\method{summary}{bdotsObj}(bdObj, ...)
+\method{summary}{bdotsObj}(object, ...)
 }
 \arguments{
-\item{bdObj}{An object of class bdotsObj}
+\item{object}{An object of class bdotsObj}
 
 \item{...}{not used}
 }

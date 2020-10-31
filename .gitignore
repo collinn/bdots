@@ -6,3 +6,5 @@ report/*
 *.rdx
 *.html
 *.png
+*.html$
+^report/*.html^

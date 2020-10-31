@@ -4,10 +4,10 @@
 \alias{plot.bdotsBootObj}
 \title{Plot for object of class bdotsBootObj}
 \usage{
-\method{plot}{bdotsBootObj}(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...)
+\method{plot}{bdotsBootObj}(x, alpha = 0.05, diffs = NULL, group = NULL, ...)
 }
 \arguments{
-\item{bdBootObj}{An object of class bdotsBootObj}
+\item{x}{An object of class bdotsBootObj}
 
 \item{alpha}{Significance level for plotting shaded regions}
 

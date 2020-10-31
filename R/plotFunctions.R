@@ -3,7 +3,7 @@
 #' Plot individual fits or model fit parameters from an object of class
 #' 'bdotsObj'. These functions are not very stable
 #'
-#' @param bdObj An object of class 'bdotsObj' returned from \code{bdotsFit}
+#' @param x An object of class 'bdotsObj' returned from \code{bdotsFit}
 #' @param fitCode Currently not used
 #' @param gridSize Length one numeric indicating size of plot grid. Default is
 #' 2x2. For right now, they are square
@@ -15,10 +15,12 @@
 #' be adjusted. If you are running into issues with seeing things correctly, try
 #' making the "Plots" window in RStudio larger before running this function
 #' @export
-plot.bdotsObj <- function(bdObj, fitCode, gridSize = NULL, plotfun = "fits", ...) {
+plot.bdotsObj <- function(x, fitCode, gridSize = NULL, plotfun = "fits", ...) {
   ## Top part of this file are methods for plot.bdotsObj
   ## Bottom part of file are methods for plot.bdotsBootObj
 
+  ## I need to just replace this throughout later, but this function sucks as is
+  bdObj <- x
   ## Generic currently works. Hurray
   ## Need to do some sort of match.call here for plotfun
   # option to print to file?
@@ -154,7 +156,7 @@ plotDiff <- function(bdBootObj, alpha = 0.05, ...) {
 #' Allows a number of different but also unstable option for plotting an object
 #' of class bdotsBoot
 #'
-#' @param bdBootObj An object of class bdotsBootObj
+#' @param x An object of class bdotsBootObj
 #' @param alpha Significance level for plotting shaded regions
 #' @param diffs Boolean to plot "difference of difference" curve
 #' @param group Specify group to plot if difference of difference was used
@@ -163,7 +165,7 @@ plotDiff <- function(bdBootObj, alpha = 0.05, ...) {
 #'
 #' @details Use with care
 #' @export
-plot.bdotsBootObj <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...) {
+plot.bdotsBootObj <- function(x, alpha = 0.05, diffs = NULL, group = NULL, ...) {
   # Fuck yeah, this is cool
   # diffs indicate if we should also plot the difference in addition to curves
   # group indicates which group, in the case we do diffs of diff
@@ -174,7 +176,7 @@ plot.bdotsBootObj <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NUL
   # group instead of using memoization. Mmm. But can't do that inside of a function
   # could possibly do it if they do bdBootObj <- plot(bdBootObj)
   ## This is way too flowery. Just make hard conditions and treat as separte functions for now
-  plotCompare(bdBootObj, alpha, diffs, group, ...)
+  plotCompare(x, alpha, diffs, group, ...)
 }
 
 #' @importFrom graphics par legend

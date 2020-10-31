@@ -4,10 +4,12 @@
 \alias{coef.bdotsObj}
 \title{Extract bdotsFit Moedel Coefficients}
 \usage{
-\method{coef}{bdotsObj}(dat)
+\method{coef}{bdotsObj}(object, ...)
 }
 \arguments{
-\item{dat}{A bdotsObj}
+\item{object}{A bdotsObj}
+
+\item{...}{not used}
 }
 \description{
 Returns coefficient matrix for bdotsFit object

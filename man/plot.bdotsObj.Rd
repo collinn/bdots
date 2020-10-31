@@ -4,10 +4,10 @@
 \alias{plot.bdotsObj}
 \title{Plot a bdotsFit object}
 \usage{
-\method{plot}{bdotsObj}(bdObj, fitCode, gridSize = NULL, plotfun = "fits", ...)
+\method{plot}{bdotsObj}(x, fitCode, gridSize = NULL, plotfun = "fits", ...)
 }
 \arguments{
-\item{bdObj}{An object of class 'bdotsObj' returned from \code{bdotsFit}}
+\item{x}{An object of class 'bdotsObj' returned from \code{bdotsFit}}
 
 \item{fitCode}{Currently not used}
 
