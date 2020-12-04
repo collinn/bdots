@@ -212,13 +212,27 @@ curve2Fun <- function(curve) {
     cformal[[nn]] <- arggs[[nn]]
   }
   idx <- which(names(cformal) == "...")
-  ss <- seq_along(cformal)[-idx]
-  cformal <- cformal[c(ss, idx)]
+  if  (length(idx)) {
+    ss <- seq_along(cformal)[-idx]
+    cformal <- cformal[c(ss, idx)]
+  }
   w <- function() {}
   body(w) <- cbody
   formals(w) <- cformal
   w
 }
+
+## Verify this works like above, need to add part to adjust for `...`
+# call2Fun <- function(x) {
+#   arggs <- as.list(x)[-1] # calls can be treated as lists
+#   cname <- deparse1(as.list(x)[[1]])
+#   w <- get(cname)
+#   for (nn in names(arggs)) {
+#     formals(w)[[nn]] <- arggs[[nn]]
+#   }
+#   w
+# }
+
 
 ## Pull from attributes names of vars to split
 # data by observation (subject, group)
@@ -238,26 +252,65 @@ getSubX <- function(bdo) {
   X[x_idx, ]
 }
 
-## Takes value from bdotsFitter
-# returns an appropriate DT
-## WE SHOULDN'T NEED THIS
-# fitObj <- res[[1]]
-# bdFit2DT <- function(fitObjs) {
-#   fitList <- lapply(fitObjs, function(fitObj) {
-#     fn <- fitObj$fitName
-#     dat <- as.data.table(matrix(c(fn, c("fit", "R2", "AR1", "fitCode")),
-#                                 ncol = length(fn) + 4))
-#     names(dat) <- c(names(fn), c("fit", "R2", "AR1", "fitCode"))
-#     dat$fit <- I(list(fitObj['fit']))
-#     dat$R2 <- fitObj[['R2']]
-#     dat$AR1 <- (fitObj[['fitCode']] < 3)
-#     dat$fitCode <- fitObj[['fitCode']]
-#     dat
-#   })
-#   fitList <- rbindlist(fitList)
-#   fitList[, fitCode := factor(fitCode, levels = 0:6)]
-#   fitList
-# }
+#' Adjust P-values for Multiple Comparisons
+#'
+#' Identical to stats::p.adjust, but includes \code{method = "oleson"}
+#'
+#' @param p numeric vector of p-values (possibly with NAs).
+#' @param method correction method, a character string. Can be any of the methods in
+#' p.adjust.methods, with the additional value \code{method = "oleson"}
+#' @param n number of comparisons, must be at least \code{length(p)}; only set this
+#' (to non-default) when you know what you are doing!
+#' @param alpha adjustment to be made with method oleson
+#' @param df degrees of freedom, if using \code{method = "oleson"}
+#' @param rho correlation coefficient, if using \code{method = "oleson"}
+#' @param cores number of cores for use in parallel, only valid for
+#' \code{method = "oleson"}. Default is zero, using half of the available cores
+#'
+#' @details I will revist this function later to make sure the arguments are consistent
+#' with how they may be used in the wild. Also need to include details from p.adjust in stats
+#' I can add oleson there with there references. Need example too, I think. ALSO - it's sometimes
+#' helpful to know alphastar. Should I return a similar value for the other methods? Do they have
+#' an equivalent? I know BH does, but I'm not positive the rest are linear adjustments.
+#' ALSO::: can ar1Solver determine rho from pvalue, or is tvalue needed?
+#'
+#' @import stats
+#'
+#' @export
+p.adjust <- function(p, method = "oleson", n = length(p), alpha = 0.05,
+                     df, rho, cores = 0) {
+  if (method == "oleson") {
+    if (cores < 1) cores <- detectCores()/2
+    if (missing(rho)) {
+      message('rho not assigned with method "olseon". Using rho <- 0.9')
+      rho <- 0.9
+    }
+    if (missing(df)) {
+      stop('Require value for df when using method "oleson"')
+    }
+
+    alphastar <- findModifiedAlpha(rho, n, df, cores)
+    k <- alphastar/alpha
+    adjpval <- p/k
+    attr(adjpval, "alphastar") <- alphastar
+    attr(adjpval, "rho") <- rho
+    return(adjpval)
+  } else {
+    if (missing(method)) {
+      method <- stats::p.adjust.methods
+    }
+    stats::p.adjust(p, method, n)
+  }
+}
+
+
+
+
+
+
+
+
+
 
 
 

@@ -29,7 +29,6 @@
 #' @import parallel
 #' @importFrom utils object.size
 #' @export
-
 bdotsFit <- function(data, # dataset
                      subject, # subjects
                      time, # column for time
