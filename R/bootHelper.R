@@ -67,10 +67,7 @@ alphaAdjust <- function(curveList, p.adj = "oleson", alpha = 0.05, cores, group 
   ## pval adjustment
   # (here's where I need to modify p.adjust to make method oleson)
   rho <- ar1Solver(tval)
-  if (TRUE) {
-    ## This is what takes a minute to run
-    # (35s on Bob's data, not splendid)
-    # (it's also not in (windows) parallel yet)
+  if (p.adj == "oleson") {
     alphastar <- findModifiedAlpha(rho,
                                    n = length(tval),
                                    df = curve[['n']],

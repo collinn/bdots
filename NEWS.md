@@ -12,3 +12,6 @@
 - Forgot to switch to devel branch, so pushing on master
 - Now for real package passes requirements for CRAN submission
 - generics and some documentation updated
+
+# bdots 11-04-2020
+- p.adjust added to use method == "oleson"
