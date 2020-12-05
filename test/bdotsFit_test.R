@@ -46,7 +46,7 @@ subject <- "Subject"
 y <- "Fixations"
 concave <-  TRUE
 rho <-  0.9
-numRefits <- 0
+numRefits <- 5
 cores <-  1
 verbose <-  FALSE
 alpha <- 0.05
@@ -65,7 +65,8 @@ res <- bdotsFit(data = cohort_unrelated,
                 numRefits = 2,
                 cores = 0,
                 verbose = FALSE)
-res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
+#res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
+res2 <- bdRemove(res)
 
 # debugonce(bdotsBoot)
 #debugonce(curveBooter)
@@ -232,3 +233,40 @@ boot.res2 <- bdotsBoot(formula = y ~ Group(LI, TD) + TrialType(M),
                        alpha = 0.05,
                        p.adj = "oleson",
                        cores = 4)
+
+
+########################################
+##### Testing polynomial function ####
+########################################
+## was missing concave smh
+res <- bdotsFit(data = cohort_unrelated,
+                subject = "Subject",
+                time = "Time",
+                y = "Fixations",
+                group = c("Group", "LookType"),
+                curveType = polynomial(degree = 5, raw = TRUE),
+                cor = TRUE,
+                numRefits = 2,
+                cores = 0,
+                verbose = FALSE)
+#res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
+res2 <- bdRemove(res, fitCode = 4)
+
+# debugonce(bdotsBoot)
+#debugonce(curveBooter)
+boot.test <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
+                       bdObj = res2,
+                       N.iter = 1000,
+                       alpha = 0.05,
+                       p.adj = "oleson",
+                       cores = 4)
+
+boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unrelated_Cohort),
+                        bdObj = res2,
+                        N.iter = 1000,
+                        alpha = 0.05,
+                        p.adj = "oleson",
+                        cores = 4)
+#plotCompare(boot.test)
+
+

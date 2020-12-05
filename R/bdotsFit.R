@@ -45,7 +45,7 @@ bdotsFit <- function(data, # dataset
   if (cores < 1) cores <- detectCores()/2
   curveType <- substitute(curveType)
   curveName <- gsub("\\(|\\)", "", deparse1(curveType))
-  curveType <- curve2Fun(curveType) # this function has an environment with a lot of stuff in it
+  curveType <- curve2Fun(curveType)
 
   ## Variable names on the dataset
   datVarNames <- c(y = y, subject = subject, time = time, group = group)
@@ -90,14 +90,21 @@ bdotsFit <- function(data, # dataset
   }
 
 
+  splitVars <- c(subject, group)
+  newdat <- split(dat, by = splitVars, drop = TRUE)
 
  # ## if(.platform$OStype == windows)
  cl <- makePSOCKcluster(cores)
- #clusterExport(cl, c("curveFitter", "makeCurveEnv", "dots", "compact"), envir = parent.frame())
+
  invisible(clusterEvalQ(cl, {library(nlme); library(bdots)}))
 
- splitVars <- c(subject, group)
- newdat <- split(dat, by = splitVars, drop = TRUE)
+  # res <- lapply(newdat, bdotsFitter,
+  #                  curveType = curveType,
+  #                  rho = rho, numRefits = numRefits,
+  #                  verbose = FALSE,
+  #                  splitVars = splitVars,
+  #                  datVarNames = datVarNames)
+
  res <- parLapply(cl, newdat, bdotsFitter,
                   curveType = curveType,
                   rho = rho, numRefits = numRefits,
@@ -108,7 +115,6 @@ bdotsFit <- function(data, # dataset
 
 
  ## See, I don't like this bc hypothetically could be length 0
- # alternative is making logistic() more complicated
  ff <- attr(res[[1]], "formula")
  fitList <- rbindlist(res, fill = TRUE)
 

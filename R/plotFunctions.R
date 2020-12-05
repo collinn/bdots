@@ -15,7 +15,7 @@
 #' be adjusted. If you are running into issues with seeing things correctly, try
 #' making the "Plots" window in RStudio larger before running this function
 #' @export
-plot.bdotsObj <- function(x, fitCode, gridSize = NULL, plotfun = "fits", ...) {
+plot.bdotsObj <- function(x, fitCode = NULL, gridSize = NULL, plotfun = "fits", ...) {
   ## Top part of this file are methods for plot.bdotsObj
   ## Bottom part of file are methods for plot.bdotsBootObj
 
@@ -58,7 +58,7 @@ plotPars <- function(bdObj, ...) {
 }
 
 #' @importFrom graphics par lines legend
-plotFits <- function(bdObj, fitCode, gridSize = NULL, ...) {
+plotFits <- function(bdObj, gridSize = NULL, ...) {
 
   ## This plots fitted vs obs curves
   # include other things to subset here

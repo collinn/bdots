@@ -3,10 +3,10 @@
 #' Double Gauss function used in fitting nlme curve for observations
 #'
 #' @param dat subject data to be used
-#' @param y outcome variable
-#' @param time time variable
-#' @param params \code{NULL} unless user wants to specify starting parameters for gnls
+#' @param y outcome variable, character vector
+#' @param time time variable, character vector
 #' @param concave Boolean
+#' @param params \code{NULL} unless user wants to specify starting parameters for gnls
 #' @param ... just in case
 #'
 #' @details User should only have to worry about setting concavity
