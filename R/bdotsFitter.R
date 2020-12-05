@@ -79,7 +79,7 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
     dt$fit <- I(list(NULL))
     dt$R2 <- NA
     dt$AR1 <- FALSE
-    dt$fitCode <- 6
+    dt$fitCode <- 6L
     attr(dt, "formula") <- ff
     return(dt)
   }
@@ -89,7 +89,7 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
   R2 <- 1 - SSE/SSY
 
   hasCor <- !is.null(fit$modelStruct$corStruct)
-  fitCode <- 3*(!hasCor) + 1*(R2 < 0.95)*(R2 > 0.8) + 2*(R2 < 0.8)
+  fitCode <- 3L*(!hasCor) + 1L*(R2 < 0.95)*(R2 > 0.8) + 2L*(R2 < 0.8)
 
   ## This is an UNREASONABLY large object. makes up most of size of bdobject
   if (hasCor) {
