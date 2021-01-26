@@ -14,4 +14,11 @@
 - generics and some documentation updated
 
 # bdots 11-04-2020
-- p.adjust added to use method == "oleson"
+- `p.adjust` exported to namespace to use `method == "oleson"`
+
+# bdots 12-05-2020
+- bdObj objects now have `fitCode` as integer
+- polynomials currently implemented, though formating needs to be adjusted
+- documentation updated for some functions
+- plot functions in process of being disassembled, so expect them less cooperative than before
+- Some steps towards curveList in bdotsBoot to having own class to be handled interactively more easily

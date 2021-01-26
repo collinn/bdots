@@ -37,23 +37,28 @@ plotFits2 <- function(bdObj, fitCode, gridSize = NULL, ...) {
     dtt <- melt(dtt, id.vars = 'time')
 
     ## Janky fix for update
-    if (gridSize == "refit") {
-      if (i == 1) {
-        title <- paste0("Original Fit\nfitCode = ", code, ", R2 = ", r2)
-      } else {
-        title <- paste0("Updated Fit\nfitCode = ", code, ", R2 = ", r2)
-      }
-    } else {
-      title <- paste0(paste0(obs, collapse = " "), "\nfitCode = ", code, ", R2 = ", r2)
-    }
+    # if (gridSize == "refit") {
+    #   if (i == 1) {
+    #     title <- paste0("Original Fit\nfitCode = ", code, ", R2 = ", r2)
+    #   } else {
+    #     title <- paste0("Updated Fit\nfitCode = ", code, ", R2 = ", r2)
+    #   }
+    # } else {
+      tits <- paste0(paste0(obs, collapse = " "), "\nfitCode = ", code, ", R2 = ", r2)
+    #}
 
-    test <- melt(dtt, id.vars = 'time')
+    #test <- melt(dtt, id.vars = 'time')
 
-    ggplot(dtt, aes(x=time, y=value, fill = variable, color = variable)) +
-      geom_line(size = 1) +
+      cbp1 <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
+                "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+      cbp1 <- c("#56B4E9", "#D55E00")
+      cbp1 <- c("#D55E00", "#56B4E9")
+
+      ggplot(dtt, aes(x=time, y=value, fill = variable, color = variable)) +
+      geom_line(size = 1) + scale_colour_manual(values = cbp1) +
       #geom_line(linetype = "dashed", aes(time, Observed), size = 1, color = 'cornflowerblue') +
       ylab(y) + xlab(attr(bdObj, "call")$time) +
-      ggtitle(title)
+      ggtitle(tits)
 
   }
 }
