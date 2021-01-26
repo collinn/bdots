@@ -4,14 +4,15 @@
 \alias{bdRemove}
 \title{bdots Remove Function}
 \usage{
-bdRemove(bdObj, fitCode = 6, removePairs = TRUE)
+bdRemove(bdObj, fitCode = 6L, removePairs = TRUE)
 }
 \arguments{
 \item{bdObj}{bdots object}
 
-\item{fitCode}{max fitCode to retain}
+\item{fitCode}{max fitCode to remove. Default is 6, which removes all subjects with NULL fits}
 
-\item{removePairs}{Boolean. Remove subject pairs. Default is TRUE to retain t-test}
+\item{removePairs}{Boolean. Remove subject pairs is one of pair is removed.
+Default is TRUE to retain paired t-test}
 }
 \description{
 Remove observations with a specified fitCode and optionally all pairs

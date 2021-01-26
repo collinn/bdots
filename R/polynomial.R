@@ -10,32 +10,25 @@
 # tt <- dat[[time]]
 # degree <- 5
 # raw <- TRUE
+#
+# fit <- lm(y ~ poly(time, degree = degree), data =)
 ####
-
+#' @export
 polynomial <- function(dat, y, time, degree, raw = TRUE, params = NULL, ...) {
 
-  polyPars <- function(dat, y, time, degree, raw, ...) {
-    yy <- dat[[y]]
-    tt <- dat[[time]]
-    pp <- lm(yy ~ poly(tt, degree = degree, raw = raw))
-    rr_names <- c(paste0("beta", seq(degree + 1L)))
-    rr <- setNames(coef(pp), rr_names)
+  polyPars <- function(dat, y, time, degree, raw) {
+    pp <- lm(dat[[y]] ~ poly(dat[[time]], degree = degree, raw = raw))
+    setNames(coef(pp), c(paste0("beta", seq(degree + 1L))))
   }
 
   if (is.null(params)) {
     params <- polyPars(dat, y, time, degree, raw)
   } else {
-    if (length(params) != degree + 1) stop("poly requires that number of params matches degree + 1 (for intercept)")
-    if (!all(names(params) %in% paste0("beta", seq(degree)))) {
+    if (length(params) != degree + 1L) stop("poly requires that number of params matches degree + 1 (for intercept)")
+    if (!all(names(params) %in% paste0("beta", seq(degree + 1L)))) {
       stop("polynomial parameters must be labeled beta1, ..., beta[degree + 1]")
     }
   }
-
-  ## This needs to be appended to dat. It changes dat. Is this dangerous? Probably
-  # mm <- model.matrix(~poly(dat[[time]], degree = degree, raw = raw) - 1, data = dat)
-  # mm_names <- paste0("bdpoly_", letters[seq(degree)])
-  # colnames(mm) <- mm_names
-  # dat[, (mm_names) := lapply(mm_names, function(x) mm[, x])]
 
   time_names <- paste0("I(Time^", seq(degree + 1L) - 1L , ")")
 
