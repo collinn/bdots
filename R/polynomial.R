@@ -1,18 +1,20 @@
-
-
-# dat <- data.table(cohort_unrelated)
-# dat <- dat[Subject == 1 & LookType == "Cohort" & Group == 50, ]
-# xx <- dat
-# time <- "Time"
-# y <- "Fixations"
-#
-# yy <- dat[[y]]
-# tt <- dat[[time]]
-# degree <- 5
-# raw <- TRUE
-#
-# fit <- lm(y ~ poly(time, degree = degree), data =)
-####
+#' Polynomial curve function for nlme
+#'
+#' Logistic function used in fitting nlme curve for observations
+#'
+#' @param dat subject data to be used
+#' @param y outcome variable
+#' @param time time variable
+#' @param degree degree of polynomial
+#' @param raw Boolean, use raw polynomials?
+#' @param params \code{NULL} unless user wants to specify starting parameters for gnls
+#' @param ... just in case
+#'
+#' @details It's recommended that one uses raw polynomials for this function for
+#' numerical stability. As inference is not performed on the parameters themselves,
+#' this should have minimial consequences
+#'
+#' @details \code{y ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (time)) / (peak - mini)))}
 #' @export
 polynomial <- function(dat, y, time, degree, raw = TRUE, params = NULL, ...) {
 
@@ -39,46 +41,3 @@ polynomial <- function(dat, y, time, degree, raw = TRUE, params = NULL, ...) {
   return(list(formula = ff, params = params))
 }
 
-# res <- polynomial(dat, y, time, degree, raw)
-# ff <- res[['formula']]
-# params <- res[['params']]
-# fit <- curveFitter(dat, ff, params, rho, numRefits)
-#
-#
-#
-#
-# fit <- gnls(eval(ff), data = dat, start = params, correlation = corAR1(rho))
-# plot(x, fitted.values(fit), type = 'l')
-# lines(x,dat$Fixations,col='red')
-#
-#
-#
-#
-#
-#
-# dat2 <- copy(dat)
-#
-# ww <- function() {
-#   dat2[, (mm_names) := lapply(mm_names, function(x) mm[, x])]
-# }
-# rr_names <- names(rr)
-#
-# time_names <- paste0("I(Time^", seq(degree), ")")
-# ff <- paste(rr_names, time_names, sep = "*", collapse = "+")
-# ff <- paste0("Fixations~", ff)
-# ff <- as.formula(ff)
-# fit <- gnls(ff, data = dat, start = rr,
-#             correlation = corAR1(0.9))
-#
-#
-# timett <- "Time"
-# f_bod <- ff[[3]]
-# f_args <- c(rr_names, timett)
-# f_args <- setNames(as.pairlist(rep("", length(f_args))), f_args)
-#
-# new_f <- eval(call("function", f_args, f_bod))
-#
-# myargs <- as.list(rr)
-# myargs$Time <- dat$Time
-#
-# test1 <- do.call(new_f, myargs)

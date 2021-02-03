@@ -103,9 +103,7 @@ bdotsRefit <- function(bdObj, fitCode = 1, ...) {
 }
 
 
-# bdo <- bdObj2[[1]]
-# x <- X[[1]]
-# nn <- names(bdObj2)[1]
+
 
 ## A lot of bits of these can be abstracted to functions
 # that way we can just jitter as often as we want (or w/e else)
@@ -242,12 +240,15 @@ printRefitUpdateInfo <- function(bdo) {
 #' Remove observations with a specified fitCode and optionally all pairs
 #'
 #' @param bdObj bdots object
-#' @param fitCode max fitCode to remove. Default is 6, which removes all subjects with NULL fits
+#' @param fitCode min fitCode to remove. Default is 6, which removes all subjects with NULL fits (fitCode = 5 would remove 5 and 6)
 #' @param removePairs Boolean. Remove subject pairs is one of pair is removed.
 #' Default is TRUE to retain paired t-test
 #'
-#' @details Would be nice if I could give any expression and remove that instead.
-#' But that's maybe not as useful as it sounds
+#' @details This function is used to remove all bdots observations with a fit code
+#' equal to or larger than the argument passed to \code{fitCode} without refitting.
+#' If \code{removePairs == TRUE}, all entries for a subject will be removed if their
+#' fit failed in any of the groups in which they were a member
+#'
 #' @export
 bdRemove <- function(bdObj, fitCode = 6L, removePairs = TRUE) {
 

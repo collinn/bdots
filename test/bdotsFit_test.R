@@ -17,44 +17,25 @@ for (ff in rfiles) {
 }
 rm(rfiles, ff)
 
-# source("~/packages/bdots/R/bdotsFit.R")
-# source("~/packages/bdots/R/bdotsFitter.R")
-# source("~/packages/bdots/R/parser.R")
-# source("~/packages/bdots/R/bootParser.R")
-# source("~/packages/bdots/R/curveFitter.R")
-# source("~/packages/bdots/R/doubleGauss.R")
-# source("~/packages/bdots/R/logistic.R")
-# source("~/packages/bdots/R/helper.R")
-# source("~/packages/bdots/R/effectiveAlpha.R")
-# source("~/packages/bdots/R/findModifiedAlpha.R")
-# source("~/packages/bdots/R/ar1Solver.R")
-# source("~/packages/bdots/R/bucket.R")
-# source("~/packages/bdots/R/bootHelper.R")
-# source("~/packages/bdots/R/bdotsBoot.R")
-# source("~/packages/bdots/R/plotFunctions.R")
-# source("~/packages/bdots/R/summaryFunctions.R")
-# source("~/packages/bdots/R/bdotsRefit.R")
-
 
 ##############
 
-load("~/bdots/demo.RData")
-data <- cohort_unrelated
-group = c("Group", "LookType")
-time <- "Time"
-subject <- "Subject"
-y <- "Fixations"
-concave <-  TRUE
-rho <-  0.9
-numRefits <- 5
-cores <-  1
-verbose <-  FALSE
-alpha <- 0.05
+# load("~/bdots/demo.RData")
+# data <- cohort_unrelated
+# group = c("Group", "LookType")
+# time <- "Time"
+# subject <- "Subject"
+# y <- "Fixations"
+# concave <-  TRUE
+# rho <-  0.9
+# numRefits <- 5
+# cores <-  1
+# verbose <-  FALSE
+# alpha <- 0.05
 
 #head(data)
 
 
-## was missing concave smh
 res <- bdotsFit(data = cohort_unrelated,
                 subject = "Subject",
                 time = "Time",
@@ -78,8 +59,6 @@ boot.test <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Coh
                                   cores = 4)
 #plotCompare(boot.test)
 
-## Doing this, in boot.test2$curveList$Cohort, there are entries for both cohort and unrelated cohort?
-# it's because I grep for "Cohort" which is in "Cohort" AND "Unrelated_Cohort".  Ah, subset of name
 boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unrelated_Cohort),
                                    bdObj = res2,
                                    N.iter = 1000,
@@ -211,10 +190,6 @@ plotCompare(boot.res, group = "LI")
 plotCompare(boot.res2)
 plotCompare(boot.res, diffs = FALSE)
 
-# > boot.res$sigTime
-# [,1] [,2]
-# [1,]   92 1200
-# [2,] 1472 2500
 
 
 dt <- data.table(x = 9)

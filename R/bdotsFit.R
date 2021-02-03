@@ -79,7 +79,7 @@ bdotsFit <- function(data, # dataset
   timetest <- lapply(timetest, function(x) unique(x[[time]]))
   timeSame <- identical(Reduce(intersect, timetest, init = timetest[[1]]),
                         Reduce(union, timetest, init = timetest[[1]]))
-  if (!timeSame) warning("Yo, these times are different between groups, and until collin fixes it, that's going to make bdotsBoot wrong-ish")
+  if (!timeSame) stop("Yo, these times are different between groups, and until collin fixes it, that's going to make bdotsBoot wrong-ish")
 
   ## This shuld work inside function. Let's check
   if (any(dat[, .N, by = c(subject, time, group)]$N > 1)) {
