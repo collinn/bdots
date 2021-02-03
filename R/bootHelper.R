@@ -44,6 +44,27 @@ bdotsBooter <- function(bdo, N.iter, corMat = NULL) {
   pars
 }
 
+## Subset bdObj based on groups being compared
+bootSubset <- function(l, bdObj) {
+  subnames <- l[["subnames"]]
+  subargs  <- l[["subargs"]]
+  resNames <- l[['resNames']]
+
+  # ouch (copy expensive) (is this necessary?)
+  # remove columns we don't want
+  bd <- subset(bdObj, select = c(resNames, subnames))
+
+  ## This will iteratively subset itself
+  for(i in seq_along(subnames)) {
+    ss_vec <- bd[[subnames[i]]] %in% subargs[[i]]
+    bd <- bd[ss_vec, ]  #subsets multiple times
+  }
+
+  ## I'm still going to keep order
+  bd[, c(resNames[1], subnames, resNames[-1]), with = FALSE]
+}
+
+
 
 ## alphaAdjust
 ## curveList - returned from curveBooter
@@ -79,122 +100,6 @@ alphaAdjust <- function(curveList, p.adj = "oleson", alpha = 0.05, cores, group 
 }
 
 
-## curveBooter
-# this function is dangerously long
-# and potentially complicated
-# need to revist for potential simplication.
-
-## Returns length 2 nested list (outdated) ((super outdated))
-# 1. curve1
-#   i. curveMat
-#   ii. parMat
-# 2. curve2
-#   i. curveMat
-#   ii. parMat
-## Make make sense to change inner/outer diff
-# The 'n' for diff is associated with the t-statistic, not actual count
-## This function is a bit of a bohemeth
-curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
-
-  if (!is.null(innerDiff)) {
-    obj <- split(Obj, by = outerDiff, drop = TRUE)
-    res <- lapply(obj, curveBooter, outerDiff = innerDiff,
-                  N.iter = N.iter, curveFun = curveFun)
-    res <- unlist(res, recursive = FALSE)
-
-    idx <- grep("diff", names(res))
-    if (length(idx) != 2) stop("something weird in curveBooter. Contact author")
-
-    ## diff of diff (length one list)
-    diffList <- Map(function(x, y) {
-      Map(function(a, b) {
-        a - b
-      }, x, y)
-    }, res[idx[1]], res[idx[2]])
-
-    diffList <- diffList[[1]]
-
-    ## snap, we can
-    if (ip <- isPaired(obj)) {
-      diffList$sd <- apply(diffList$curveMat, 2, sd)
-      diffList$n <- nrow(obj[[1]]) - 1
-    } else {
-      diffList$sd <- nopairSD(res[idx])
-      diffList$n <- sum(vapply(obj, nrow, numeric(1))) - 2
-    }
-    diffList$paired <- ip
-
-    ## Maybe first do something to combine these?
-    ## specfically, we should only return a single diff
-
-    return(setNames(c(res, list(diffList)), c(names(res), "diff")))
-  } # start base case
-
-  ## Determine correlation matrix, if paired
-  oP <- split(Obj, by = outerDiff, drop = TRUE)
-  if (ip <- isPaired(oP)) {
-    cmat <- lapply(oP, coef)
-    corMat <- do.call("cor", setNames(cmat, c("x", "y")))
-  } else {
-    corMat <- NULL
-  }
-
-  ## Bootstrap values
-  if (!is.null(corMat)) {
-    outDiffL <- split(Obj, by = "Subject", drop = TRUE)
-    bootPars <- lapply(outDiffL, bdotsBooter, N.iter, corMat)
-    meanMat <- parMatSplit(Reduce(`+`,  bootPars)/length(bootPars))
-  } else {
-    outDiffL <- lapply(oP, split, by = "Subject")
-    meanMat <- lapply(outDiffL, function(x) {
-      bootPars <- lapply(x, bdotsBooter, N.iter, corMat)
-      meanMat <- Reduce(`+`,  bootPars)/length(bootPars)
-    })
-  }
-
-  ## Call curve function on bootstrapped values
-  time <- attr(Obj, "time")
-  timeName <- attr(Obj, "call")$time
-  curveList <- lapply(seq_along(meanMat), function(i) {
-    mm <- meanMat[[i]]
-    parNames <- colnames(mm)
-    mmList <- lapply(split(mm, row(mm)), function(x) {
-      x <- as.list(x)
-      x[[timeName]] <- time
-      setNames(x, c(parNames, timeName))
-    })
-    res <- lapply(mmList, function(x) {force(x); do.call(curveFun, x)})
-    res <- matrix(unlist(res, use.names = FALSE), nrow = length(res), byrow = TRUE)
-    curveFit <- colMeans(res) # each column is a time point
-    curveSD <- apply(res, 2, sd)
-    list(fit = curveFit, sd = curveSD, curveMat = res, parMat = mm, n = nrow(oP[[i]]))
-  })
-
-  ## This is a bit sloppy
-  nn <- names(curveList[[1]])
-  diffList <- structure(vector("list", length = length(nn) + 1),
-                        names = c(nn, "paired"))
-
-  ## Could probably do the double map here like above
-  # maybe see which is faster?
-  # we also don't need a difference of parameter matrix? that doesn't make sense
-  tmp <- unlist(curveList, recursive = FALSE, use.names = FALSE)
-  for (i in seq_along(nn)) {
-    diffList[[i]] <- tmp[[i]] - tmp[[i + length(nn)]]
-  }
-
-  if (ip) {
-    diffList$sd <- apply(diffList$curveMat, 2, sd)
-    diffList$n <- nrow(oP[[1]]) - 1
-  } else {
-    diffList$sd <- nopairSD(curveList)
-    diffList$n <- sum(vapply(oP, nrow, numeric(1))) - 2
-  }
-  diffList$paired <- ip
-
-  ## Let's return all that above, and do the diff stuff here (wasted computation if not needed, I guess, but it's only matrix calc)
-  setNames(c(curveList, list(diffList)), c(unique(Obj[[outerDiff]]), "diff"))
-}
 
 
 

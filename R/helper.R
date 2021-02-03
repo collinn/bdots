@@ -9,18 +9,6 @@ getVarMat <- function(dat) {
   dat$fit[[1]]$varBeta
 }
 
-# coef <- function(x, ...) {
-#   UseMethod("coef")
-# }
-
-
-## Extract coef from  bdotsObj
-## uh, this doesn't adress null
-# Ah, mother fucker, that's fitcode 6!
-# this can potentially be made cleaner
-#### Can't replace fit[[1]] since it's unnamed length 1 list. Could name it, I guess
-## Needs to be made generic, address fitcode mentioned above.
-# this needs to be renamed coef.bdObj
 #' Extract bdotsFit Moedel Coefficients
 #'
 #' Returns coefficient matrix for bdotsFit object
@@ -49,10 +37,11 @@ coef.bdotsObj <- function(object, ...) {
 ## Make split retain bdotsObj class
 # Need to also split data attribute
 #' @import data.table
-split.bdotsObj <- function(bdo, by, ...) {
+#' @export
+split.bdotsObj <- function(bdo, by, drop = FALSE, ...) {
   oldAttr <- attributes(bdo)
   class(bdo) <- c("data.table", "data.frame")
-  res <- lapply(split(bdo, by = by, ...), function(x) {
+  res <- lapply(split(bdo, by = by, drop = drop, ...), function(x) {
     attributes(x) <- oldAttr
     x
   })
@@ -67,7 +56,7 @@ split.bdotsObj <- function(bdo, by, ...) {
 #   structure(.Data = res, class = c("bdObjList"))
 # }
 
-
+#' @export
 rbindlist <- function(x, ...) {
   UseMethod("rbindlist")
 }
@@ -84,6 +73,7 @@ rbindlist.default <- function(x, ...) {
 #' @param ... for compatability with data.table
 #'
 #'
+#' @export
 rbindlist.bdObjList <- function(bdo, ...) {
   oldAttr <- attributes(bdo[[1]])
   class(bdo) <- "list"
@@ -94,12 +84,10 @@ rbindlist.bdObjList <- function(bdo, ...) {
 
 
 ## Used in bdotsBoot
-## Probably having subject in string is wrong, but ok for now
 isPaired <- function(l) { # this only works for lists of bdObj
   subject <- attr(l[[1]], "call")[['subject']]
-  reduceEq <- function(x, y) if(identical(x[[subject]], y[[subject]])) x else FALSE
-  tmp <- Reduce(reduceEq, l)
-  # !identical(tmp, FALSE) <- see if this works
+  reduceEq <- function(x, y) if (identical(x[[subject]], y[[subject]])) x else FALSE
+  tmp <- Reduce(reduceEq, l) # how did I do this?
   if(identical(tmp, FALSE)) FALSE else TRUE
 }
 
@@ -132,7 +120,7 @@ parMatSplit <- function(x) {
 # }
 ## I think this is correct, but gives strange fits sometimes
 nopairSD <- function(l) {
-  if(length(l) != 2) stop("contact author with 123")
+  if(length(l) != 2) stop("contact author with 1239")
   s <- lapply(l, function(x) {
     vv <- x[['sd']]^2
     n <- x[['n']]
@@ -141,6 +129,36 @@ nopairSD <- function(l) {
   s <- Reduce(`+`, s) / (l[[1]]$n + l[[2]]$n - 2) * (1/l[[1]]$n + 1/l[[2]]$n)
   s <- sqrt(s)
 }
+
+## this ONLY returns the sd for the t stat, not the multiplier
+## For now, making it the entire denominator. we will check plot and see if it makes sense
+nopairSD2 <- function(l) {
+  sd_ratio <- Reduce(function(x, y) {x$sd/y$sd}, l)
+  ## Proportion of sd ratio within bounds should be some val, lets say 0.5
+  var_sim <- mean(sd_ratio > 1/2 & sd_ratio < 2) > 0.5
+  if (var_sim) {
+    s <- lapply(l, function(x) {
+      vv <- x[['sd']]^2
+      n <- x[['n']]
+      (n - 1) * vv
+    })
+    s <- Reduce(`+`, s) / (l[[1]]$n + l[[2]]$n - 2) * (l[[1]]$n + l[[2]]$n)
+    s <- sqrt(s)
+    dof <- l[[1]]$n + l[[2]]$n - 2
+  } else {
+    s <- lapply(l, function(x) {
+      vv <- x[['sd']]^2
+      n <- x[['n']]
+      vv/n
+    })
+    dof_denom <- Reduce(`+`, Map(function(x, y) {x^2 / (y[['n']] - 1)}, x = s, y = l))
+    s <- Reduce(`+`, s)
+    dof <- s^2 / dof_denom
+    s <- sqrt(s)
+  }
+  return(list(sd = s, dof = dof))
+}
+
 ###################################
 ## Stolen from purrrrrrrr
 vec_depth <- function(x) {
