@@ -11,11 +11,12 @@ library(pryr)
 #load("~/packages/bdots/data/testRunData.RData")
 # Not for parallel, I could do clusterEvalQ(cl, source(".."))
 
-rfiles <- list.files("~/packages/bdots/R", full.names = TRUE)
-for (ff in rfiles) {
-  source(ff)
-}
-rm(rfiles, ff)
+# load_all()
+# rfiles <- list.files("~/packages/bdots/R", full.names = TRUE)
+# for (ff in rfiles) {
+#   source(ff)
+# }
+# rm(rfiles, ff)
 
 
 ##############
@@ -225,7 +226,7 @@ res <- bdotsFit(data = cohort_unrelated,
                 cores = 0,
                 verbose = FALSE)
 #res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
-res2 <- bdRemove(res, fitCode = 4)
+res2 <- bdRemove(res, fitCode = 2)
 
 # debugonce(bdotsBoot)
 #debugonce(curveBooter)

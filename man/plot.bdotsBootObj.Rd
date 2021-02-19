@@ -4,18 +4,21 @@
 \alias{plot.bdotsBootObj}
 \title{Plot for object of class bdotsBootObj}
 \usage{
-\method{plot}{bdotsBootObj}(x, alpha = 0.05, diffs = NULL, group = NULL, ...)
+\method{plot}{bdotsBootObj}(x, alpha = NULL, plotDiffs = TRUE, group = NULL, ...)
 }
 \arguments{
 \item{x}{An object of class bdotsBootObj}
 
-\item{alpha}{Significance level for plotting shaded regions}
+\item{alpha}{Significance level for plotting confidence intervals. To readjust
+areas of significance will value different than alpha used in \code{bdotsBoot} is
+computationally expensive and is currently not an option but will be offered soon.}
 
-\item{diffs}{Boolean to plot "difference of difference" curve}
+\item{plotDiffs}{Boolean to plot difference curve}
 
-\item{group}{Specify group to plot if difference of difference was used}
+\item{group}{Specify group to plot if difference of difference was used. The
+user can also subset the bdotsBootObj prior to plotting}
 
-\item{...}{ignore for now}
+\item{...}{ignore for now, but will eventually allow plot parameters}
 }
 \description{
 Allows a number of different but also unstable option for plotting an object

@@ -14,7 +14,7 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
 
     return(structure(.Data = setNames(c(res, list(diffList)),
                                c(names(res), "diff")),
-                     class = "outerDiffList"))
+                     class = c("outerGroupCurveList","groupCuveList")))
   }
 
   ## Determine correlation matrix, if paired
@@ -32,7 +32,7 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
     bootPars <- lapply(outDiffL, bdotsBooter, N.iter, corMat)
     meanMat <- parMatSplit(Reduce(`+`,  bootPars)/length(bootPars))
   } else {
-    outDiffL <- lapply(oP, split.bdotsObj, attr(Obj, "call")[['subject']], drop = TRUE)
+    outDiffL <- lapply(oP, split.bdotsObj, by = attr(Obj, "call")[['subject']], drop = TRUE)
     meanMat <- lapply(outDiffL, function(x) {
       bootPars <- lapply(x, bdotsBooter, N.iter, corMat)
       meanMat <- Reduce(`+`,  bootPars)/length(bootPars)
@@ -47,7 +47,7 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
 
   structure(.Data = setNames(c(curveList, list(diffList)),
                              c(unique(Obj[[outerDiff]]), "diff")),
-            class = "innerCurveList")
+            class = c("innerGroupCurveList", "groupCuveList"))
 }
 
 ###------------------------------------------------
@@ -86,16 +86,15 @@ makeCurveList <- function(meanMat, curveFun, oP) {
 ## Make diffList from curveList
 makeInnerDiffList <- function(curveList, oP) {
   diffList <- Map(function(x, y) {
-    x- y
+    x - y
   }, curveList[[1]], curveList[[2]])
-
 
   if (ip <- isPaired(oP)) {
     diffList$sd <- apply(diffList$curveMat, 2, sd) # this is correct
-    diffList$n <- nrow(oP[[1]]) - 1
+    diffList$n <- nrow(oP[[1]]) - 1L
   } else {
     diffList$sd <- nopairSD(curveList)
-    diffList$n <- sum(vapply(oP, nrow, numeric(1))) - 2
+    diffList$n <- sum(vapply(oP, nrow, numeric(1))) - 2L
   }
   diffList$paired <- ip
   structure(.Data = diffList,
@@ -116,16 +115,17 @@ makeOuterDiffList <- function(res, obj) {
     }, x, y)
   }, res[idx[1]], res[idx[2]])
 
+
   ## Map returns a lenght 1 list
   diffList <- diffList[[1]]
 
   ## snap, we can
   if (ip <- isPaired(obj)) {
     diffList$sd <- apply(diffList$curveMat, 2, sd)
-    diffList$n <- nrow(obj[[1]]) - 1
+    diffList$n <- nrow(obj[[1]]) - 1L
   } else {
     diffList$sd <- nopairSD(res[idx])
-    diffList$n <- sum(vapply(obj, nrow, numeric(1))) - 2
+    diffList$n <- sum(vapply(obj, nrow, numeric(1))) - 2L
   }
   diffList$paired <- ip
   structure(.Data = diffList,

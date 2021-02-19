@@ -10,7 +10,6 @@ bdotsFitter(
   rho,
   numRefits = 0,
   verbose,
-  thenames = NULL,
   get.cov.only = NULL,
   params = NULL,
   splitVars = NULL,
@@ -29,15 +28,13 @@ bdotsFitter(
 
 \item{verbose}{not used}
 
-\item{thenames}{not used (but otherwise in conjunction with verbose)}
-
 \item{get.cov.only}{holdover from old bdots. Follow up with Jake to see if used}
 
 \item{params}{starting parameters, if wanting to add manually}
 
 \item{splitVars}{variables used to identify group. Might combine with datVarNames}
 
-\item{datVarNames}{character vector indicating reponse and time values}
+\item{datVarNames}{character vector indicating reponse and time values from parent call}
 
 \item{...}{not used}
 }

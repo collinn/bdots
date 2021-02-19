@@ -67,6 +67,7 @@ bdotsFit <- function(data, # dataset
   ## Factors eff things up
   dat <- setDT(data)
   dat[, (group) := lapply(.SD, as.character), .SDcols = group]
+  dat[, (subject) := lapply(.SD, as.character), .SDcols = subject]
 
 
   ## We can quickly check that time is kosher, at least within group divides
@@ -97,13 +98,6 @@ bdotsFit <- function(data, # dataset
  cl <- makePSOCKcluster(cores)
 
  invisible(clusterEvalQ(cl, {library(nlme); library(bdots)}))
-
-  # res <- lapply(newdat, bdotsFitter,
-  #                  curveType = curveType,
-  #                  rho = rho, numRefits = numRefits,
-  #                  verbose = FALSE,
-  #                  splitVars = splitVars,
-  #                  datVarNames = datVarNames)
 
  res <- parLapply(cl, newdat, bdotsFitter,
                   curveType = curveType,

@@ -9,7 +9,7 @@ bdRemove(bdObj, fitCode = 6L, removePairs = TRUE)
 \arguments{
 \item{bdObj}{bdots object}
 
-\item{fitCode}{max fitCode to remove. Default is 6, which removes all subjects with NULL fits}
+\item{fitCode}{min fitCode to remove. Default is 6, which removes all subjects with NULL fits (fitCode = 5 would remove 5 and 6)}
 
 \item{removePairs}{Boolean. Remove subject pairs is one of pair is removed.
 Default is TRUE to retain paired t-test}
@@ -18,6 +18,8 @@ Default is TRUE to retain paired t-test}
 Remove observations with a specified fitCode and optionally all pairs
 }
 \details{
-Would be nice if I could give any expression and remove that instead.
-But that's maybe not as useful as it sounds
+This function is used to remove all bdots observations with a fit code
+equal to or larger than the argument passed to \code{fitCode} without refitting.
+If \code{removePairs == TRUE}, all entries for a subject will be removed if their
+fit failed in any of the groups in which they were a member
 }
