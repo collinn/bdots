@@ -4,10 +4,10 @@
 \alias{rbindlist.bdObjList}
 \title{rbindlist for bdotsObjects}
 \usage{
-\method{rbindlist}{bdObjList}(bdo, ...)
+\method{rbindlist}{bdObjList}(x, ...)
 }
 \arguments{
-\item{bdo}{bdotsObject}
+\item{x}{bdotsObject}
 
 \item{...}{for compatability with data.table}
 }

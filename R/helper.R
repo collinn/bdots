@@ -118,7 +118,7 @@ rbindlist.default <- function(x, ...) {
 #'
 #' Similar to data.table::rbindlist, but preserves botsObjects attributes
 #'
-#' @param bdo bdotsObject
+#' @param x bdotsObject
 #' @param ... for compatability with data.table
 #'
 #'
