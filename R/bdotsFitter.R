@@ -7,7 +7,6 @@
 #' @param rho correlation coefficient
 #' @param numRefits number of refit attempts
 #' @param verbose not used
-#' @param thenames not used (but otherwise in conjunction with verbose)
 #' @param get.cov.only holdover from old bdots. Follow up with Jake to see if used
 #' @param params starting parameters, if wanting to add manually
 #' @param splitVars variables used to identify group. Might combine with datVarNames

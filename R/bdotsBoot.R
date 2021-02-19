@@ -50,13 +50,12 @@ bdotsBoot <- function(formula,
   }
 
   prs <- bootParser(formula, bdObj)
-  bdObj <- bootSubset(prs, bdObj)
+  bdObj <- bootGroupSubset(prs, bdObj)
   innerDiff <- prs[["innerDiff"]] # unnamed char vec
   outerDiff <- prs[["outerDiff"]] # unnamed char vec
 
   curveGrps <- setNames(prs[['subargs']], prs[['subnames']])
 
-  ## From adv R, kinda
   makeCurveFun <- function(bdObj) {
     time <- attr(bdObj, "call")[['time']]
     f_bod <- attr(bdObj, "formula")[[3]]
@@ -83,6 +82,7 @@ bdotsBoot <- function(formula,
   sigTime <- bucket(pval <= alphastar, time)
   dod <- ifelse(is.null(innerDiff), FALSE, TRUE)
 
+  ## maybe consider keeping ancillary data in list, i.e., res.
   structure(class = "bdotsBootObj",
             .Data = list(curveList = curveList,
                          alpha = alpha,
@@ -91,8 +91,10 @@ bdotsBoot <- function(formula,
                          sigTime = sigTime,
                          rho = rho,
                          paired = ip,
+                         # also this is duplicated in curveGroups, i.e., diffs == names(curveGroups)
+                         # however, it does not  specify between inner and outer group, so idk
                          diffs = c("outerDiff" = outerDiff,
-                                   "innerDiff" = innerDiff),
+                                   "innerDiff" = innerDiff), # could replaces this with `prs`
                          curveGroups = curveGrps,
                          dod = dod,
                          curveFun = curveFun),

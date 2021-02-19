@@ -1,5 +1,39 @@
 
+## Subset a bdotsBootObj based on group
+#' Subset a nested group bdotsBoot objects
+#'
+#' @param x An object returned from \code{bdotsBoot}
+#' @param group A group to subset. Must be an outer group
+#' @param adjustAlpha currently not used. Will give option to recompute adjusted alpha
+#' @param ... Not used
+#'
+#' @details This function is used to subset a bdotsBootObject that was fit to compute
+#' the difference of differences. This allows the user to subset out the outer group
+#' in the comparison for plotting and investigation
+#'
+#' @export
+subset.bdotsBootObj <- function(x, group, adjustAlpha = NULL, ...) {
+  bdBootObj <- x #  need to just rename and not be lazy here
+  if (!bdBootObj$dod)
+    stop("No inner group to subset")
 
+  if (!(group %in% names(bdBootObj$curveList)))
+    stop("Invalid group for subset")
+
+  ## Take only old group
+  bdBootObj$curveList <- bdBootObj$curveList[[group]]
+  bdBootObj$diffs <- setNames(bdBootObj$diffs['innerDiff'], 'outerDiff')
+  bdBootObj$dod <- FALSE
+  bdBootObj$curveGroups <- bdBootObj$curveGroups[bdBootObj$diffs]
+
+  ## See if recomputed alpha, for now, w/e. Also, this feels gross
+  bdBootObj$sigTime <- NULL
+  bdBootObj$adj.alpha <- NULL
+  bdBootObj$rho <- NULL
+  bdBootObj$adj.pval <- NULL
+  bdBootObj$paired <- bdBootObj$curveList[['diff']][['paired']]
+  bdBootObj
+}
 
 ## getVarMat
 # takes subset data with single observation
@@ -36,14 +70,27 @@ coef.bdotsObj <- function(object, ...) {
 
 ## Make split retain bdotsObj class
 # Need to also split data attribute
+#' Split object of class bdotsObj
+#'
+#' Analogous to other splitting functions, but retains necessary attributes
+#' across the split object. As of now, it can only be unsplit with bdots::rbindlist
+#'
+#' @param x Object of class bdotsObj
+#' @param f For consistency with generic, but is not used
+#' @param drop logical. Default FALSE will not drop empty list elements caused
+#' by factor levels not referred by that factor. Analagous to data.table::split
+#' @param by Character vector of column names on which to split. Usually will
+#' be Subject or one of the fitted groups
+#' @param ... not used
+#'
 #' @import data.table
 #' @export
-split.bdotsObj <- function(bdo, by, drop = FALSE, ...) {
-  oldAttr <- attributes(bdo)
-  class(bdo) <- c("data.table", "data.frame")
-  res <- lapply(split(bdo, by = by, drop = drop, ...), function(x) {
-    attributes(x) <- oldAttr
-    x
+split.bdotsObj <- function(x, f, drop = FALSE, by,...) {
+  oldAttr <- attributes(x)
+  class(x) <- c("data.table", "data.frame")
+  res <- lapply(split(x, by = by, drop = drop, ...), function(y) {
+    attributes(y) <- oldAttr
+    y
   })
   structure(.Data = res, class = c("bdObjList"))
 }
@@ -56,11 +103,13 @@ split.bdotsObj <- function(bdo, by, drop = FALSE, ...) {
 #   structure(.Data = res, class = c("bdObjList"))
 # }
 
-#' @export
+## Don't export for now because fuck S3 generic matching
+# @export
 rbindlist <- function(x, ...) {
   UseMethod("rbindlist")
 }
 
+#' @importFrom data.table rbindlist
 rbindlist.default <- function(x, ...) {
   data.table::rbindlist(x, ...)
 }
@@ -74,12 +123,12 @@ rbindlist.default <- function(x, ...) {
 #'
 #'
 #' @export
-rbindlist.bdObjList <- function(bdo, ...) {
-  oldAttr <- attributes(bdo[[1]])
-  class(bdo) <- "list"
-  bdo <- rbindlist(bdo, ...)
-  attributes(bdo) <- oldAttr
-  bdo
+rbindlist.bdObjList <- function(x, ...) {
+  oldAttr <- attributes(x[[1]])
+  class(x) <- "list"
+  x <- rbindlist(x, ...)
+  attributes(x) <- oldAttr
+  x
 }
 
 

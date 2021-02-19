@@ -45,7 +45,7 @@ bdotsBooter <- function(bdo, N.iter, corMat = NULL) {
 }
 
 ## Subset bdObj based on groups being compared
-bootSubset <- function(l, bdObj) {
+bootGroupSubset <- function(l, bdObj) {
   subnames <- l[["subnames"]]
   subargs  <- l[["subargs"]]
   resNames <- l[['resNames']]

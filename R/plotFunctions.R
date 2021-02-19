@@ -1,3 +1,7 @@
+# Reference for passing plot pars
+# https://github.com/pbreheny/ncvreg/blob/master/R/plot-ncvreg.R
+# lien 15
+
 #' Plot a bdotsFit object
 #'
 #' Plot individual fits or model fit parameters from an object of class
@@ -17,8 +21,6 @@
 #' @import ggplot2
 #' @export
 plot.bdotsObj <- function(x, fitCode = NULL, gridSize = NULL, plotfun = "fits", ...) {
-  ## Top part of this file are methods for plot.bdotsObj
-  ## Bottom part of file are methods for plot.bdotsBootObj
 
   ## I need to just replace this throughout later, but this function sucks as is
   bdObj <- x
@@ -72,6 +74,7 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
   splitVars <- c(bdCall$subject, eval(bdCall$group))
   y <- bdCall$y # what observed values are in X
 
+
   if (!is.character(y)) stop("Error 123")
 
   X <- attr(bdObj, "X")$X
@@ -91,9 +94,9 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
     gridSize <- 2
   } else if (gridSize == "refit") {
     par(mfrow = c(1, 2))
-  } else {
-    par(mfrow = c(gridSize, gridSize))
   }
+
+  par(mfrow = c(gridSize, gridSize))
 
   Xs <- split(X, by = splitVars)
 
@@ -117,18 +120,16 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
     obsY <- Xs[[obs2]][[y]]
     fitY <- fitted.values(bdObj[i, ]$fit[[1]])
 
-    ## Janky fix for update
+    ## Janky fix for update. Should just make a separate for refits
     if (gridSize == "refit") {
       if (i == 1) {
         title <- paste("Original Fit", "\n fitCode = ", code, ", R2 = ", r2)
-      }
-      if (i == 2) {
+      } else {
         title <- paste("Updated Fit", "\n fitCode = ", code, ", R2 = ", r2)
       }
     } else {
       title <- paste(paste0(obs, collapse = " "), "\n fitCode = ", code, ", R2 = ", r2)
     }
-
 
     plot(x = time, y = obsY, lty = 2, lwd = 2, type = 'l',
          ylab = y, main = title, col = 'blue')
@@ -136,13 +137,11 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
     # perhaps change legend based on  plot type?
     legend(lgn, legend = c("Observed", "Model Fit"), lty = c(2, 1),
            lwd = c(2, 2), col = c('blue', 'black'))
-
-
   }
 
 }
 
-
+## Needs title
 #' @importFrom graphics matplot
 plotDiff <- function(bdBootObj, alpha = 0.05, ...) {
   diff <- bdBootObj[['curveList']][['diff']]
@@ -150,127 +149,6 @@ plotDiff <- function(bdBootObj, alpha = 0.05, ...) {
   ## add some shaading to this, that would be lit
   matplot(mm, lty = c(2, 1, 2), type = 'l',
           col = c('grey', 'black', 'gray'))
-}
-
-#' Plot for object of class bdotsBootObj
-#'
-#' Allows a number of different but also unstable option for plotting an object
-#' of class bdotsBoot
-#'
-#' @param x An object of class bdotsBootObj
-#' @param alpha Significance level for plotting shaded regions
-#' @param diffs Boolean to plot "difference of difference" curve
-#' @param group Specify group to plot if difference of difference was used
-#' @param ... ignore for now
-#'
-#'
-#' @details Use with care
-#' @export
-plot.bdotsBootObj <- function(x, alpha = 0.05, diffs = NULL, group = NULL, ...) {
-  # Fuck yeah, this is cool
-  # diffs indicate if we should also plot the difference in addition to curves
-  # group indicates which group, in the case we do diffs of diff
-  # should also have an argument to alpha adjust for diff of diff. Because we may
-  # end up with LI.M, LI.W and LI.diff, but we don't have significant regions for them.
-  # it should definitely be an argument since that computation is expensive.
-  # should perhaps consider if there is a way to add new_alphastar to a specific
-  # group instead of using memoization. Mmm. But can't do that inside of a function
-  # could possibly do it if they do bdBootObj <- plot(bdBootObj)
-  ## This is way too flowery. Just make hard conditions and treat as separte functions for now
-  plotCompare(x, alpha, diffs, group, ...)
-}
-
-#' @importFrom graphics par legend
-plotCompare <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...) {
-
-  cl <- bdBootObj[['curveList']]
-  dod <- bdBootObj[['dod']] # diff of diff
-  cvGroups <- bdBootObj[['diffs']]
-
-  if (dod & is.null(diffs)) {
-    diffs <- TRUE
-  }
-
-  # diff of diff and select group (this is kosher)
-  if (dod & !is.null(group)) {
-    gpidx <- grep(group, names(cl))
-    if (length(gpidx) == 0) stop("Invalid 'group' name") # may check if they accidentally passed innerDiff var
-    cl <- cl[[gpidx]]
-  }
-
-  ## if not diff of diff and group selected, there can be no diffs
-  if (!dod & !is.null(group) & !is.null(diffs)) {
-    if (diffs == TRUE) warning("Single curve selected, diff curve not available")
-    diffs <- FALSE
-  }
-
-
-  diffidx <- grep("diff", names(cl))
-
-  ## does diff exist? if so, let's break it up
-  # if diffs is null, default is TRUE
-  if (length(diffidx) != 0) {
-    diffCurve <- cl[[diffidx]]
-    idx <- seq_along(names(cl))[-diffidx]
-    cl <- cl[idx]
-    if (is.null(diffs)) diffs <- TRUE
-  } else {
-    diffs <- FALSE
-  }
-
-  if (dod & is.null(group)) {
-    cl <- lapply(cl, function(x) {
-      x[3]
-    })
-    names(cl) <- NULL
-    cl <- unlist(cl, recursive = FALSE)
-  }
-
-  ## Plot matrices
-  cvMat <- lapply(cl, makePlotCI, alpha)
-  nn <- length(cvMat)
-  cvMat <- Reduce(cbind, cvMat)
-  cvGroups <- bdBootObj[['diffs']]
-
-  time <- attr(bdBootObj, "bdObjAttr")[["time"]]
-
-  if (nn == 1) {
-    plotcol <- 'blue'
-  } else if (nn == 2) {
-    plotcol <- c("blue", "red")
-  }
-
-  if (diffs) {
-    oldPar <- par()$mfrow
-    on.exit(par(mfrow = oldPar))
-    par(mfrow = c(1, 2))
-    diffMat <- makePlotCI(diffCurve, alpha)
-  }
-
-  matplot(x = time, cvMat, lty = rep(c(2, 1, 2), nn),
-          type = 'l', col = rep(plotcol, each = 3))
-  # set legend placement (?)
-  lgn <- switch(attr(bdBootObj, "bdObjAttr")[['curveType']],
-                "logistic" = "bottomright",
-                "doubleGauss" = "topright",
-                "topright")
-  legend(lgn, legend = names(cl), lty = c(2, 1),
-         lwd = c(2, 2), col = plotcol)
-
-  if (is.null(group)) {
-    sigTime <- bdBootObj[["sigTime"]]
-    bucketPlot(sigTime, ylim = c(min(cvMat), max(cvMat)))
-  }
-
-  ## Need to compute sigTime if they select for computation
-  if (diffs & is.null(group)) {
-    matplot(x = time, diffMat, lty = c(2, 1, 2), type = 'l',
-            col = c('grey', 'black', 'gray'))
-    bucketPlot(sigTime, ylim = c(min(diffMat), max(diffMat)))
-  } else if (diffs & !is.null(group)) {
-    matplot(x = time, diffMat, lty = c(2, 1, 2), type = 'l',
-            col = c('grey', 'black', 'gray'))
-  }
 }
 
 #' @importFrom grDevices rgb
@@ -288,90 +166,217 @@ bucketPlot <- function(sigTime, ylim = c(0, 0.9), ...) {
   }
 }
 
-
+## this is valid at least for group fits, not 100% sure of diff
 makePlotCI <- function(cl, alpha = 0.05, ...) {
   ## This should take in an object of curveList i.e., 'diff', 'LI.M', etc.
-  tv <- qt(1 - alpha / 2, cl[['n']] - 1)
+  tv <- qt(1 - alpha / 2, cl[['n']] - 1) # this will not be correct for diff, as 'n' will be wrong.
   fit <- cl[['fit']]
   sd <- cl[['sd']]
   mm <- matrix(NA, ncol = 3, nrow = length(fit))
-  mm[ ,1] <- fit - sd * tv
+  mm[ ,1] <- fit - sd * tv # need to divide by sqrt(n) ?
   mm[, 2] <- fit
   mm[, 3] <- fit + sd * tv
   mm
 }
 
+#' Plot for object of class bdotsBootObj
+#'
+#' Allows a number of different but also unstable option for plotting an object
+#' of class bdotsBoot
+#'
+#' @param x An object of class bdotsBootObj
+#' @param alpha Significance level for plotting confidence intervals. To readjust
+#' areas of significance will value different than alpha used in \code{bdotsBoot} is
+#' computationally expensive and is currently not an option but will be offered soon.
+#' @param plotDiffs Boolean to plot difference curve
+#' @param group Specify group to plot if difference of difference was used. The
+#' user can also subset the bdotsBootObj prior to plotting
+#' @param ... ignore for now, but will eventually allow plot parameters
+#'
+#'
+#' @details Use with care
+#' @export
+plot.bdotsBootObj <- function(x, alpha = NULL, plotDiffs = TRUE, group = NULL, ...) {
+  # value used in original call
+  alpha <- x$alpha
 
-## First stab at ggplot2, but plotting not a priority
-## This is temporary
-# plotFits2 <- function(bdObj, gridSize = NULL, ...) {
+  if (x$dod & !is.null(group)) {
+    x <- subset(x, group, alpha)
+    plotInnerGroup(x, alpha, plotDiffs, ...)
+  } else if (x$dod) {
+    plotOuterGroup(x, alpha, plotDiffs, ...)
+  } else {
+    plotInnerGroup(x, alpha, plotDiffs, ...)
+  }
+}
+
+#' @importFrom graphics par legend
+plotInnerGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ...) {
+  cList <- bdBootObj[['curveList']]
+  diffList <- cList[['diff']]
+  cList <- cList[setdiff(names(cList), "diff")]
+  cvMat <- lapply(cList, makePlotCI, alpha)
+  nn <- length(cvMat)
+  cvMat <- Reduce(cbind, cvMat)
+
+  Time <- attr(bdBootObj, "bdObjAttr")[["time"]]
+
+  ## Set pars
+  plotcol <- c("steelblue", "tomato")
+  bdCall <- attr(bdBootObj, "bdObjAttr")[['call']]
+  yylab <- bdCall[['y']]
+  xxlab <- bdCall[['time']]
+  mmain <- names(bdBootObj$curveGroups)
+
+  ## If plotDiff
+  if (plotDiffs) {
+    oldMfrow <- par()$mfrow
+    on.exit(par(mfrow = oldMfrow))
+    par(mfrow = c(1, 2))
+    diffMat <- makePlotCI(diffList, alpha)
+  }
+
+  ## With pars, makes more sense to use do.call
+  matplot(x = Time, cvMat, lty = rep(c(2,1,2), nn),
+          type = 'l', col = rep(plotcol, each = 3),
+          xlab = xxlab, ylab = yylab, main = mmain)
+
+  # set legend placement (?) ideally xpd out of plot or below
+  lgn <- switch(attr(bdBootObj, "bdObjAttr")[['curveType']],
+                "logistic" = "topleft",
+                "doubleGauss" = "topleft",
+                "topleft")
+
+  ## This only holds if diff of diff not used. Need to handle other case
+  if (is.null(NULL) & !is.null(bdBootObj[['sigTime']])) {
+    sigTime <- bdBootObj[["sigTime"]]
+    bucketPlot(sigTime, ylim = c(min(cvMat), max(cvMat)))
+  }
+
+  legend(lgn, legend = names(cList), lty = c(1, 1),
+         lwd = c(2, 2), col = plotcol, xpd = TRUE)
+
+  if (plotDiffs) {
+    matplot(x = Time, diffMat, lty = c(2, 1, 2), type = 'l',
+            col = c('grey', 'black', 'gray'),
+            main = "difference of curves", xlab = xxlab,
+            ylab = bquote(paste(Delta, .(yylab), sep = " ")))
+    if (!is.null(bdBootObj[['sigTime']]))
+      bucketPlot(sigTime, ylim = c(min(diffMat), max(diffMat)))
+  }
+}
+
+## For plotting diff of diff case
+plotOuterGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ...) {
+  cList <- bdBootObj$curveList
+  diffList <- cList[['diff']]
+  cList <- cList[setdiff(names(cList), "diff")]
+  cList <- unlist(cList, recursive = FALSE)
+  cList <- cList[grep("diff$", names(cList))]
+  tt <- bdBootObj
+  cList[['diff']] <- diffList
+  tt$curveList <- cList
+  plotInnerGroup(tt, alpha, plotDiffs, ...)
+}
+
+
+
+
+#### ---------------- OLD 2/19/21 -------------
+# plotCompare <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...) {
 #
-#   value <- variable <- NULL # matt dowle workaround for cran check ggplot vars
+#   cl <- bdBootObj[['curveList']]
+#   dod <- bdBootObj[['dod']] # diff of diff
+#   cvGroups <- bdBootObj[['diffs']]
 #
-#   bdCall <- attr(bdObj, "call")
-#   splitVars <- c(bdCall$subject, eval(bdCall$group))
-#   y <- bdCall$y # what observed values are in X
-#   if (!is.character(y)) stop("Error 123")
-#   time <- attr(bdObj, "time")
-#
-#
-#   X <- attr(bdObj, "X")$X
-#   dfname <- deparse1(bdCall$data)
-#   if (is.null(X) & exists(dfname)) {
-#     X <- get(dfname)
-#   } else if (is.null(X) & !exists(dfname)) {
-#     stop("Cannot find dataset used to construct bdObj, please pass as argument")
+#   if (dod & is.null(diffs)) {
+#     diffs <- TRUE
 #   }
 #
-#   Xs <- split(X, by = splitVars)
+#   # diff of diff and select group (this is kosher)
+#   if (dod & !is.null(group)) {
+#     gpidx <- grep(group, names(cl))
+#     if (length(gpidx) == 0) stop("Invalid 'group' name") # may check if they accidentally passed innerDiff var
+#     cl <- cl[[gpidx]]
+#   }
 #
-#   old_gg <- theme_set(theme_bw())
-#   on.exit(theme_set(old_gg))
+#   ## if not diff of diff and group selected, there can be no diffs
+#   if (!dod & !is.null(group) & !is.null(diffs)) {
+#     if (diffs == TRUE) warning("Single curve selected, diff curve not available")
+#     diffs <- FALSE
+#   }
 #
-#   i <- 1
-#   #for (i in seq_len(nrow(bdObj))) {
-#     code <- bdObj[i, ]$fitCode
-#     r2 <- round(as.numeric(bdObj[i, ]$R2), 3)
-#     if (code == 6) next
-#     obs <- unlist(bdObj[i, splitVars, with = FALSE])
-#     obs2 <- paste(obs, collapse = ".")
 #
-#     dtt <- data.table(time = time)
-#     dtt$Observed <- Xs[[obs2]][[y]]
-#     dtt$Fit <- fitted.values(bdObj[i, ]$fit[[1]])
-#     dtt <- melt(dtt, id.vars = 'time')
+#   diffidx <- grep("diff", names(cl))
 #
-#     ## Janky fix for update
-#     # if (gridSize == "refit") {
-#     #   if (i == 1) {
-#     #     title <- paste0("Original Fit\nfitCode = ", code, ", R2 = ", r2)
-#     #   } else {
-#     #     title <- paste0("Updated Fit\nfitCode = ", code, ", R2 = ", r2)
-#     #   }
-#     # } else {
-#     tits <- paste0(paste0(obs, collapse = " "), "\nfitCode = ", code, ", R2 = ", r2)
-#     #}
+#   ## does diff exist? if so, let's break it up
+#   # if diffs is null, default is TRUE
+#   if (length(diffidx) != 0) {
+#     diffCurve <- cl[[diffidx]]
+#     idx <- seq_along(names(cl))[-diffidx]
+#     cl <- cl[idx]
+#     if (is.null(diffs)) diffs <- TRUE
+#   } else {
+#     diffs <- FALSE
+#   }
 #
-#     #test <- melt(dtt, id.vars = 'time')
+#   if (dod & is.null(group)) {
+#     cl <- lapply(cl, function(x) {
+#       x[3]
+#     })
+#     names(cl) <- NULL
+#     cl <- unlist(cl, recursive = FALSE)
+#   }
 #
-#     cbp1 <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
-#               "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-#     cbp1 <- c("#56B4E9", "#D55E00")
-#     cbp1 <- c("#D55E00", "#56B4E9")
+#   ## Plot matrices
+#   cvMat <- lapply(cl, makePlotCI, alpha)
+#   nn <- length(cvMat)
+#   cvMat <- Reduce(cbind, cvMat)
+#   cvGroups <- bdBootObj[['diffs']]
 #
-#     ggplot(dtt, aes(x=time, y=value, fill = variable, color = variable)) +
-#       geom_line(size = 1) + scale_colour_manual(values = cbp1) +
-#       #geom_line(linetype = "dashed", aes(time, Observed), size = 1, color = 'cornflowerblue') +
-#       ylab(y) + xlab(attr(bdObj, "call")$time) +
-#       ggtitle(tits)
+#   time <- attr(bdBootObj, "bdObjAttr")[["time"]]
 #
-#   #}
+#   if (nn == 1) {
+#     plotcol <- 'blue'
+#   } else if (nn == 2) {
+#     plotcol <- c("blue", "red")
+#   }
+#
+#   if (diffs) {
+#     oldPar <- par()$mfrow
+#     on.exit(par(mfrow = oldPar))
+#     par(mfrow = c(1, 2))
+#     diffMat <- makePlotCI(diffCurve, alpha)
+#   }
+#
+#   matplot(x = time, cvMat, lty = rep(c(2, 1, 2), nn),
+#           type = 'l', col = rep(plotcol, each = 3))
+#   # set legend placement (?)
+#   lgn <- switch(attr(bdBootObj, "bdObjAttr")[['curveType']],
+#                 "logistic" = "bottomright",
+#                 "doubleGauss" = "topright",
+#                 "topright")
+#   legend(lgn, legend = names(cl), lty = c(2, 1),
+#          lwd = c(2, 2), col = plotcol)
+#
+#   if (is.null(group)) {
+#     sigTime <- bdBootObj[["sigTime"]]
+#     bucketPlot(sigTime, ylim = c(min(cvMat), max(cvMat)))
+#   }
+#
+#   ## Need to compute sigTime if they select for computation
+#   if (diffs & is.null(group)) {
+#     matplot(x = time, diffMat, lty = c(2, 1, 2), type = 'l',
+#             col = c('grey', 'black', 'gray'))
+#     bucketPlot(sigTime, ylim = c(min(diffMat), max(diffMat)))
+#   } else if (diffs & !is.null(group)) {
+#     matplot(x = time, diffMat, lty = c(2, 1, 2), type = 'l',
+#             col = c('grey', 'black', 'gray'))
+#   }
 # }
 #
-
-
-
-
+#
+#
 
 
 
