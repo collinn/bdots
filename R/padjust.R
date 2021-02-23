@@ -23,30 +23,34 @@
 #' @import stats
 #'
 #' @export
-p.adjust <- function(p, method = "oleson", n = length(p), alpha = 0.05,
+p_adjust <- function(p, method = "oleson", n = length(p), alpha = 0.05,
                      df, rho, cores = 0) {
+
+  method <- match.arg(method, c("oleson", stats::p.adjust.methods))
+
   if (method == "oleson") {
     if (cores < 1) cores <- detectCores()/2
     if (missing(rho)) {
       message('rho not assigned with method "olseon". Using rho = 0.9')
-      rho <- 0.9
+      rho <- 0.9 # could map pvalues back to t stat and do ar1Solver?
     }
     if (missing(df)) {
       stop('Require value for df when using method "oleson"')
     }
 
-    alphastar <- findModifiedAlpha(rho, n, df, cores)
+    alphastar <- findModifiedAlpha(rho, n, df, alpha, cores = cores)
     k <- alphastar/alpha
     adjpval <- p/k
     attr(adjpval, "alphastar") <- alphastar
     attr(adjpval, "rho") <- rho
   } else {
-    if (missing(method)) {
-      method <- stats::p.adjust.methods
-    }
     adjpval <- stats::p.adjust(p, method, n)
-    attr(adjpval, "alphastar") <- NA
-    attr(adjpval, "rho") <- NA
+    if (method == "bonferroni") {
+      attr(adjpval, "alphastar") <- alpha/n
+    } else {
+      attr(adjpval, "alphastar") <- NULL
+    }
+    attr(adjpval, "rho") <- NULL
   }
   return(adjpval)
 }

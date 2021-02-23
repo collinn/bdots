@@ -155,18 +155,6 @@ parMatSplit <- function(x) {
 #####
 ### There are a bunch that are possible
 
-## Get standard deviation for t statistic
-# in unpaired test
-## this t-stat is not even close to correct
-# nopairSD <- function(l) {
-#   if(length(l) != 2) stop("contact author with 123")
-#   s <- lapply(l, function(x) {
-#     vv <- x[['sd']]^2
-#     n <- x[['n']]
-#     (n-1) * vv
-#   })
-#   s <- Reduce(`+`, s) * sqrt(1/l[[1]]$n + 1/l[[2]]$n)
-# }
 ## I think this is correct, but gives strange fits sometimes
 nopairSD <- function(l) {
   if(length(l) != 2) stop("contact author with 1239")
@@ -181,32 +169,32 @@ nopairSD <- function(l) {
 
 ## this ONLY returns the sd for the t stat, not the multiplier
 ## For now, making it the entire denominator. we will check plot and see if it makes sense
-nopairSD2 <- function(l) {
-  sd_ratio <- Reduce(function(x, y) {x$sd/y$sd}, l)
-  ## Proportion of sd ratio within bounds should be some val, lets say 0.5
-  var_sim <- mean(sd_ratio > 1/2 & sd_ratio < 2) > 0.5
-  if (var_sim) {
-    s <- lapply(l, function(x) {
-      vv <- x[['sd']]^2
-      n <- x[['n']]
-      (n - 1) * vv
-    })
-    s <- Reduce(`+`, s) / (l[[1]]$n + l[[2]]$n - 2) * (l[[1]]$n + l[[2]]$n)
-    s <- sqrt(s)
-    dof <- l[[1]]$n + l[[2]]$n - 2
-  } else {
-    s <- lapply(l, function(x) {
-      vv <- x[['sd']]^2
-      n <- x[['n']]
-      vv/n
-    })
-    dof_denom <- Reduce(`+`, Map(function(x, y) {x^2 / (y[['n']] - 1)}, x = s, y = l))
-    s <- Reduce(`+`, s)
-    dof <- s^2 / dof_denom
-    s <- sqrt(s)
-  }
-  return(list(sd = s, dof = dof))
-}
+# nopairSD2 <- function(l) {
+#   sd_ratio <- Reduce(function(x, y) {x$sd/y$sd}, l)
+#   ## Proportion of sd ratio within bounds should be some val, lets say 0.5
+#   var_sim <- mean(sd_ratio > 1/2 & sd_ratio < 2) > 0.5
+#   if (var_sim) {
+#     s <- lapply(l, function(x) {
+#       vv <- x[['sd']]^2
+#       n <- x[['n']]
+#       (n - 1) * vv
+#     })
+#     s <- Reduce(`+`, s) / (l[[1]]$n + l[[2]]$n - 2) * (l[[1]]$n + l[[2]]$n)
+#     s <- sqrt(s)
+#     dof <- l[[1]]$n + l[[2]]$n - 2
+#   } else {
+#     s <- lapply(l, function(x) {
+#       vv <- x[['sd']]^2
+#       n <- x[['n']]
+#       vv/n
+#     })
+#     dof_denom <- Reduce(`+`, Map(function(x, y) {x^2 / (y[['n']] - 1)}, x = s, y = l))
+#     s <- Reduce(`+`, s)
+#     dof <- s^2 / dof_denom
+#     s <- sqrt(s)
+#   }
+#   return(list(sd = s, dof = dof))
+# }
 
 ###################################
 ## Stolen from purrrrrrrr

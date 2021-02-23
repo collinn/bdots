@@ -22,27 +22,17 @@
 #' @export
 plot.bdotsObj <- function(x, fitCode = NULL, gridSize = NULL, plotfun = "fits", ...) {
 
-  ## I need to just replace this throughout later, but this function sucks as is
-  bdObj <- x
   ## Generic currently works. Hurray
   ## Need to do some sort of match.call here for plotfun
   # option to print to file?
   if (plotfun == 'fits') {
-    plotFits(bdObj, fitCode, gridSize, ...)
+    plotFits(x, gridSize, ...)
   } else if (plotfun == 'pars') {
-    plotPars(bdObj, fitCode, gridSize, ...)
+    plotPars(x, gridSize, ...)
   } else {
     stop("Invalid plotfun type. See ?plot.bdotsObj")
   }
 }
-
-# plot <- function(x, ...) {
-#   UseMethod("plot")
-# }
-
-# so  plot(class, args) is how it will all look in the end
-# add option for them to set own grid
-## Might be interesting to do by Group?
 
 #' @importFrom graphics par hist
 plotPars <- function(bdObj, ...) {
@@ -63,17 +53,9 @@ plotPars <- function(bdObj, ...) {
 #' @importFrom graphics par lines legend
 plotFits <- function(bdObj, gridSize = NULL, ...) {
 
-  ## This plots fitted vs obs curves
-  # include other things to subset here
-  # fitcode, group, etc or arg to add data'
-  # or to set par
-
-  ## do subsetting here
-
   bdCall <- attr(bdObj, "call")
   splitVars <- c(bdCall$subject, eval(bdCall$group))
-  y <- bdCall$y # what observed values are in X
-
+  y <- bdCall$y
 
   if (!is.character(y)) stop("Error 123")
 
@@ -85,18 +67,20 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
     stop("Cannot find dataset used to construct bdObj, please pass as argument")
   }
 
-
   ## Assume that subsets have been made
   oldPar <- par()$mfrow
   on.exit(par(mfrow = oldPar))
 
   if (is.null(gridSize)) {
     gridSize <- 2
+    par(mfrow = c(gridSize, gridSize))
   } else if (gridSize == "refit") {
     par(mfrow = c(1, 2))
+  } else {
+    par(mfrow = c(gridSize, gridSize))
   }
 
-  par(mfrow = c(gridSize, gridSize))
+
 
   Xs <- split(X, by = splitVars)
 
@@ -105,10 +89,11 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
   time <- attr(bdObj, "time")
 
   # set legend placement (?)
-  lgn <- switch(attr(bdObj, "curveType"),
-         "logistic" = "bottomright",
-         "doubleGauss" = "topright",
-         "topright")
+  # lgn <- switch(attr(bdObj, "curveType"),
+  #        "logistic" = "bottomright",
+  #        "doubleGauss" = "topright",
+  #        "topright")
+  lgn <- "topleft" # for now
 
   # should also make sure that axes are all the same
   for (i in seq_len(nrow(bdObj))) {
@@ -242,10 +227,11 @@ plotInnerGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ...) {
           xlab = xxlab, ylab = yylab, main = mmain)
 
   # set legend placement (?) ideally xpd out of plot or below
-  lgn <- switch(attr(bdBootObj, "bdObjAttr")[['curveType']],
-                "logistic" = "topleft",
-                "doubleGauss" = "topleft",
-                "topleft")
+  # lgn <- switch(attr(bdBootObj, "bdObjAttr")[['curveType']],
+  #               "logistic" = "topleft",
+  #               "doubleGauss" = "topleft",
+  #               "topleft")
+  lgn <- "topleft" # for now
 
   ## This only holds if diff of diff not used. Need to handle other case
   if (is.null(NULL) & !is.null(bdBootObj[['sigTime']])) {
@@ -278,106 +264,6 @@ plotOuterGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ...) {
   tt$curveList <- cList
   plotInnerGroup(tt, alpha, plotDiffs, ...)
 }
-
-
-
-
-#### ---------------- OLD 2/19/21 -------------
-# plotCompare <- function(bdBootObj, alpha = 0.05, diffs = NULL, group = NULL, ...) {
-#
-#   cl <- bdBootObj[['curveList']]
-#   dod <- bdBootObj[['dod']] # diff of diff
-#   cvGroups <- bdBootObj[['diffs']]
-#
-#   if (dod & is.null(diffs)) {
-#     diffs <- TRUE
-#   }
-#
-#   # diff of diff and select group (this is kosher)
-#   if (dod & !is.null(group)) {
-#     gpidx <- grep(group, names(cl))
-#     if (length(gpidx) == 0) stop("Invalid 'group' name") # may check if they accidentally passed innerDiff var
-#     cl <- cl[[gpidx]]
-#   }
-#
-#   ## if not diff of diff and group selected, there can be no diffs
-#   if (!dod & !is.null(group) & !is.null(diffs)) {
-#     if (diffs == TRUE) warning("Single curve selected, diff curve not available")
-#     diffs <- FALSE
-#   }
-#
-#
-#   diffidx <- grep("diff", names(cl))
-#
-#   ## does diff exist? if so, let's break it up
-#   # if diffs is null, default is TRUE
-#   if (length(diffidx) != 0) {
-#     diffCurve <- cl[[diffidx]]
-#     idx <- seq_along(names(cl))[-diffidx]
-#     cl <- cl[idx]
-#     if (is.null(diffs)) diffs <- TRUE
-#   } else {
-#     diffs <- FALSE
-#   }
-#
-#   if (dod & is.null(group)) {
-#     cl <- lapply(cl, function(x) {
-#       x[3]
-#     })
-#     names(cl) <- NULL
-#     cl <- unlist(cl, recursive = FALSE)
-#   }
-#
-#   ## Plot matrices
-#   cvMat <- lapply(cl, makePlotCI, alpha)
-#   nn <- length(cvMat)
-#   cvMat <- Reduce(cbind, cvMat)
-#   cvGroups <- bdBootObj[['diffs']]
-#
-#   time <- attr(bdBootObj, "bdObjAttr")[["time"]]
-#
-#   if (nn == 1) {
-#     plotcol <- 'blue'
-#   } else if (nn == 2) {
-#     plotcol <- c("blue", "red")
-#   }
-#
-#   if (diffs) {
-#     oldPar <- par()$mfrow
-#     on.exit(par(mfrow = oldPar))
-#     par(mfrow = c(1, 2))
-#     diffMat <- makePlotCI(diffCurve, alpha)
-#   }
-#
-#   matplot(x = time, cvMat, lty = rep(c(2, 1, 2), nn),
-#           type = 'l', col = rep(plotcol, each = 3))
-#   # set legend placement (?)
-#   lgn <- switch(attr(bdBootObj, "bdObjAttr")[['curveType']],
-#                 "logistic" = "bottomright",
-#                 "doubleGauss" = "topright",
-#                 "topright")
-#   legend(lgn, legend = names(cl), lty = c(2, 1),
-#          lwd = c(2, 2), col = plotcol)
-#
-#   if (is.null(group)) {
-#     sigTime <- bdBootObj[["sigTime"]]
-#     bucketPlot(sigTime, ylim = c(min(cvMat), max(cvMat)))
-#   }
-#
-#   ## Need to compute sigTime if they select for computation
-#   if (diffs & is.null(group)) {
-#     matplot(x = time, diffMat, lty = c(2, 1, 2), type = 'l',
-#             col = c('grey', 'black', 'gray'))
-#     bucketPlot(sigTime, ylim = c(min(diffMat), max(diffMat)))
-#   } else if (diffs & !is.null(group)) {
-#     matplot(x = time, diffMat, lty = c(2, 1, 2), type = 'l',
-#             col = c('grey', 'black', 'gray'))
-#   }
-# }
-#
-#
-#
-
 
 
 

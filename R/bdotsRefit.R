@@ -59,7 +59,8 @@ bdotsRefit <- function(bdObj, fitCode = 1, ...) {
   }
 
   ## This is gross
-  if (length(rmv_sub_id) != 0) {
+  # no, its super gross
+  if (length(null_idx) != 0) {
 
     ## First, get all bdNames, remove those in rmv_names
     bdNames <- do.call(paste, c(bdObj[, nn, with = FALSE], sep = "."))
@@ -118,7 +119,7 @@ bdUpdate <- function(bdo) {
 
   ## Getting curve function
   bdCall <- attr(bdo, "call")
-  nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']]))
+  nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']])) # this is split vars!
   time <- attr(bdo, "time")
   rho <- attr(bdo, "rho")
   crvFun <- curve2Fun(bdCall[['curveType']])
@@ -126,9 +127,10 @@ bdUpdate <- function(bdo) {
 
   ## This is a terrible work around
   #  to get correct names in x for curveFitter
-  x <- setDT(attr(bdo, "X")$X)
+  #x <- setDT(attr(bdo, "X")$X)
+  x <- getSubX(bdo)
   set(x, j = c("y", "time"),
-      value = x[,c(bdCall[['y']], bdCall[['time']]), with = FALSE])
+      value = x[,c(bdCall[['y']], bdCall[['time']]), with = FALSE]) # this needs to be subset
 
 
   plot(bdo, gridSize = 1)
@@ -146,7 +148,10 @@ bdUpdate <- function(bdo) {
                      "5) See original fit metrics\n",
                      "6) Delete subject")
     cat(rf_msg)
-    resp <- readline("Choose (1-6): ")
+    resp <- NA
+    while (!(resp %in% 1:6)) {
+      resp <- readline("Choose (1-6): ")
+    }
     if (resp == 1) {
       accept <- TRUE
       break
@@ -191,10 +196,12 @@ bdUpdate <- function(bdo) {
 
     ## repeat of inside of bdotsFit (make this a function? - yes)
     # then need to update to bdFit as well
-    result <- bdotsFitter(dat = x, curveType = crvFun, rho = rho, params = newPars)
+    ## Needs splitVars and datVarNames
+    result <- bdotsFitter(dat = x, curveType = crvFun, rho = rho, params = newPars,
+                          splitVars = nn, datVarNames = bdCall)
 
     new_bdo <- copy(bdo)
-    new_bdo$fit <- I(list(result['fit']))
+    new_bdo$fit <- result$fit
     new_bdo$R2 <- result[['R2']]
     new_bdo$AR1 <- (result[['fitCode']] < 3)
     new_bdo$fitCode <- result[['fitCode']]

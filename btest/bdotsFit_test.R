@@ -50,13 +50,15 @@ res <- bdotsFit(data = cohort_unrelated,
 #res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
 res2 <- bdRemove(res)
 
+test <- bdotsRefit(res2, fitCode = 3)
+
 # debugonce(bdotsBoot)
 #debugonce(curveBooter)
 boot.test <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
                                   bdObj = res2,
                                   N.iter = 1000,
                                   alpha = 0.05,
-                                  p.adj = "oleson",
+                                  p.adj = "fdr",
                                   cores = 4)
 #plotCompare(boot.test)
 
