@@ -1,7 +1,4 @@
 
-#deleteLater <- bdObj
-#bdObj <- deleteLater
-
 ## This is for parsing formula for bdotsBoot
 ## Syntax as follows:
 ## LHS can be only response, or it can be diffs, with a group of two elements
@@ -79,29 +76,6 @@ bootParser <- function(ff, bdObj) {
 
 
 
-bootSubset <- function(l, bdObj) {
-  subnames <- l[["subnames"]]
-  subargs  <- l[["subargs"]]
-  resNames <- l[['resNames']]
-
-  # ouch (copy expensive)
-  # remove columns we don't want
-  # also, this shit is internal, order of columns doesn't matter
-  # since it's not being returned
-  bd <- subset(bdObj, select = c(resNames, subnames))
-  # ss_vec <- vector("numeric", length = nrow(bd))
-  for(i in seq_along(subnames)) {
-    ss_vec <- bd[[subnames[i]]] %in% subargs[[i]]
-    bd <- bd[ss_vec, ]
-  }
-
-  ## I'm still going to keep order
-  bd[, c(resNames[1], subnames, resNames[-1]), with = FALSE]
-}
-
-
-
-
 
 # ff <- diffs(y, condition(M,W)) ~ group(DLD, TD) + g2(n1, n2)
 # ff <- y ~ group(DLD, TD)
@@ -116,35 +90,9 @@ breakupExpression <- function(ee) {
   ee
 }
 
-### Still needs some work
-# behaves differently when there is a + on the RHS
-# probably crazy ass errors that can occur too, idk
-
-
-## Parse formula passed to bdotsBoot
-## Can probably make something similar for bdotsFit?
-# y ~ Subject * Time | groups ?
-# need to figure out the subject/time arrangement
-# fuuuh, or do it like survival packave
-# (y, time) ~ subject | g1 + ...  <- yup
-
-## Also possible that there are no RHS groups (shit)
-## Actually, no, could be no groups to LHS
-# or no, we wouldn't have diffs(y, g1(n1, n2)) ~ 1, it would be y ~ g1(n1, n2))
-
-
 
 ## important to keep in  mind, this function should return
 # same object, regardless of input.
-## Also. For final, export to CRAN bdots package,
-# should rewrite everything from this there, so that I can
-# keep all of the comments I've made detailing my thoughts on certain aspects of the code
-# while retaining dignity of original authors, I do think it would be a helpful
-# exercise to detail what was wrong, and how it change. How can I do that in
-# a purely academic sense, with no discredit to Michael (Brad, eh. Nobody knows he did anything
-# and what he added made it marginally better. It was an improvement to poorly written code,
-# while retaining the logic and paradigm/style of the original. Ex. See, he saw this problem in v.1,
-# he made v.2, see how v.2 > v.1, but then see why v3 is better suited to this problem)
 bdotsParser <- function(ff) {
   print(class(ff))
   if(length(ff) != 3) stop("need y ~ x")
@@ -158,7 +106,6 @@ bdotsParser <- function(ff) {
   rhs <- Filter(function(x) !identical(as.character(x), "+"), rhs)
 
   rhs <- lapply(rhs, identity)
-
 
   fitGroups <- lapply(rhs, breakupExpression)
   grplen <- vapply(fitGroups, length, numeric(1))
@@ -204,7 +151,6 @@ curveParser <- function(expr) {
 
   ## First of these is function name
   curve <- expr[1]
-  if (!(curve %in% c("doubleGauss", "logistic", "poly"))) stop("Invalid curve type") # can probably remove this (probably should)
 
   arggs <- strsplit(expr[-1], ",") # get all arguments
   arggs <- lapply(arggs, function(x) gsub("^[ \t]+|[ \t]+$", "", x))
@@ -235,29 +181,6 @@ makeCurveEnv <- function(val) {
 }
 
 
-#
-# ## It's important that we call with substitute in function
-# ww <- function(a) {
-#   curveParser(substitute(a))
-# }
-#
-# (ww(doubleGauss(concave = FALSE, eatmyshitter = TRUE)))
-# ### Lets test that output
-# # Shit yes, this evaluates everything and returns environment
-# ww <- function(a) {
-#   val <- curveParser(substitute(a))
-#   curveType <- names(val)
-#   val <- as.list(unlist(val, use.names = FALSE))
-#   myenv <- new.env()
-#   for(i in seq_along(val)) {
-#     #eval(parse(text = val[i]), envir = sys.frame(sys.nframe()))
-#     eval(parse(text = val[i]), envir = myenv)
-#   }
-#   myenv
-# }
-#
-# ## This returns an environment
-# aa <- (ww(doubleGauss(concave = FALSE, eatmyshitter = TRUE)))
 
 ## Maybe I can combien this all in one place
 curveParser2 <- function(expr) {
@@ -266,7 +189,6 @@ curveParser2 <- function(expr) {
 
   ## First of these is function name
   curve <- expr[1]
-  if (!(curve %in% c("doubleGauss", "logistic", "poly"))) stop("Invalid curve type") # can probably remove this (probably should)
 
   arggs <- strsplit(expr[-1], ",") # get all arguments
   arggs <- lapply(arggs, function(x) gsub("^[ \t]+|[ \t]+$", "", x))
@@ -282,7 +204,6 @@ curveParser2 <- function(expr) {
   myenv <- new.env()
   myenv$curveType <- curve
   for(i in seq_along(arggs)) {
-    #eval(parse(text = val[i]), envir = sys.frame(sys.nframe()))
     eval(parse(text = arggs[i]), envir = myenv)
   }
   myenv

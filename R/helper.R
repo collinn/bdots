@@ -1,5 +1,39 @@
 
+## Subset a bdotsBootObj based on group
+#' Subset a nested group bdotsBoot objects
+#'
+#' @param x An object returned from \code{bdotsBoot}
+#' @param group A group to subset. Must be an outer group
+#' @param adjustAlpha currently not used. Will give option to recompute adjusted alpha
+#' @param ... Not used
+#'
+#' @details This function is used to subset a bdotsBootObject that was fit to compute
+#' the difference of differences. This allows the user to subset out the outer group
+#' in the comparison for plotting and investigation
+#'
+#' @export
+subset.bdotsBootObj <- function(x, group, adjustAlpha = NULL, ...) {
+  bdBootObj <- x #  need to just rename and not be lazy here
+  if (!bdBootObj$dod)
+    stop("No inner group to subset")
 
+  if (!(group %in% names(bdBootObj$curveList)))
+    stop("Invalid group for subset")
+
+  ## Take only old group
+  bdBootObj$curveList <- bdBootObj$curveList[[group]]
+  bdBootObj$diffs <- setNames(bdBootObj$diffs['innerDiff'], 'outerDiff')
+  bdBootObj$dod <- FALSE
+  bdBootObj$curveGroups <- bdBootObj$curveGroups[bdBootObj$diffs]
+
+  ## See if recomputed alpha, for now, w/e. Also, this feels gross
+  bdBootObj$sigTime <- NULL
+  bdBootObj$adj.alpha <- NULL
+  bdBootObj$rho <- NULL
+  bdBootObj$adj.pval <- NULL
+  bdBootObj$paired <- bdBootObj$curveList[['diff']][['paired']]
+  bdBootObj
+}
 
 ## getVarMat
 # takes subset data with single observation
@@ -9,25 +43,13 @@ getVarMat <- function(dat) {
   dat$fit[[1]]$varBeta
 }
 
-# coef <- function(x, ...) {
-#   UseMethod("coef")
-# }
-
-
-## Extract coef from  bdotsObj
-## uh, this doesn't adress null
-# Ah, mother fucker, that's fitcode 6!
-# this can potentially be made cleaner
-#### Can't replace fit[[1]] since it's unnamed length 1 list. Could name it, I guess
-## Needs to be made generic, address fitcode mentioned above.
-# this needs to be renamed coef.bdObj
 #' Extract bdotsFit Moedel Coefficients
 #'
 #' Returns coefficient matrix for bdotsFit object
 #'
 #' @param object A bdotsObj
 #' @param ... not used
-#' @import stats
+# @importFrom stats coef
 #' @export
 coef.bdotsObj <- function(object, ...) {
   #if (!inherits(dat, "bdotsObj")) stop('need bdotsObj')
@@ -48,13 +70,27 @@ coef.bdotsObj <- function(object, ...) {
 
 ## Make split retain bdotsObj class
 # Need to also split data attribute
+#' Split object of class bdotsObj
+#'
+#' Analogous to other splitting functions, but retains necessary attributes
+#' across the split object. As of now, it can only be unsplit with bdots::rbindlist
+#'
+#' @param x Object of class bdotsObj
+#' @param f For consistency with generic, but is not used
+#' @param drop logical. Default FALSE will not drop empty list elements caused
+#' by factor levels not referred by that factor. Analagous to data.table::split
+#' @param by Character vector of column names on which to split. Usually will
+#' be Subject or one of the fitted groups
+#' @param ... not used
+#'
 #' @import data.table
-split.bdotsObj <- function(bdo, by, ...) {
-  oldAttr <- attributes(bdo)
-  class(bdo) <- c("data.table", "data.frame")
-  res <- lapply(split(bdo, by = by, ...), function(x) {
-    attributes(x) <- oldAttr
-    x
+#' @export
+split.bdotsObj <- function(x, f, drop = FALSE, by,...) {
+  oldAttr <- attributes(x)
+  class(x) <- c("data.table", "data.frame")
+  res <- lapply(split(x, by = by, drop = drop, ...), function(y) {
+    attributes(y) <- oldAttr
+    y
   })
   structure(.Data = res, class = c("bdObjList"))
 }
@@ -67,11 +103,13 @@ split.bdotsObj <- function(bdo, by, ...) {
 #   structure(.Data = res, class = c("bdObjList"))
 # }
 
-
+## Don't export for now because fuck S3 generic matching
+# @export
 rbindlist <- function(x, ...) {
   UseMethod("rbindlist")
 }
 
+#' @importFrom data.table rbindlist
 rbindlist.default <- function(x, ...) {
   data.table::rbindlist(x, ...)
 }
@@ -80,26 +118,26 @@ rbindlist.default <- function(x, ...) {
 #'
 #' Similar to data.table::rbindlist, but preserves botsObjects attributes
 #'
-#' @param bdo bdotsObject
+#' @param x bdotsObject
 #' @param ... for compatability with data.table
 #'
 #'
-rbindlist.bdObjList <- function(bdo, ...) {
-  oldAttr <- attributes(bdo[[1]])
-  class(bdo) <- "list"
-  bdo <- rbindlist(bdo, ...)
-  attributes(bdo) <- oldAttr
-  bdo
+#' @export
+rbindlist.bdObjList <- function(x, ...) {
+  oldAttr <- attributes(x[[1]])
+  class(x) <- "list"
+  x <- rbindlist(x, ...)
+  attributes(x) <- oldAttr
+  x
 }
 
 
 ## Used in bdotsBoot
-## Probably having subject in string is wrong, but ok for now
 isPaired <- function(l) { # this only works for lists of bdObj
-    reduceEq <- function(x, y) if(identical(x[["Subject"]], y[["Subject"]])) x else FALSE
-    tmp <- Reduce(reduceEq, l)
-    # !identical(tmp, FALSE) <- see if this works
-    if(identical(tmp, FALSE)) FALSE else TRUE
+  subject <- attr(l[[1]], "call")[['subject']]
+  reduceEq <- function(x, y) if (identical(x[[subject]], y[[subject]])) x else FALSE
+  tmp <- Reduce(reduceEq, l) # how did I do this?
+  if(identical(tmp, FALSE)) FALSE else TRUE
 }
 
 ##  parMatSplit
@@ -117,21 +155,9 @@ parMatSplit <- function(x) {
 #####
 ### There are a bunch that are possible
 
-## Get standard deviation for t statistic
-# in unpaired test
-## this t-stat is not even close to correct
-# nopairSD <- function(l) {
-#   if(length(l) != 2) stop("contact author with 123")
-#   s <- lapply(l, function(x) {
-#     vv <- x[['sd']]^2
-#     n <- x[['n']]
-#     (n-1) * vv
-#   })
-#   s <- Reduce(`+`, s) * sqrt(1/l[[1]]$n + 1/l[[2]]$n)
-# }
 ## I think this is correct, but gives strange fits sometimes
 nopairSD <- function(l) {
-  if(length(l) != 2) stop("contact author with 123")
+  if(length(l) != 2) stop("contact author with 1239")
   s <- lapply(l, function(x) {
     vv <- x[['sd']]^2
     n <- x[['n']]
@@ -140,6 +166,36 @@ nopairSD <- function(l) {
   s <- Reduce(`+`, s) / (l[[1]]$n + l[[2]]$n - 2) * (1/l[[1]]$n + 1/l[[2]]$n)
   s <- sqrt(s)
 }
+
+## this ONLY returns the sd for the t stat, not the multiplier
+## For now, making it the entire denominator. we will check plot and see if it makes sense
+# nopairSD2 <- function(l) {
+#   sd_ratio <- Reduce(function(x, y) {x$sd/y$sd}, l)
+#   ## Proportion of sd ratio within bounds should be some val, lets say 0.5
+#   var_sim <- mean(sd_ratio > 1/2 & sd_ratio < 2) > 0.5
+#   if (var_sim) {
+#     s <- lapply(l, function(x) {
+#       vv <- x[['sd']]^2
+#       n <- x[['n']]
+#       (n - 1) * vv
+#     })
+#     s <- Reduce(`+`, s) / (l[[1]]$n + l[[2]]$n - 2) * (l[[1]]$n + l[[2]]$n)
+#     s <- sqrt(s)
+#     dof <- l[[1]]$n + l[[2]]$n - 2
+#   } else {
+#     s <- lapply(l, function(x) {
+#       vv <- x[['sd']]^2
+#       n <- x[['n']]
+#       vv/n
+#     })
+#     dof_denom <- Reduce(`+`, Map(function(x, y) {x^2 / (y[['n']] - 1)}, x = s, y = l))
+#     s <- Reduce(`+`, s)
+#     dof <- s^2 / dof_denom
+#     s <- sqrt(s)
+#   }
+#   return(list(sd = s, dof = dof))
+# }
+
 ###################################
 ## Stolen from purrrrrrrr
 vec_depth <- function(x) {
@@ -212,13 +268,28 @@ curve2Fun <- function(curve) {
     cformal[[nn]] <- arggs[[nn]]
   }
   idx <- which(names(cformal) == "...")
-  ss <- seq_along(cformal)[-idx]
-  cformal <- cformal[c(ss, idx)]
+  if  (length(idx)) {
+    ss <- seq_along(cformal)[-idx]
+    cformal <- cformal[c(ss, idx)]
+  }
   w <- function() {}
   body(w) <- cbody
   formals(w) <- cformal
+  environment(w) <- new.env()
   w
 }
+
+## Verify this works like above, need to add part to adjust for `...`
+# call2Fun <- function(x) {
+#   arggs <- as.list(x)[-1] # calls can be treated as lists
+#   cname <- deparse1(as.list(x)[[1]])
+#   w <- get(cname)
+#   for (nn in names(arggs)) {
+#     formals(w)[[nn]] <- arggs[[nn]]
+#   }
+#   w
+# }
+
 
 ## Pull from attributes names of vars to split
 # data by observation (subject, group)
@@ -238,26 +309,15 @@ getSubX <- function(bdo) {
   X[x_idx, ]
 }
 
-## Takes value from bdotsFitter
-# returns an appropriate DT
-## WE SHOULDN'T NEED THIS
-# fitObj <- res[[1]]
-# bdFit2DT <- function(fitObjs) {
-#   fitList <- lapply(fitObjs, function(fitObj) {
-#     fn <- fitObj$fitName
-#     dat <- as.data.table(matrix(c(fn, c("fit", "R2", "AR1", "fitCode")),
-#                                 ncol = length(fn) + 4))
-#     names(dat) <- c(names(fn), c("fit", "R2", "AR1", "fitCode"))
-#     dat$fit <- I(list(fitObj['fit']))
-#     dat$R2 <- fitObj[['R2']]
-#     dat$AR1 <- (fitObj[['fitCode']] < 3)
-#     dat$fitCode <- fitObj[['fitCode']]
-#     dat
-#   })
-#   fitList <- rbindlist(fitList)
-#   fitList[, fitCode := factor(fitCode, levels = 0:6)]
-#   fitList
-# }
+
+
+
+
+
+
+
+
+
 
 
 

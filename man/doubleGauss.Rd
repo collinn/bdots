@@ -9,9 +9,9 @@ doubleGauss(dat, y, time, params = NULL, concave = TRUE, ...)
 \arguments{
 \item{dat}{subject data to be used}
 
-\item{y}{outcome variable}
+\item{y}{outcome variable, character vector}
 
-\item{time}{time variable}
+\item{time}{time variable, character vector}
 
 \item{params}{\code{NULL} unless user wants to specify starting parameters for gnls}
 
