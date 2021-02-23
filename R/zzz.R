@@ -1,3 +1,3 @@
 .onAttach <- function(libname, pkgname) {
-  packageStartupMessage("Updated 10-31-2020. See NOTES.md for details")
+  packageStartupMessage("Updated 02-23-2021. See NOTES.md for details")
 }

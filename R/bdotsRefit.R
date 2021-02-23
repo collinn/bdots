@@ -59,7 +59,8 @@ bdotsRefit <- function(bdObj, fitCode = 1, ...) {
   }
 
   ## This is gross
-  if (length(rmv_sub_id) != 0) {
+  # no, its super gross
+  if (length(null_idx) != 0) {
 
     ## First, get all bdNames, remove those in rmv_names
     bdNames <- do.call(paste, c(bdObj[, nn, with = FALSE], sep = "."))
@@ -103,9 +104,7 @@ bdotsRefit <- function(bdObj, fitCode = 1, ...) {
 }
 
 
-# bdo <- bdObj2[[1]]
-# x <- X[[1]]
-# nn <- names(bdObj2)[1]
+
 
 ## A lot of bits of these can be abstracted to functions
 # that way we can just jitter as often as we want (or w/e else)
@@ -120,7 +119,7 @@ bdUpdate <- function(bdo) {
 
   ## Getting curve function
   bdCall <- attr(bdo, "call")
-  nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']]))
+  nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']])) # this is split vars!
   time <- attr(bdo, "time")
   rho <- attr(bdo, "rho")
   crvFun <- curve2Fun(bdCall[['curveType']])
@@ -128,9 +127,10 @@ bdUpdate <- function(bdo) {
 
   ## This is a terrible work around
   #  to get correct names in x for curveFitter
-  x <- setDT(attr(bdo, "X")$X)
+  #x <- setDT(attr(bdo, "X")$X)
+  x <- getSubX(bdo)
   set(x, j = c("y", "time"),
-      value = x[,c(bdCall[['y']], bdCall[['time']]), with = FALSE])
+      value = x[,c(bdCall[['y']], bdCall[['time']]), with = FALSE]) # this needs to be subset
 
 
   plot(bdo, gridSize = 1)
@@ -148,7 +148,10 @@ bdUpdate <- function(bdo) {
                      "5) See original fit metrics\n",
                      "6) Delete subject")
     cat(rf_msg)
-    resp <- readline("Choose (1-6): ")
+    resp <- NA
+    while (!(resp %in% 1:6)) {
+      resp <- readline("Choose (1-6): ")
+    }
     if (resp == 1) {
       accept <- TRUE
       break
@@ -193,10 +196,12 @@ bdUpdate <- function(bdo) {
 
     ## repeat of inside of bdotsFit (make this a function? - yes)
     # then need to update to bdFit as well
-    result <- bdotsFitter(dat = x, curveType = crvFun, rho = rho, params = newPars)
+    ## Needs splitVars and datVarNames
+    result <- bdotsFitter(dat = x, curveType = crvFun, rho = rho, params = newPars,
+                          splitVars = nn, datVarNames = bdCall, numRefits = 5)
 
     new_bdo <- copy(bdo)
-    new_bdo$fit <- I(list(result['fit']))
+    new_bdo$fit <- result$fit
     new_bdo$R2 <- result[['R2']]
     new_bdo$AR1 <- (result[['fitCode']] < 3)
     new_bdo$fitCode <- result[['fitCode']]
@@ -242,16 +247,20 @@ printRefitUpdateInfo <- function(bdo) {
 #' Remove observations with a specified fitCode and optionally all pairs
 #'
 #' @param bdObj bdots object
-#' @param fitCode max fitCode to retain
-#' @param removePairs Boolean. Remove subject pairs. Default is TRUE to retain t-test
+#' @param fitCode min fitCode to remove. Default is 6, which removes all subjects with NULL fits (fitCode = 5 would remove 5 and 6)
+#' @param removePairs Boolean. Remove subject pairs is one of pair is removed.
+#' Default is TRUE to retain paired t-test
 #'
-#' @details Would be nice if I could give any expression and remove that instead.
-#' But that's maybe not as useful as it sounds
+#' @details This function is used to remove all bdots observations with a fit code
+#' equal to or larger than the argument passed to \code{fitCode} without refitting.
+#' If \code{removePairs == TRUE}, all entries for a subject will be removed if their
+#' fit failed in any of the groups in which they were a member
+#'
 #' @export
-bdRemove <- function(bdObj, fitCode = 6, removePairs = TRUE) {
+bdRemove <- function(bdObj, fitCode = 6L, removePairs = TRUE) {
 
   ## Checking for decency
-  fitCode <- min(6, max(fitCode, 1))
+  fitCode <- min(6L, max(fitCode, 1L))
   idx <- bdObj[['fitCode']] >= fitCode
 
   if (removePairs) {
@@ -262,6 +271,7 @@ bdRemove <- function(bdObj, fitCode = 6, removePairs = TRUE) {
 
   bdObj[!idx, ]
 }
+
 
 
 

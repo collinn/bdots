@@ -11,50 +11,32 @@ library(pryr)
 #load("~/packages/bdots/data/testRunData.RData")
 # Not for parallel, I could do clusterEvalQ(cl, source(".."))
 
-rfiles <- list.files("~/packages/bdots/R", full.names = TRUE)
-for (ff in rfiles) {
-  source(ff)
-}
-rm(rfiles, ff)
-
-# source("~/packages/bdots/R/bdotsFit.R")
-# source("~/packages/bdots/R/bdotsFitter.R")
-# source("~/packages/bdots/R/parser.R")
-# source("~/packages/bdots/R/bootParser.R")
-# source("~/packages/bdots/R/curveFitter.R")
-# source("~/packages/bdots/R/doubleGauss.R")
-# source("~/packages/bdots/R/logistic.R")
-# source("~/packages/bdots/R/helper.R")
-# source("~/packages/bdots/R/effectiveAlpha.R")
-# source("~/packages/bdots/R/findModifiedAlpha.R")
-# source("~/packages/bdots/R/ar1Solver.R")
-# source("~/packages/bdots/R/bucket.R")
-# source("~/packages/bdots/R/bootHelper.R")
-# source("~/packages/bdots/R/bdotsBoot.R")
-# source("~/packages/bdots/R/plotFunctions.R")
-# source("~/packages/bdots/R/summaryFunctions.R")
-# source("~/packages/bdots/R/bdotsRefit.R")
+# load_all()
+# rfiles <- list.files("~/packages/bdots/R", full.names = TRUE)
+# for (ff in rfiles) {
+#   source(ff)
+# }
+# rm(rfiles, ff)
 
 
 ##############
 
-load("~/bdots/demo.RData")
-data <- cohort_unrelated
-group = c("Group", "LookType")
-time <- "Time"
-subject <- "Subject"
-y <- "Fixations"
-concave <-  TRUE
-rho <-  0.9
-numRefits <- 0
-cores <-  1
-verbose <-  FALSE
-alpha <- 0.05
+# load("~/bdots/demo.RData")
+# data <- cohort_unrelated
+# group = c("Group", "LookType")
+# time <- "Time"
+# subject <- "Subject"
+# y <- "Fixations"
+# concave <-  TRUE
+# rho <-  0.9
+# numRefits <- 5
+# cores <-  1
+# verbose <-  FALSE
+# alpha <- 0.05
 
 #head(data)
 
 
-## was missing concave smh
 res <- bdotsFit(data = cohort_unrelated,
                 subject = "Subject",
                 time = "Time",
@@ -65,7 +47,10 @@ res <- bdotsFit(data = cohort_unrelated,
                 numRefits = 2,
                 cores = 0,
                 verbose = FALSE)
-res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
+#res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
+res2 <- bdRemove(res)
+
+test <- bdotsRefit(res2, fitCode = 3)
 
 # debugonce(bdotsBoot)
 #debugonce(curveBooter)
@@ -73,12 +58,10 @@ boot.test <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Coh
                                   bdObj = res2,
                                   N.iter = 1000,
                                   alpha = 0.05,
-                                  p.adj = "oleson",
+                                  p.adj = "fdr",
                                   cores = 4)
 #plotCompare(boot.test)
 
-## Doing this, in boot.test2$curveList$Cohort, there are entries for both cohort and unrelated cohort?
-# it's because I grep for "Cohort" which is in "Cohort" AND "Unrelated_Cohort".  Ah, subset of name
 boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unrelated_Cohort),
                                    bdObj = res2,
                                    N.iter = 1000,
@@ -210,10 +193,6 @@ plotCompare(boot.res, group = "LI")
 plotCompare(boot.res2)
 plotCompare(boot.res, diffs = FALSE)
 
-# > boot.res$sigTime
-# [,1] [,2]
-# [1,]   92 1200
-# [2,] 1472 2500
 
 
 dt <- data.table(x = 9)
@@ -232,3 +211,40 @@ boot.res2 <- bdotsBoot(formula = y ~ Group(LI, TD) + TrialType(M),
                        alpha = 0.05,
                        p.adj = "oleson",
                        cores = 4)
+
+
+########################################
+##### Testing polynomial function ####
+########################################
+## was missing concave smh
+res <- bdotsFit(data = cohort_unrelated,
+                subject = "Subject",
+                time = "Time",
+                y = "Fixations",
+                group = c("Group", "LookType"),
+                curveType = polynomial(degree = 5, raw = TRUE),
+                cor = TRUE,
+                numRefits = 2,
+                cores = 0,
+                verbose = FALSE)
+#res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
+res2 <- bdRemove(res, fitCode = 2)
+
+# debugonce(bdotsBoot)
+#debugonce(curveBooter)
+boot.test <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
+                       bdObj = res2,
+                       N.iter = 1000,
+                       alpha = 0.05,
+                       p.adj = "oleson",
+                       cores = 4)
+
+boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unrelated_Cohort),
+                        bdObj = res2,
+                        N.iter = 1000,
+                        alpha = 0.05,
+                        p.adj = "oleson",
+                        cores = 4)
+#plotCompare(boot.test)
+
+
