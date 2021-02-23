@@ -198,7 +198,7 @@ bdUpdate <- function(bdo) {
     # then need to update to bdFit as well
     ## Needs splitVars and datVarNames
     result <- bdotsFitter(dat = x, curveType = crvFun, rho = rho, params = newPars,
-                          splitVars = nn, datVarNames = bdCall)
+                          splitVars = nn, datVarNames = bdCall, numRefits = 5)
 
     new_bdo <- copy(bdo)
     new_bdo$fit <- result$fit
