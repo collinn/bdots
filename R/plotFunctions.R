@@ -93,7 +93,7 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
   #        "logistic" = "bottomright",
   #        "doubleGauss" = "topright",
   #        "topright")
-  lgn <- "topleft" # for now
+  lgn <- "topright" # for now
 
   # should also make sure that axes are all the same
   for (i in seq_len(nrow(bdObj))) {
@@ -231,7 +231,7 @@ plotInnerGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ...) {
   #               "logistic" = "topleft",
   #               "doubleGauss" = "topleft",
   #               "topleft")
-  lgn <- "topleft" # for now
+  lgn <- "topright" # for now
 
   ## This only holds if diff of diff not used. Need to handle other case
   if (is.null(NULL) & !is.null(bdBootObj[['sigTime']])) {
