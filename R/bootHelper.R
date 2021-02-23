@@ -70,9 +70,6 @@ bootGroupSubset <- function(l, bdObj) {
 ## curveList - returned from curveBooter
 ## group - either Group name or Group value, i.e., LI = LI.M/LI.W or W = LI.W/TD.W
 ## For right now, group can only be group name (since I would need to recalculate diff for group value)
-# returns:
-# alphastar
-# other stuff too
 alphaAdjust <- function(curveList, p.adj = "oleson", alpha = 0.05, cores, group = NULL) {
   if (is.null(group)) {
     curve <- curveList[['diff']]
@@ -82,20 +79,26 @@ alphaAdjust <- function(curveList, p.adj = "oleson", alpha = 0.05, cores, group 
     d_idx <- grep(paste0(group, "\\.diff"), names(curveList[[idx]]))
     curve <- curveList[[idx]][[d_idx]]
   }
-  tval <- curve[["fit"]]/curve[['sd']]
-  pval <- 2 * (1 - pt(abs(tval), df = curve[['n']]))
+  tstat <- curve[["fit"]]/curve[['sd']]
+  pval <- 2 * (1 - pt(abs(tstat), df = curve[['n']]))
 
-  ## pval adjustment
-  # (here's where I need to modify p.adjust to make method oleson)
-  rho <- ar1Solver(tval)
-  if (p.adj == "oleson") {
-    alphastar <- findModifiedAlpha(rho,
-                                   n = length(tval),
-                                   df = curve[['n']],
-                                   cores = cores)
-    k <- alphastar/alpha
-    adjpval <- pval/k
-  }
+  p.adj <- match.arg(p.adj, c("oleson", stats::p.adjust.methods))
+  rho <- ar1Solver(tstat)
+
+  adjpval <- p_adjust(pval, p.adj, length(tstat), alpha,
+                      df = curve[['n']], rho = rho, cores = cores)
+  alphastar <- attr(adjpval, "alphastar")
+
+  # if (p.adj == "oleson") {
+  #   alphastar <- findModifiedAlpha(rho,
+  #                                  n = length(tstat),
+  #                                  df = curve[['n']],
+  #                                  cores = cores)
+  #   k <- alphastar/alpha
+  #   adjpval <- pval/k
+  # }
+
+
   list(pval = pval, adjpval = adjpval, alphastar = alphastar, rho = rho)
 }
 

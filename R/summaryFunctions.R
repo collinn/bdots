@@ -139,6 +139,9 @@ summary.bdotsBootObj <- function(object, ...) {
   time <- attr(bdBootObj, "bdObjAttr")[['time']]
   timeRange <- range(time)
 
+  padj_method <- match.arg(attr(bdBootObj, "call")[['p.adj']],
+                           c("oleson", stats::p.adjust.methods))
+
 
   ## group specific info
   diffs <- bdBootObj[['diffs']]
@@ -174,7 +177,8 @@ summary.bdotsBootObj <- function(object, ...) {
                          innerList = innerList,
                          timeRange = timeRange,
                          ntime = length(time),
-                         curveType = curveType),
+                         curveType = curveType,
+                         padj_method = padj_method),
             class = "bdotsBootSummary",
             call = bdCall)
 
@@ -207,7 +211,7 @@ print.bdotsBootSummary <- function(x, ...) {
     cat("Difference:", x[['diffs']][['outerDiff']], "\n")
   }
   cat("\n")
-  cat("Alpha adjust method:", "oleson\n")
+  cat("Alpha adjust method:", x$padj_method, "\n")
   cat("Adjusted Alpha:", x[['alphastar']], "\n")
   cat("Significant Intervals at adjusted alpha:\n")
   print(x[['sigTime']])

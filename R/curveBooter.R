@@ -125,7 +125,7 @@ makeOuterDiffList <- function(res, obj) {
     diffList$n <- nrow(obj[[1]]) - 1L
   } else {
     diffList$sd <- nopairSD(res[idx])
-    diffList$n <- sum(vapply(obj, nrow, numeric(1))) - 2L
+    diffList$n <- sum(vapply(obj, nrow, numeric(1L))) - 2L
   }
   diffList$paired <- ip
   structure(.Data = diffList,

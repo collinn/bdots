@@ -44,7 +44,8 @@ bdotsFit <- function(data, # dataset
 
   if (cores < 1) cores <- detectCores()/2
   curveType <- substitute(curveType)
-  curveName <- gsub("\\(|\\)", "", deparse1(curveType))
+  #curveName <- gsub("\\(|\\)", "", deparse1(curveType))
+  curveName <- curveType[[1]]
   curveType <- curve2Fun(curveType)
 
   ## Variable names on the dataset
@@ -69,13 +70,6 @@ bdotsFit <- function(data, # dataset
   dat[, (group) := lapply(.SD, as.character), .SDcols = group]
   dat[, (subject) := lapply(.SD, as.character), .SDcols = subject]
 
-
-  ## We can quickly check that time is kosher, at least within group divides
-  ## Would need to verify this is we planned on doing paired stuff?
-  ## Here's the thing, with some maneuvering, I could verify how many
-  ## unique sets of time we have, then attach only that as list in attributes?
-  ## For now, let's just PRAY that they are all equal. We just need it to drop
-  # into bdotsBoot.
   timetest <- split(dat, by = group, drop = TRUE)
   timetest <- lapply(timetest, function(x) unique(x[[time]]))
   timeSame <- identical(Reduce(intersect, timetest, init = timetest[[1]]),
@@ -89,7 +83,6 @@ bdotsFit <- function(data, # dataset
     dat[, substitute(y) := mean(get(y)), by = c(subject, time, group)]
     dat <- unique(dat, by = c(subject, time, group))
   }
-
 
   splitVars <- c(subject, group)
   newdat <- split(dat, by = splitVars, drop = TRUE)
@@ -107,8 +100,6 @@ bdotsFit <- function(data, # dataset
                   datVarNames = datVarNames)
  stopCluster(cl)
 
-
- ## See, I don't like this bc hypothetically could be length 0
  ff <- attr(res[[1]], "formula")
  fitList <- rbindlist(res, fill = TRUE)
 
@@ -126,35 +117,12 @@ bdotsFit <- function(data, # dataset
  X_env <- new.env(parent = emptyenv())
  X_env$X <- X
 
- ## Janky for now, but we want a gropuName List
+ ## Janky for now, but we want a groupName List
  ## TOO janky. Fix this ASAP
  tmp <- unique(fitList[, group, with = FALSE])
  tmp <- names(split(tmp, by = group))
  groups <- list(groups = group,
                 vals = tmp)
-
- ## Class bdots object
-
- ## 1) curveType
- ## 2) formula
- ## 3) fitList
-   # i) columns for identifiers (subject, group)
-   # ii) gnls model fit
-   # iii) R2, AR1 for visual reference
-   # iv) fitCode for refitting
-
- ## To refit
- # 1) Punch your own gnls object into fit (on your own for this one,
-      # can use formula from bdots object)
- # 2) This process
-  # i) fit <- bdotsFit(...)
-  # ii) examine fits w/ plots or w/e
-     # I) refits for all fitCode > n
-     # II) specify specific entry to refit
-  # iii) Perform refits
-    # I) do it interactively (with a wizard!)
-    # II) input your own starting parameters (as matrix)
-       # a) must be same dimension as refits doing
 
  res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
                   .Data = fitList,
@@ -165,7 +133,6 @@ bdotsFit <- function(data, # dataset
                   rho = rho,
                   groups = groups,
                   X = X_env)
-
 }
 
 

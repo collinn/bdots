@@ -65,13 +65,12 @@ bdotsBoot <- function(formula,
   }
   curveFun <- makeCurveFun(bdObj)
 
-  ## This is either an innerDiff or outerDiff list (check class)
   curveList <- curveBooter(bdObj,
                            outerDiff = outerDiff,
                            innerDiff = innerDiff,
                            N.iter = N.iter,
                            curveFun = curveFun)
-  ip <- curveList[['diff']][['paired']] # paired?
+  ip <- curveList[['diff']][['paired']]
 
   res <- alphaAdjust(curveList, p.adj, alpha, cores)
   pval <- res[['pval']]
@@ -91,8 +90,6 @@ bdotsBoot <- function(formula,
                          sigTime = sigTime,
                          rho = rho,
                          paired = ip,
-                         # also this is duplicated in curveGroups, i.e., diffs == names(curveGroups)
-                         # however, it does not  specify between inner and outer group, so idk
                          diffs = c("outerDiff" = outerDiff,
                                    "innerDiff" = innerDiff), # could replaces this with `prs`
                          curveGroups = curveGrps,
