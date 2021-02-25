@@ -8,33 +8,6 @@ library(parallel)
 library(nlme)
 library(mvtnorm)
 library(pryr)
-#load("~/packages/bdots/data/testRunData.RData")
-# Not for parallel, I could do clusterEvalQ(cl, source(".."))
-
-# load_all()
-# rfiles <- list.files("~/packages/bdots/R", full.names = TRUE)
-# for (ff in rfiles) {
-#   source(ff)
-# }
-# rm(rfiles, ff)
-
-
-##############
-
-# load("~/bdots/demo.RData")
-# data <- cohort_unrelated
-# group = c("Group", "LookType")
-# time <- "Time"
-# subject <- "Subject"
-# y <- "Fixations"
-# concave <-  TRUE
-# rho <-  0.9
-# numRefits <- 5
-# cores <-  1
-# verbose <-  FALSE
-# alpha <- 0.05
-
-#head(data)
 
 
 res <- bdotsFit(data = cohort_unrelated,
@@ -50,7 +23,12 @@ res <- bdotsFit(data = cohort_unrelated,
 #res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
 res2 <- bdRemove(res)
 
-test <- bdotsRefit(res2, fitCode = 3)
+test <- bdotsRefit(res, fitCode = 6, quickRefit = FALSE)
+
+## Not really much luck for doublegauss
+test <- bdotsRefit(res, numRefits = 2L)
+table(res$fitCode)
+table(test$fitCode)
 
 # debugonce(bdotsBoot)
 #debugonce(curveBooter)

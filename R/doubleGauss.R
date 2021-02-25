@@ -65,5 +65,6 @@ doubleGauss <- function(dat, y, time, params = NULL, concave = TRUE, ...) {
                                      / (2 * sig1 ^ 2)) * (ht - base1) + base1)
               + (mu <= .(time)) * (exp(-1 * (.(time) - mu) ^ 2
                                     / (2 * sig2 ^ 2)) * (ht - base2) + base2))
+  attr(ff, "parnames") <- names(params)
   return(list(formula = ff, params = params))
   }

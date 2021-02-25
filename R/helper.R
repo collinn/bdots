@@ -109,11 +109,12 @@ rbindlist <- function(x, ...) {
   UseMethod("rbindlist")
 }
 
-#' @importFrom data.table rbindlist
+#' @importFrom data.table rbindlistbdots
 rbindlist.default <- function(x, ...) {
   data.table::rbindlist(x, ...)
 }
 
+## Not 100% sure I should include this
 #' rbindlist for bdotsObjects
 #'
 #' Similar to data.table::rbindlist, but preserves botsObjects attributes
@@ -309,8 +310,16 @@ getSubX <- function(bdo) {
   X[x_idx, ]
 }
 
-
-
+## Create curve function from formula
+# used in bdotsBoot and bdUpdate_NULL
+makeCurveFun <- function(bdObj) {
+  time <- attr(bdObj, "call")[['time']]
+  f_bod <- attr(bdObj, "formula")[[3]]
+  parnames <- attributes(attr(bdObj, "formula"))[['parnames']]
+  f_args <- c(parnames, time)
+  f_args <- setNames(as.pairlist(rep("", length(f_args))), f_args)
+  eval(call("function", f_args, f_bod), parent.frame())
+}
 
 
 
