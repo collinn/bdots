@@ -4,17 +4,27 @@
 \alias{bdotsRefit}
 \title{Refit Observations Returned from bdotsFit}
 \usage{
-bdotsRefit(bdObj, fitCode = 1, ...)
+bdotsRefit(bdObj, fitCode = 1L, quickRefit = TRUE, numRefits = 2L, ...)
 }
 \arguments{
 \item{bdObj}{An object of class 'bdotsObj' returned from \code{bdotsFit}}
 
-\item{fitCode}{A length one numeric indicating observations to refit. See Details}
+\item{fitCode}{A length one integer indicating observations to refit. See Details}
+
+\item{quickRefit}{Boolean indicating if a quick refit should be used. If TRUE,
+rather than prompting the user for adjustments for each observation, \code{bdotsReft}
+will jitter the parameters of all observations indicated by \code{fitCode} and attempt
+to refit. Between the original and the refitted curve, this will place priority on
+the higher \code{fitCode}. If these are equal, R2 will take precedence. Otherwise,
+the original fit will be kept.}
+
+\item{numRefits}{Integer indicating the number of refit attempts after jittering
+parameters, either with quickRefit or when done individually}
 
 \item{...}{not used}
 }
 \value{
-Returns bdObj with updated fit
+Returns bdObj with updated fits
 }
 \description{
 Refit Observations Returned from bdotsFit
@@ -22,5 +32,7 @@ Refit Observations Returned from bdotsFit
 \details{
 fitCode indicates lower bound on observations to refit. For example,
 if \code{fitCode = 4}, \code{bdotsRefit} will prompt user to refit all
-observations with fitCode = 4, 5, 6.
+observations with fitCode = 4, 5, 6. The \code{quickRit} option will attempt
+to jitter and refit all observations selected by \code{fitCode}. Otherwise, the
+user will be prompted through a menu to individually refit observations
 }
