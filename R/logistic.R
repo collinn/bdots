@@ -52,5 +52,6 @@ logistic <- function(dat, y, time, params = NULL, ...) {
   y <- str2lang(y)
   time <- str2lang(time)
   ff <- bquote(.(y) ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (.(time))) / (peak - mini))))
+  attr(ff, "parnames") <- names(params)
   return(list(formula = ff, params = params))
 }

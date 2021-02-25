@@ -3,22 +3,31 @@
 #'
 #'
 #' @param bdObj An object of class 'bdotsObj' returned from \code{bdotsFit}
-#' @param fitCode A length one numeric indicating observations to refit. See Details
+#' @param fitCode A length one integer indicating observations to refit. See Details
+#' @param quickRefit Boolean indicating if a quick refit should be used. If TRUE,
+#' rather than prompting the user for adjustments for each observation, \code{bdotsReft}
+#' will jitter the parameters of all observations indicated by \code{fitCode} and attempt
+#' to refit. Between the original and the refitted curve, this will place priority on
+#' the higher \code{fitCode}. If these are equal, R2 will take precedence. Otherwise,
+#' the original fit will be kept.
+#' @param numRefits Integer indicating the number of refit attempts after jittering
+#' parameters, either with quickRefit or when done individually
 #' @param ... not used
 #'
-#' @return Returns bdObj with updated fit
+#' @return Returns bdObj with updated fits
 #'
 #' @details fitCode indicates lower bound on observations to refit. For example,
 #' if \code{fitCode = 4}, \code{bdotsRefit} will prompt user to refit all
-#' observations with fitCode = 4, 5, 6.
+#' observations with fitCode = 4, 5, 6. The \code{quickRit} option will attempt
+#' to jitter and refit all observations selected by \code{fitCode}. Otherwise, the
+#' user will be prompted through a menu to individually refit observations
 #' @import data.table
 #' @export
-bdotsRefit <- function(bdObj, fitCode = 1, ...) {
-  if (is.null(fitCode)) {
-    fitCode <- readline(prompt = "fitCode: ")
-  }
-  # X <- attr(bdObj, "X")
-  # attr(bdObj, "X") <- NULL
+bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = TRUE, numRefits = 2L, ...) {
+
+  if (is.null(fitCode)) fitCode <- 1L
+
+
   if (is.null(attr(bdObj, "X")$X)) {
     stop("Dataset must be provided")
   }
@@ -30,20 +39,26 @@ bdotsRefit <- function(bdObj, fitCode = 1, ...) {
   ## Because of factors, which I should really think about removing
   fitcode <- fitCode
   idx <- which(bdObj$fitCode >= fitcode)
-  if (length(idx) == 0) {
-    message("All observations have fitCode = 0. Nothing to refit :)")
+  if (length(idx) == 0L) {
+    message(paste0("All observations fitCode greater than ",
+                   fitcode, ". Nothing to refit :)"))
     return(bdObj)
   }
   bdObj2 <- split(bdObj[idx, ], by = nn)
-  new_bd <- lapply(bdObj2, bdUpdate)
 
-  ## Remove deleted observations
-  # null_idx - which fits were removed
-  # new_bd - compacted new_bd list
-  # rmv_names - names from bd list being removed
-  # rmv_sub_id - Subject identifier of removed
-  # -- this is to provide option to remove all of subject
-  # idx - idx representing position for new_bd list
+  if (quickRefit) {
+    ## Oddly, I get errors running parLapply not lapply. Will investigate
+    # cores <- attr(bdObj, "call")$cores
+    # if (cores == 0) cores <- detectCores()/2
+    # cl <- makePSOCKcluster(cores)
+    # invisible(clusterEvalQ(cl, library(bdots)))
+    # new_bd <- parLapply(cl, bdObj2, bdQuickRefit, numRefits)
+    # stopCluster(cl)
+    new_bd <- lapply(bdObj2, bdQuickRefit, numRefits)
+  } else {
+    new_bd <- lapply(bdObj2, bdUpdate, numRefits)
+  }
+
   null_idx <- which(vapply(new_bd, is.null, logical(1)))
   if (length(null_idx) != 0) {
     new_bd <- compact(new_bd)
@@ -89,53 +104,95 @@ bdotsRefit <- function(bdObj, fitCode = 1, ...) {
       corr_resp <- FALSE
       while (!corr_resp) {
         resp <- readline("Remove all associated observations? (Y/n): ")
-        if (resp  %in% c("Y", "n")) {
+        if (resp  %in% c("Y", "n"))
           corr_resp <- TRUE
-        } else {
+        else
           cat("Please enter 'Y' or 'n'\n")
-        }
       }
-      if (resp == "Y") {
+      if (resp == "Y")
         bdObj <- bdObj[-rmv_pairs, ]
-      }
     }
   }
   bdObj
 }
 
 
+bdQuickRefit <- function(bdo, numRefits) {
+
+
+
+  if (bdo$fitCode != 6L) {
+    njitter <- 5L
+    newPars <- coef(bdo[['fit']][[1]])
+  } else {
+    newPars <- NULL
+  }
+
+  while(numRefits != 0L) {
+
+    ## jitterbug
+    if (bdo$fitCode != 6L) {
+      for (i in seq_along(newPars)) {
+        newPars[i] <- jitter(newPars[i], factor = njitter)
+      }
+      njitter <- njitter + 1L
+    }
+
+    new_bdo <- bdRefitter(bdo, params = newPars)
+    if (new_bdo$fitCode < bdo$fitCode) {
+      return(new_bdo)
+    } else if (new_bdo$fitCode == bdo$fitCode) {
+      v <- ifelse(is.na(new_bdo$R2), 0, new_bdo$R2) - ifelse(is.na(bdo$R2), 0, bdo$R2)
+      if (v > 0.05) return(new_bdo)
+    }
+    numRefits <- numRefits - 1L
+  }
+  return(bdo)
+}
+
+
+## Given a single bdotsFit observation, computes a refit
+bdRefitter <- function(bdo, numRefits = 0L, rho = NULL, params = NULL, ...) {
+  if (nrow(bdo) != 1L) stop("bdRefitter can only take a single observation")
+  bdCall <- attr(bdo, "call")
+  nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']])) # this is split vars!
+  if (is.null(rho)) rho <- attr(bdo, "rho")
+  crvFun <- curve2Fun(bdCall[['curveType']])
+
+  x <- getSubX(bdo)
+  set(x, j = c("y", "time"),
+      value = x[,c(bdCall[['y']], bdCall[['time']]), with = FALSE])
+
+  new_bdo <- bdotsFitter(dat = x, curveType = crvFun, rho = rho,
+                         params = params, splitVars = nn, datVarNames = bdCall,
+                         numRefits = numRefits)
+  prob <- tryCatch(attributes(new_bdo) <- attributes(bdo), error = function(e) 2)
+  if (is.numeric(prob)) browser()
+  new_bdo
+}
+
 
 
 ## A lot of bits of these can be abstracted to functions
-# that way we can just jitter as often as we want (or w/e else)
-# note, this will also be found in bdotsFit too
-# Perhaps throw in  option to "Trash" an observation
-## Have to use nn, since it's used
-bdUpdate <- function(bdo) {
+## Need to be able to handle fitCode == 6
+bdUpdate <- function(bdo, numRefits) {
 
-  # class(bdo) <- c("bdotsObj", class(bdo))
-  # x <- X[[nn]]
-  # attr(bdo, "X") <- x
+  ## This will attempt to fit without. If a fit is made, then fitCode
+  # will no longer be 6. In that case, bdUpdate_NULL will call bdUpdate
+  # which will then skip this step
+  if (bdo$fitCode == 6) {
+    bdo <- bdUpdate_NULL(bdo, numRefits)
+    return(bdo)
+  }
 
-  ## Getting curve function
-  bdCall <- attr(bdo, "call")
-  nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']])) # this is split vars!
-  time <- attr(bdo, "time")
   rho <- attr(bdo, "rho")
-  crvFun <- curve2Fun(bdCall[['curveType']])
-  fit <- bdo[['fit']][[1]]
-
-  ## This is a terrible work around
-  #  to get correct names in x for curveFitter
-  #x <- setDT(attr(bdo, "X")$X)
-  x <- getSubX(bdo)
-  set(x, j = c("y", "time"),
-      value = x[,c(bdCall[['y']], bdCall[['time']]), with = FALSE]) # this needs to be subset
-
-
   plot(bdo, gridSize = 1)
-  oldPars <- printRefitUpdateInfo(bdo)
 
+  ## Adding newPars here allows jitter to bounce around more
+  oldPars <- newPars <- printRefitUpdateInfo(bdo)
+
+  ## Increase jitter each  time it occurs
+  njitter <- 5L
   accept <- FALSE
   while (!accept) {
 
@@ -156,7 +213,10 @@ bdUpdate <- function(bdo) {
       accept <- TRUE
       break
     } else if (resp == 2) {
-      newPars <- jitter(coef(fit))
+      for (i in seq_along(newPars)) {
+        newPars[i] <- jitter(newPars[i], factor = njitter)
+      }
+      njitter <- njitter + 1L
     } else if (resp == 3) {
       newPars <- oldPars
       cat("Press Return to keep original value\n")
@@ -176,7 +236,7 @@ bdUpdate <- function(bdo) {
       newPars <- oldPars
     } else if (resp == 5) {
       printRefitUpdateInfo(bdo)
-      next
+      next # reset while loop
     } else if (resp == 6) {
         corr_resp <- FALSE
         while (!corr_resp) {
@@ -191,23 +251,14 @@ bdUpdate <- function(bdo) {
           bdo <- NULL
           break
         }
-        next
-     }
+        next # reset while loop
+    }
 
-    ## repeat of inside of bdotsFit (make this a function? - yes)
-    # then need to update to bdFit as well
-    ## Needs splitVars and datVarNames
-    result <- bdotsFitter(dat = x, curveType = crvFun, rho = rho, params = newPars,
-                          splitVars = nn, datVarNames = bdCall, numRefits = 5)
+    new_bdo <- bdRefitter(bdo, rho, numRefits, params = newPars)
+    both_bdo <- structure(.Data = list(bdo, new_bdo),
+                          class = "bdObjList")
 
-    new_bdo <- copy(bdo)
-    new_bdo$fit <- result$fit
-    new_bdo$R2 <- result[['R2']]
-    new_bdo$AR1 <- (result[['fitCode']] < 3)
-    new_bdo$fitCode <- result[['fitCode']]
-
-    both_bdo <- rbindlist(list(bdo, new_bdo))
-    attributes(both_bdo) <- attributes(bdo)
+    both_bdo <- rbindlist(both_bdo)
     plot(both_bdo, gridSize = "refit")
 
     cat("Refit Info:\n")
@@ -223,7 +274,7 @@ bdUpdate <- function(bdo) {
   bdo
 }
 
-
+## Prints info for update
 printRefitUpdateInfo <- function(bdo) {
   bdCall <- attr(bdo, "call")
   rho <- attr(bdo, "rho")
@@ -241,6 +292,7 @@ printRefitUpdateInfo <- function(bdo) {
 }
 
 
+## This should probably move to a different file.
 ## Delete subjects with specified fitCode value
 #' bdots Remove Function
 #'
@@ -253,7 +305,7 @@ printRefitUpdateInfo <- function(bdo) {
 #'
 #' @details This function is used to remove all bdots observations with a fit code
 #' equal to or larger than the argument passed to \code{fitCode} without refitting.
-#' If \code{removePairs == TRUE}, all entries for a subject will be removed if their
+#' If \code{removePairs = TRUE}, all entries for a subject will be removed if their
 #' fit failed in any of the groups in which they were a member
 #'
 #' @export
@@ -268,12 +320,95 @@ bdRemove <- function(bdObj, fitCode = 6L, removePairs = TRUE) {
     subRmv <- bdObj[[sub]][idx]
     idx <- bdObj[[sub]] %in% subRmv
   }
-
+  ## Should I also subset the data matrix?
   bdObj[!idx, ]
 }
 
 
 
+### ---------- testing
+
+
+bdUpdate_NULL <- function(bdo, numRefits) {
+  plot(bdo, gridSize = 1)
+
+  accept <- FALSE
+  while (!accept) {
+
+    ## Maybe add in future ability to change row
+    rf_msg <- paste0("\nActions:\n",
+                     "1) Adjust starting parameters manually\n",
+                     "2) Delete subject")
+    cat(rf_msg)
+    resp <- NA
+    while (!(resp %in% 1:2)) {
+      resp <- readline("Choose (1-2): ")
+    }
+
+    if (resp == 1) {
+      parnames <- attributes(attr(bdo, "formula"))[['parnames']]
+      newPars <- setNames(rep(NA, length(parnames)), parnames)
+      for (pname in names(newPars)) {
+        tmpval <- NA
+        while (is.na(as.numeric(tmpval))) {
+          tmpval <- readline(paste0("New value for ", pname, ": "))
+          if (!is.na(as.numeric(tmpval)))
+            newPars[pname] <- as.numeric(tmpval)
+          else
+            warning("Invalid entry, please enter numeric value")
+        }
+      }
+      new_bdo <- bdRefitter(bdo, rho = 0.9, numRefits, params = newPars)
+
+      ## Would be VERY COOL to plot a curve of the curve function with
+      # the suggested parameters. Will try this later
+      if (new_bdo$fitCode == 6) {
+        cat("Fit unsuccessful. Plotting curve from your input parameters in red.\n",
+            "Use this to adjust parameter estimates accordingly")
+
+        ## Try adding lines to plot
+        # makeCurveFun <- function(bdObj) {
+        #   time <- attr(bdObj, "call")[['time']]
+        #   f_bod <- attr(bdObj, "formula")[[3]]
+        #   f_args <- c(colnames(coef(bdObj)), time)
+        #   f_args <- setNames(as.pairlist(rep("", length(f_args))), f_args)
+        #   eval(call("function", f_args, f_bod), parent.frame())
+        # }
+        curveFun <- makeCurveFun(bdo)
+        Time <- attr(bdo, "time")
+        TimeName <- attr(bdo, "call")[['time']]
+        parList <- as.list(newPars)
+        parList[[TimeName]] <- Time
+        suggestFit <- do.call(curveFun, parList)
+        lines(x = Time, y = suggestFit, lwd = 2, col = 'tomato')
+        next
+      } else {
+        cat("Fit success! Moving to standard refit options for current observation\n")
+        readline("Press Enter to continue")
+        #cat("\n\n")
+        bdo <- bdUpdate(new_bdo, numRefits)
+        break
+      }
+    } else if (resp == 2) {
+      corr_resp <- FALSE
+      while (!corr_resp) {
+        dd <- readline("Delete observation? (Y/n): ")
+        if (dd  %in% c("Y", "n")) {
+          corr_resp <- TRUE
+        } else {
+          cat("Please enter 'Y' or 'n'\n")
+        }
+      }
+      if (dd == "Y") {
+        bdo <- NULL
+        break
+      }
+      next # reset while loop
+    }
+  }
+
+  return(bdo) # this will return to orig. bdUpdate call and then return again there
+}
 
 
 

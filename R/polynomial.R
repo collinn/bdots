@@ -38,6 +38,7 @@ polynomial <- function(dat, y, time, degree, raw = TRUE, params = NULL, ...) {
   ff <- str2lang(ff)
   y <- str2lang(y)
   ff <- bquote(.(y) ~ .(ff))
+  attr(ff, "parnames") <- names(params)
   return(list(formula = ff, params = params))
 }
 
