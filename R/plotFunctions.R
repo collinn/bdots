@@ -99,11 +99,11 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
   for (i in seq_len(nrow(bdObj))) {
     code <- bdObj[i, ]$fitCode
     r2 <- round(as.numeric(bdObj[i, ]$R2), 3)
-    if (code == 6) next
     obs <- unlist(bdObj[i, splitVars, with = FALSE])
     obs2 <- paste(obs, collapse = ".")
     obsY <- Xs[[obs2]][[y]]
-    fitY <- fitted.values(bdObj[i, ]$fit[[1]])
+    if (code != 6)
+      fitY <- fitted.values(bdObj[i, ]$fit[[1]])
 
     ## Janky fix for update. Should just make a separate for refits
     if (gridSize == "refit") {
@@ -116,12 +116,20 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
       title <- paste(paste0(obs, collapse = " "), "\n fitCode = ", code, ", R2 = ", r2)
     }
 
-    plot(x = time, y = obsY, lty = 2, lwd = 2, type = 'l',
+    plot(x = time, y = obsY, lty = 1, lwd = 2, type = 'l',
          ylab = y, main = title, col = 'blue')
-    lines(x = time, y = fitY, lty = 1, lwd =2, type = 'l')
-    # perhaps change legend based on  plot type?
-    legend(lgn, legend = c("Observed", "Model Fit"), lty = c(2, 1),
-           lwd = c(2, 2), col = c('blue', 'black'))
+
+    if (code != 6) {
+      lines(x = time, y = fitY, lty = 1, lwd = 2, type = 'l')
+      # perhaps change legend based on  plot type?
+      legend(lgn, legend = c("Observed", "Model Fit"), lty = c(1, 1),
+             lwd = c(2, 2), col = c('blue', 'black'))
+    } else {
+      legend(lgn, legend = c("Observed"), lty = 1,
+             lwd = 2, col = c('blue'))
+    }
+
+
   }
 
 }
@@ -176,27 +184,29 @@ makePlotCI <- function(cl, alpha = 0.05, ...) {
 #' @param plotDiffs Boolean to plot difference curve
 #' @param group Specify group to plot if difference of difference was used. The
 #' user can also subset the bdotsBootObj prior to plotting
+#' @param ciBands Boolean indicating whether or not to include confidence intervals
+#' around fitted curves (currently only option is TRUE)
 #' @param ... ignore for now, but will eventually allow plot parameters
 #'
 #'
 #' @details Use with care
 #' @export
-plot.bdotsBootObj <- function(x, alpha = NULL, plotDiffs = TRUE, group = NULL, ...) {
+plot.bdotsBootObj <- function(x, alpha = NULL, plotDiffs = TRUE, group = NULL, ciBands = TRUE, ...) {
   # value used in original call
   alpha <- x$alpha
 
   if (x$dod & !is.null(group)) {
     x <- subset(x, group, alpha)
-    plotInnerGroup(x, alpha, plotDiffs, ...)
+    plotInnerGroup(x, alpha, plotDiffs, ciBands, ...)
   } else if (x$dod) {
-    plotOuterGroup(x, alpha, plotDiffs, ...)
+    plotOuterGroup(x, alpha, plotDiffs, ciBands, ...)
   } else {
-    plotInnerGroup(x, alpha, plotDiffs, ...)
+    plotInnerGroup(x, alpha, plotDiffs, ciBands, ...)
   }
 }
 
 #' @importFrom graphics par legend
-plotInnerGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ...) {
+plotInnerGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ciBands, ...) {
   cList <- bdBootObj[['curveList']]
   diffList <- cList[['diff']]
   cList <- cList[setdiff(names(cList), "diff")]
@@ -253,7 +263,7 @@ plotInnerGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ...) {
 }
 
 ## For plotting diff of diff case
-plotOuterGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ...) {
+plotOuterGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ciBands, ...) {
   cList <- bdBootObj$curveList
   diffList <- cList[['diff']]
   cList <- cList[setdiff(names(cList), "diff")]
@@ -262,7 +272,7 @@ plotOuterGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ...) {
   tt <- bdBootObj
   cList[['diff']] <- diffList
   tt$curveList <- cList
-  plotInnerGroup(tt, alpha, plotDiffs, ...)
+  plotInnerGroup(tt, alpha, plotDiffs, ciBands, ...)
 }
 
 

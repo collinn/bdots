@@ -168,6 +168,7 @@ summary.bdotsBootObj <- function(object, ...) {
 
   structure(.Data = list(formula = formula,
                          alphastar = alphastar,
+                         alpha = bdCall$alpha,
                          sigTime = sigTime,
                          rho = rho,
                          dod = dod,
@@ -211,8 +212,10 @@ print.bdotsBootSummary <- function(x, ...) {
     cat("Difference:", x[['diffs']][['outerDiff']], "\n")
   }
   cat("\n")
+  cat("Autocorrelation Estimate:", x$rho, "\n")
   cat("Alpha adjust method:", x$padj_method, "\n")
-  cat("Adjusted Alpha:", x[['alphastar']], "\n")
+  cat("Alpha:", x$alpha, "\n")
+  cat("Adjusted alpha:", x[['alphastar']], "\n")
   cat("Significant Intervals at adjusted alpha:\n")
   print(x[['sigTime']])
 

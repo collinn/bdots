@@ -20,6 +20,6 @@ Remove observations with a specified fitCode and optionally all pairs
 \details{
 This function is used to remove all bdots observations with a fit code
 equal to or larger than the argument passed to \code{fitCode} without refitting.
-If \code{removePairs == TRUE}, all entries for a subject will be removed if their
+If \code{removePairs = TRUE}, all entries for a subject will be removed if their
 fit failed in any of the groups in which they were a member
 }
