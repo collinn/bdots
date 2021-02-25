@@ -184,7 +184,7 @@ makePlotCI <- function(cl, alpha = 0.05, ...) {
 #' @param plotDiffs Boolean to plot difference curve
 #' @param group Specify group to plot if difference of difference was used. The
 #' user can also subset the bdotsBootObj prior to plotting
-#' @param ciBands. Boolean indicating whether or not to include confidence intervals
+#' @param ciBands Boolean indicating whether or not to include confidence intervals
 #' around fitted curves (currently only option is TRUE)
 #' @param ... ignore for now, but will eventually allow plot parameters
 #'

@@ -109,7 +109,7 @@ rbindlist <- function(x, ...) {
   UseMethod("rbindlist")
 }
 
-#' @importFrom data.table rbindlistbdots
+#' @importFrom data.table rbindlist
 rbindlist.default <- function(x, ...) {
   data.table::rbindlist(x, ...)
 }

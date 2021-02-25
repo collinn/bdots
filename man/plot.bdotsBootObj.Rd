@@ -4,7 +4,7 @@
 \alias{plot.bdotsBootObj}
 \title{Plot for object of class bdotsBootObj}
 \usage{
-\method{plot}{bdotsBootObj}(x, alpha = NULL, plotDiffs = TRUE, group = NULL, ...)
+\method{plot}{bdotsBootObj}(x, alpha = NULL, plotDiffs = TRUE, group = NULL, ciBands = TRUE, ...)
 }
 \arguments{
 \item{x}{An object of class bdotsBootObj}
@@ -17,6 +17,9 @@ computationally expensive and is currently not an option but will be offered soo
 
 \item{group}{Specify group to plot if difference of difference was used. The
 user can also subset the bdotsBootObj prior to plotting}
+
+\item{ciBands}{Boolean indicating whether or not to include confidence intervals
+around fitted curves (currently only option is TRUE)}
 
 \item{...}{ignore for now, but will eventually allow plot parameters}
 }
