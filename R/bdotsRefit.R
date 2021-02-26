@@ -23,7 +23,7 @@
 #' user will be prompted through a menu to individually refit observations
 #' @import data.table
 #' @export
-bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = TRUE, numRefits = 2L, ...) {
+bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = FALSE, numRefits = 2L, ...) {
 
   if (is.null(fitCode)) fitCode <- 1L
 
@@ -326,23 +326,34 @@ bdRemove <- function(bdObj, fitCode = 6L, removePairs = TRUE) {
 
 
 
-### ---------- testing
-
 
 bdUpdate_NULL <- function(bdo, numRefits) {
   plot(bdo, gridSize = 1)
 
-  accept <- FALSE
-  while (!accept) {
+  rounds <- 1L
+  while (TRUE) {
 
-    ## Maybe add in future ability to change row
-    rf_msg <- paste0("\nActions:\n",
-                     "1) Adjust starting parameters manually\n",
-                     "2) Delete subject")
-    cat(rf_msg)
-    resp <- NA
-    while (!(resp %in% 1:2)) {
-      resp <- readline("Choose (1-2): ")
+    if (rounds == 1L) {
+      rf_msg <- paste0("\nActions:\n",
+                       "1) Adjust starting parameters manually\n",
+                       "2) Delete subject")
+      cat(rf_msg)
+      resp <- NA
+      while (!(resp %in% 1:2)) {
+        resp <- readline("Choose (1-2): ")
+      }
+      rounds <- rounds + 1L
+    } else {
+      rf_msg <- paste0("\nActions:\n",
+                       "1) Adjust starting parameters manually\n",
+                       "2) Print previous parameter attempt\n",
+                       "3) Update previous parameter attempt\n",
+                       "4) Delete subject")
+      cat(rf_msg)
+      resp <- NA
+      while (!(resp %in% 1:4)) {
+        resp <- readline("Choose (1-4): ")
+      }
     }
 
     if (resp == 1) {
@@ -358,46 +369,76 @@ bdUpdate_NULL <- function(bdo, numRefits) {
             warning("Invalid entry, please enter numeric value")
         }
       }
+
       new_bdo <- bdRefitter(bdo, rho = 0.9, numRefits, params = newPars)
 
-      ## Would be VERY COOL to plot a curve of the curve function with
-      # the suggested parameters. Will try this later
       if (new_bdo$fitCode == 6) {
         cat("Fit unsuccessful. Plotting curve from your input parameters in red.\n",
-            "Use this to adjust parameter estimates accordingly")
+            "Use this to adjust parameter estimates accordingly\n")
 
-        ## Try adding lines to plot
-        # makeCurveFun <- function(bdObj) {
-        #   time <- attr(bdObj, "call")[['time']]
-        #   f_bod <- attr(bdObj, "formula")[[3]]
-        #   f_args <- c(colnames(coef(bdObj)), time)
-        #   f_args <- setNames(as.pairlist(rep("", length(f_args))), f_args)
-        #   eval(call("function", f_args, f_bod), parent.frame())
-        # }
         curveFun <- makeCurveFun(bdo)
         Time <- attr(bdo, "time")
         TimeName <- attr(bdo, "call")[['time']]
         parList <- as.list(newPars)
         parList[[TimeName]] <- Time
         suggestFit <- do.call(curveFun, parList)
+        plot(bdo, gridSize = 1)
         lines(x = Time, y = suggestFit, lwd = 2, col = 'tomato')
         next
       } else {
         cat("Fit success! Moving to standard refit options for current observation\n")
         readline("Press Enter to continue")
-        #cat("\n\n")
         bdo <- bdUpdate(new_bdo, numRefits)
         break
       }
     } else if (resp == 2) {
+      print(newPars)
+    } else if (resp == 3) {
+      oldPars <- newPars
+      cat("Press Enter to keep current value\n")
+      for (pname in names(oldPars)) {
+        cat("Current value:\n")
+        print(oldPars[pname])
+        tmpval <- NA
+        while (is.na(as.numeric(tmpval))) {
+          tmpval <- readline(paste0("New value for ", pname, ": "))
+          if (!is.na(as.numeric(tmpval)))
+            newPars[pname] <- as.numeric(tmpval)
+          else if (tmpval == "") {
+            newPars[pname] <- oldPars[pname]
+            break
+          } else
+            warning("Invalid entry, please enter a numeric value")
+        }
+      }
+      new_bdo <- bdRefitter(bdo, rho = 0.9, numRefits, params = newPars)
+      if (new_bdo$fitCode == 6) {
+        cat("Fit unsuccessful. Plotting curve from your input parameters in red.\n",
+            "Use this to adjust parameter estimates accordingly\n")
+
+        curveFun <- makeCurveFun(bdo)
+        Time <- attr(bdo, "time")
+        TimeName <- attr(bdo, "call")[['time']]
+        parList <- as.list(newPars)
+        parList[[TimeName]] <- Time
+        suggestFit <- do.call(curveFun, parList)
+        plot(bdo, gridSize = 1)
+        lines(x = Time, y = suggestFit, lwd = 2, col = 'tomato')
+        next
+      } else {
+        cat("Fit success! Moving to standard refit options for current observation\n")
+        readline("Press Enter to continue")
+        bdo <- bdUpdate(new_bdo, numRefits)
+        break
+      }
+    } else if (resp == 4) {
       corr_resp <- FALSE
       while (!corr_resp) {
         dd <- readline("Delete observation? (Y/n): ")
-        if (dd  %in% c("Y", "n")) {
+        if (dd  %in% c("Y", "n"))
           corr_resp <- TRUE
-        } else {
+        else
           cat("Please enter 'Y' or 'n'\n")
-        }
       }
       if (dd == "Y") {
         bdo <- NULL
@@ -406,7 +447,6 @@ bdUpdate_NULL <- function(bdo, numRefits) {
       next # reset while loop
     }
   }
-
   return(bdo) # this will return to orig. bdUpdate call and then return again there
 }
 
