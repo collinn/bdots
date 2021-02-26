@@ -4,7 +4,7 @@
 \alias{bdotsRefit}
 \title{Refit Observations Returned from bdotsFit}
 \usage{
-bdotsRefit(bdObj, fitCode = 1L, quickRefit = TRUE, numRefits = 2L, ...)
+bdotsRefit(bdObj, fitCode = 1L, quickRefit = FALSE, numRefits = 2L, ...)
 }
 \arguments{
 \item{bdObj}{An object of class 'bdotsObj' returned from \code{bdotsFit}}
