@@ -2,8 +2,8 @@ Package: bdots
 Type: Package
 Title: Bootstrapped Differences of Time Series
 Version: 0.1.30
-Date: 2020-10-09
-Author: Michael Seedorff, Jacob Oleson, Grant Brown,
+Date: 2021-02-26
+Author: Collin Nolte, Michael Seedorff, Jacob Oleson, Grant Brown,
       Joseph Cavanaugh, and Bob McMurray
 Maintainer: Jacob Oleson <jacob-oleson@uiowa.edu>
 Depends: R (>= 4.0.0), data.table
