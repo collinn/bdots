@@ -22,7 +22,11 @@ res <- bdotsFit(data = cohort_unrelated,
                 verbose = FALSE)
 #res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
 res2 <- bdRemove(res)
-
+debug(bdotsRefit)
+debug(bdUpdate)
+debug(bdUpdate_NULL)
+res <- res[fitCode == 6, ]
+res <- res[2:4, ]
 test <- bdotsRefit(res, fitCode = 6, quickRefit = FALSE)
 
 ## Not really much luck for doublegauss
