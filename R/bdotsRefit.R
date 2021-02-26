@@ -167,7 +167,7 @@ bdRefitter <- function(bdo, numRefits = 0L, rho = NULL, params = NULL, ...) {
                          params = params, splitVars = nn, datVarNames = bdCall,
                          numRefits = numRefits)
   prob <- tryCatch(attributes(new_bdo) <- attributes(bdo), error = function(e) 2)
-  if (is.numeric(prob)) browser()
+  if (is.numeric(prob)) stop("issue in bdrefitter, likely with ncols")
   new_bdo
 }
 
