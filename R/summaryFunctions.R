@@ -61,7 +61,7 @@ summary.bdotsObj <- function(object, ...) {
 
 #' Print bdotsObj Summary
 #'
-#' Stuff
+#' Print bdotsObj Summary
 #'
 #' @param x object to be printed
 #' @param ... not used
@@ -191,6 +191,7 @@ summary.bdotsBootObj <- function(object, ...) {
 #'
 #' That's pretty much it. This is a print method, so there is likely
 #' not much need to call it directly
+#'
 #' @param x generic name, but this will be an object of bdotsBootSummary
 #' @param ... ignored for now
 #'
@@ -223,11 +224,6 @@ print.bdotsBootSummary <- function(x, ...) {
   invisible(x)
 }
 
-
-#
-# summary <- function(x, ...)
-#   UseMethod("summary")
-#
 
 
 

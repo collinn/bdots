@@ -1,3 +1,9 @@
+## This file contains those functions used for parsing expressions and
+# formulas. This needs to be revisted and cleaned up, as I'm sure there are
+# some that are either no longer used or are redundant
+
+## ------------
+
 
 ## This is for parsing formula for bdotsBoot
 ## Syntax as follows:
@@ -208,6 +214,34 @@ curveParser2 <- function(expr) {
   }
   myenv
   #setNames(arggs, curve)
+}
+
+
+## bdCall2Subset and recurToSubset should be
+# combined. The only difference is that recurToSubset
+# will return a length 1 list (as is the case for lhs[[3]])
+
+## used for subsetting dt based on bdotsBoot formula
+# takes g(n1, n2, ...) and returns c("g", "n1", "n2", ...)
+bdCall2Subset <- function(x) {
+  if(!is.call(x)) stop(paste0("invalid syntax:", x))
+  x <- vapply(x, deparse1, character(1L))
+  vv <- paste0("val", 1:(length(x) - 1))
+  setNames(x, c("col", vv))
+}
+
+## Should document what this does
+recurToSubset <- function(x) {
+  types <- vapply(x, class, character(1))
+  types <- ifelse(types %in% c("name", "numeric"), "name", types)
+  allnames <- identical(rep("name", length(x)), types)
+  if (length(x) == 1 | allnames) {
+    outer <- bdCall2Subset(x)
+  } else {
+    if (!identical(as.symbol("+"), x[[1]])) stop("invalid formula syntax on rhs")
+    outer <- lapply(x[-1], recurToSubset)
+  }
+  unzipList(outer)
 }
 
 

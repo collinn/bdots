@@ -1,5 +1,7 @@
 
 ### Functions used in bdotsBoot ###
+# 1. bdotsBooter - bootstraps par values
+# 2. bdotsGroupSubset - subsets bdotsFitObj based on group values to bdotsBoot
 
 ## bdotsBooter
 # Takes subset dat with iter and corMat, returns
@@ -50,9 +52,7 @@ bootGroupSubset <- function(l, bdObj) {
   subargs  <- l[["subargs"]]
   resNames <- l[['resNames']]
 
-  # ouch (copy expensive) (is this necessary?)
-  # remove columns we don't want
-  bd <- subset(bdObj, select = c(resNames, subnames))
+  bd <- bdObj[, c(resNames, subnames), with = FALSE]
 
   ## This will iteratively subset itself
   for(i in seq_along(subnames)) {
@@ -88,16 +88,6 @@ alphaAdjust <- function(curveList, p.adj = "oleson", alpha = 0.05, cores, group 
   adjpval <- p_adjust(pval, p.adj, length(tstat), alpha,
                       df = curve[['n']], rho = rho, cores = cores)
   alphastar <- attr(adjpval, "alphastar")
-
-  # if (p.adj == "oleson") {
-  #   alphastar <- findModifiedAlpha(rho,
-  #                                  n = length(tstat),
-  #                                  df = curve[['n']],
-  #                                  cores = cores)
-  #   k <- alphastar/alpha
-  #   adjpval <- pval/k
-  # }
-
 
   list(pval = pval, adjpval = adjpval, alphastar = alphastar, rho = rho)
 }
