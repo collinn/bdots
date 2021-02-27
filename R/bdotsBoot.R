@@ -20,17 +20,91 @@
 #'
 #' ## Groups
 #'
-#' To be confusing, we use "groups" in two senses here. The first use, which we
-#' will denote with captial "G" Group, indicates the column name of the dataset
-#' representing one of the variables by which we will distinguish categories of
-#' observations. Lowercase "g" group will be the values in this column.
+#' The Groups are the values input in \code{group} in the \code{bdotsFit} function,
+#' which are columns of the dataset used. These will be denoted G_i
+#' Within each group, we will designate the unique values within each group as v_j, ..., whereby
+#' G_i(v_1, v_2) will designate unique two unique values within G_i. The possible
+#' values of v_i will be implied by the group with which they are associated.
 #'
-#' ## LHS
+#' For example, if we have groups \code{vehicle} and \code{color}, we could specify
+#' that we are interested in all blue cars and trucks with the expression
+#' \code{vehicle(car, truck) + color(red)}.
 #'
-#' If we are comparing two groups, we will just use the name of the outcome, i.e.,
-#' `y ~` .
+#' ## Formula
+#'
+#' ### Bootstrapped difference of curves
+#'
+#' This illustrates the case in which we are taking a simple bootstraped difference
+#' between two curves within a single group
+#'
+#' If only one group was provided in \code{bdotsFit}, we can take the bootstrapped
+#' difference between two values within the group with
+#'
+#' \code{y ~ Group1(val1, val2)}
+#'
+#' If more than two groups were provided, we must specify within which values of the
+#' other groups we would like to compare the differences from Group1 in order to
+#' uniquely identify the observations. This would be
+#'
+#' \code{y ~ Group1(val1, val2) + Group2(val1)}
+#'
+#' For example, bootstrapping the differences between cars and trucks when \code{color}
+#' was provided as a second group, we would need \code{y ~ vehicle(car, truck) + color(red)}.
+#'
+#' ### Bootstrapped difference of difference curves
+#'
+#' This next portion illustrates the case in which we are interested in studying
+#' the difference between the differences between two groups, which we will call
+#' the innerGroup and the outerGroup following a nested container metaphor. Here,
+#' we must use caution as the order of these differences matter. Using again the
+#' vehicle example, we can describe this in two ways:
+#'
+#' \enumerate{
+#'    \item We may be interested in comparing the difference between red trucks and cars (d_red) with
+#'    the difference between blue trucks and cars (d_blue). In this case, we will be finding
+#'    the difference between cars and trucks twice (one for blue, one for red). The
+#'    vehicle type is the innerGroup, nested within the outerGroup, in this case, color.
+#'    \item We may also be interested in comparing the difference between red trucks
+#'    and blue trucks (d_truck) with the difference between red and blue cars (d_car).
+#'    Here, innerGroup is the color and outerGroup is the vehicle
+#' }
+#'
+#' As our primary object of interest here is not the difference in outcome itself, but the difference
+#' of the outcome within two groups, the LHS of the formula is written
+#' \code{diffs(y, Group1(val1, val2))}, where Group1 is the innerGroup. The RHS
+#' is then used to specify the groups of which we want to take the inner difference of. The
+#' syntax here is the same as above. Together, then, the formula looks like
+#'
+#' \code{diffs(y, Group1(val1, val2)) ~ Group2(val1, val2)}
+#'
+#' in the case in which only two grouping variables were provided to \code{bdotsFit}
+#' and
+#'
+#' \code{diffs(y, Group1(val1, val2)) ~ Group2(val1, val2) + Group3(val1) + ...}
+#'
+#' is used to uniquely identify the sets of differences when three or more groups were provided.
 #'
 #' @return  Object of class 'bdotsBootObj'
+#'
+#' @examples
+#' \dontrun{
+#'
+#' ## fit <- bdotsFit(cohort_unrelated, ...)
+#'
+#' boot1 <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
+#'                    bdObj = fit,
+#'                    N.iter = 1000,
+#'                    alpha = 0.05,
+#'                    p.adj = "oleson",
+#'                    cores = 4)
+#'
+#' boot2 <- bdotsBoot(formula = Fixations ~ Group(50, 65) + LookType(Cohort),
+#'                    bdObj = fit,
+#'                    N.iter = 1000,
+#'                    alpha = 0.05,
+#'                    p.adj = "oleson",
+#'                    cores = 4)
+#' }
 #'
 #' @import data.table
 #' @export
@@ -56,13 +130,15 @@ bdotsBoot <- function(formula,
 
   curveGrps <- setNames(prs[['subargs']], prs[['subnames']])
 
-  makeCurveFun <- function(bdObj) {
-    time <- attr(bdObj, "call")[['time']]
-    f_bod <- attr(bdObj, "formula")[[3]]
-    f_args <- c(colnames(coef(bdObj)), time)
-    f_args <- setNames(as.pairlist(rep("", length(f_args))), f_args)
-    eval(call("function", f_args, f_bod), parent.frame())
-  }
+  ## Moved to helper.R, make sure it still works here
+  # makeCurveFun <- function(bdObj) {
+  #   time <- attr(bdObj, "call")[['time']]
+  #   f_bod <- attr(bdObj, "formula")[[3]]
+  #   f_args <- c(colnames(coef(bdObj)), time)
+  #   f_args <- setNames(as.pairlist(rep("", length(f_args))), f_args)
+  #   eval(call("function", f_args, f_bod), parent.frame())
+  # }
+
   curveFun <- makeCurveFun(bdObj)
 
   curveList <- curveBooter(bdObj,

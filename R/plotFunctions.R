@@ -14,7 +14,7 @@
 #' @param plotfun Plot either subject fits or model parameters with "fits" or "pars"
 #' @param ... ignore for now (other args to plot.generic)
 #'
-#' @details Right now, these functions are very unstable and expected to change.
+#' @details Right now, these functions are a bit unstable and expected to change.
 #' The largest current issue is with the placement of the legend, which cannot
 #' be adjusted. If you are running into issues with seeing things correctly, try
 #' making the "Plots" window in RStudio larger before running this function
@@ -189,7 +189,7 @@ makePlotCI <- function(cl, alpha = 0.05, ...) {
 #' @param ... ignore for now, but will eventually allow plot parameters
 #'
 #'
-#' @details Use with care
+#' @details This plot function is also a bit unstable and is expected to change
 #' @export
 plot.bdotsBootObj <- function(x, alpha = NULL, plotDiffs = TRUE, group = NULL, ciBands = TRUE, ...) {
   # value used in original call
@@ -277,4 +277,23 @@ plotOuterGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ciBands, .
 
 
 
+## Determines time regions where difference significant
+# sig are boolean values
+bucket <- function(sig, time) {
+  if (sum(sig) == 0) return(NULL)
+  rr <- rle(sig)
+  rr$idx <- cumsum(rr$lengths)
+  mm <- rr$values*(rr$idx) + (1 - rr$values)*(rr$idx + 1)
 
+  ## Alt condition if first region true
+  if (rr$values[1] == 1) {
+    #mm <- mm[c(length(mm), 1:(length(mm)-1))]
+    #mm[1] <- 1
+    mm <- c(1, mm)
+  }
+  # If ends on false
+  if (rr$values[length(rr$values)] == 0) {
+    mm <- mm[1:(length(mm) - 1)]
+  }
+  matrix(time[mm], ncol = 2, byrow = TRUE)
+}

@@ -42,8 +42,7 @@ if the first attemp fails}
 
 \item{verbose}{currently not used}
 
-\item{returnX}{Boolean. Return data with bdObj? Ignore for now. There will be
-a way around this later, but for now, if this is FALSE, things won't work}
+\item{returnX}{Boolean. Return data with bdObj? Currently not implemented}
 
 \item{...}{Secret}
 }
@@ -58,4 +57,19 @@ This is step one of the three step bdots process. Things should be
 more or less straight forward. The only tricky part involves curveType. For now
 know that one can use doubleGauss(concave = TRUE/FALSE) or logistic(). Should
 be passed in as a function. See the vignette on customizing this
+}
+\examples{
+\dontrun{
+res <- bdotsFit(data = cohort_unrelated,
+                subject = "Subject",
+                time = "Time",
+                y = "Fixations",
+                group = c("Group", "LookType"),
+                curveType = doubleGauss(concave = TRUE),
+                cor = TRUE,
+                numRefits = 2,
+                cores = 0,
+                verbose = FALSE)
+}
+
 }
