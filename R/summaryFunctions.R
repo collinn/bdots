@@ -61,7 +61,7 @@ summary.bdotsObj <- function(object, ...) {
 
 #' Print bdotsObj Summary
 #'
-#' Stuff
+#' Print bdotsObj Summary
 #'
 #' @param x object to be printed
 #' @param ... not used
@@ -128,7 +128,7 @@ summary.bdotsBootObj <- function(object, ...) {
   bdBootObj <- object
   ## Header info
   bdCall <- attr(bdBootObj, "call")
-  alphastar <- bdBootObj[['adj.alpha']]
+  alphastar <- bdBootObj[['adjalpha']]
   sigTime <- bdBootObj[['sigTime']]
   rho <- bdBootObj[['rho']]
   dod <- bdBootObj[['dod']]
@@ -139,7 +139,7 @@ summary.bdotsBootObj <- function(object, ...) {
   time <- attr(bdBootObj, "bdObjAttr")[['time']]
   timeRange <- range(time)
 
-  padj_method <- match.arg(attr(bdBootObj, "call")[['p.adj']],
+  padj_method <- match.arg(attr(bdBootObj, "call")[['padj']],
                            c("oleson", stats::p.adjust.methods))
 
 
@@ -191,6 +191,7 @@ summary.bdotsBootObj <- function(object, ...) {
 #'
 #' That's pretty much it. This is a print method, so there is likely
 #' not much need to call it directly
+#'
 #' @param x generic name, but this will be an object of bdotsBootSummary
 #' @param ... ignored for now
 #'
@@ -223,11 +224,6 @@ print.bdotsBootSummary <- function(x, ...) {
   invisible(x)
 }
 
-
-#
-# summary <- function(x, ...)
-#   UseMethod("summary")
-#
 
 
 

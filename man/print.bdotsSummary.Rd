@@ -12,7 +12,7 @@
 \item{...}{not used}
 }
 \description{
-Stuff
+Print bdotsObj Summary
 }
 \details{
 That's pretty much it. This is a print method, so there is likely

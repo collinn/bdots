@@ -14,8 +14,7 @@
 #' @param numRefits Integer indicating number of attempts to fit an observation
 #' if the first attemp fails
 #' @param verbose currently not used
-#' @param returnX Boolean. Return data with bdObj? Ignore for now. There will be
-#' a way around this later, but for now, if this is FALSE, things won't work
+#' @param returnX Boolean. Return data with bdObj? Currently not implemented
 #' @param ... Secret
 #'
 #' @return Object of class 'bdotsObj', inherits from data.table
@@ -24,6 +23,20 @@
 #' more or less straight forward. The only tricky part involves curveType. For now
 #' know that one can use doubleGauss(concave = TRUE/FALSE) or logistic(). Should
 #' be passed in as a function. See the vignette on customizing this
+#'
+#' @examples
+#' \dontrun{
+#' res <- bdotsFit(data = cohort_unrelated,
+#'                 subject = "Subject",
+#'                 time = "Time",
+#'                 y = "Fixations",
+#'                 group = c("Group", "LookType"),
+#'                 curveType = doubleGauss(concave = TRUE),
+#'                 cor = TRUE,
+#'                 numRefits = 2,
+#'                 cores = 0,
+#'                 verbose = FALSE)
+#' }
 #'
 #' @import data.table
 #' @import parallel
@@ -118,11 +131,12 @@ bdotsFit <- function(data, # dataset
  X_env$X <- X
 
  ## Janky for now, but we want a groupName List
- ## TOO janky. Fix this ASAP
- tmp <- unique(fitList[, group, with = FALSE])
- tmp <- names(split(tmp, by = group))
+ # tmp <- unique(fitList[, group, with = FALSE])
+ # tmp <- names(split(tmp, by = group))
+ vals <- do.call(function(...) paste(..., sep = "."),
+                 unique(fitList[, group, with = FALSE]))
  groups <- list(groups = group,
-                vals = tmp)
+                vals = vals)
 
  res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
                   .Data = fitList,
