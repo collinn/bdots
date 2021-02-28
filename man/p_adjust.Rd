@@ -4,16 +4,7 @@
 \alias{p_adjust}
 \title{Adjust P-values for Multiple Comparisons}
 \usage{
-p_adjust(
-  p,
-  method = "oleson",
-  n = length(p),
-  tstat = FALSE,
-  alpha = 0.05,
-  df,
-  rho,
-  cores = 0
-)
+p_adjust(p, method = "oleson", n = length(p), alpha = 0.05, df, rho, cores = 0)
 }
 \arguments{
 \item{p}{numeric vector of p-values (possibly with NAs).}
