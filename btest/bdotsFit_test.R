@@ -39,17 +39,17 @@ table(test$fitCode)
 #debugonce(curveBooter)
 boot.test <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
                        bdObj = res2,
-                       N.iter = 1000,
+                       Niter = 1000,
                        alpha = 0.05,
-                       p.adj = "fdr",
+                       padj = "fdr",
                        cores = 4)
 #plotCompare(boot.test)
 
 boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unrelated_Cohort),
                                    bdObj = res2,
-                                   N.iter = 1000,
+                                   Niter = 1000,
                                    alpha = 0.05,
-                                   p.adj = "oleson",
+                                   padj = "oleson",
                                    cores = 4)
 ## Keep only valid pairs for now
 #res2 <- res[, 1:7]
@@ -78,9 +78,9 @@ tt <- bdotsRefit(res.l)
 
 boot.l <- bdotsBoot(formula = y ~ protocol(CI, NH),
                                   bdObj = res.l,
-                                  N.iter = 1000,
+                                  Niter = 1000,
                                   alpha = 0.05,
-                                  p.adj = "oleson",
+                                  padj = "oleson",
                                   cores = 4)
 #plotCompare(boot)
 
@@ -140,9 +140,9 @@ system.time(res.b <- bdotsFit(data = currdata2,
 # should investigate nopairSD in helper.R
 system.time(boot.res <- bdotsBoot(formula = diffs(Looks, TrialType(M,W)) ~ Group(LI, TD),
                       bdObj = res.b,
-                      N.iter = 1000,
+                      Niter = 1000,
                       alpha = 0.05,
-                      p.adj = "oleson",
+                      padj = "oleson",
                       cores = 4))
 
 ## Without diff, need to make sure we are subsetting correctly
@@ -156,9 +156,9 @@ system.time(boot.res <- bdotsBoot(formula = diffs(Looks, TrialType(M,W)) ~ Group
 #  nice to add option on not including (LI, TD) if there are only two
 boot.res2 <- bdotsBoot(formula = y ~ Group(LI, TD) + TrialType(M),
                                   bdObj = res.b,
-                                  N.iter = 1000,
+                                  Niter = 1000,
                                   alpha = 0.05,
-                                  p.adj = "oleson",
+                                  padj = "oleson",
                                   cores = 4)
 
 save(res2, boot.test, boot.test2, boot.res, res.b, res.l, boot.l, boot.res2,
@@ -190,9 +190,9 @@ f(rr)
 
 boot.res2 <- bdotsBoot(formula = y ~ Group(LI, TD) + TrialType(M),
                        bdObj = bdo2,
-                       N.iter = 1000,
+                       Niter = 1000,
                        alpha = 0.05,
-                       p.adj = "oleson",
+                       padj = "oleson",
                        cores = 4)
 
 

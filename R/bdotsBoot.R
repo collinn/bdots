@@ -5,9 +5,9 @@
 #'
 #' @param formula See details.
 #' @param bdObj An object of class 'bdotsObj'
-#' @param N.iter Number of iterations of bootstrap to draw
+#' @param Niter Number of iterations of bootstrap to draw
 #' @param alpha Significance level
-#' @param p.adj Adjustment to make to pvalues for significance. Will be able to
+#' @param padj Adjustment to make to pvalues for significance. Will be able to
 #' use anything from \code{p.adjust} function, but for now, just "oleson"
 #' @param cores Number of cores to use in parallel. Default is zero, which
 #' uses half of what is available.
@@ -111,9 +111,9 @@
 
 bdotsBoot <- function(formula,
                       bdObj,
-                      N.iter = 1000,
+                      Niter = 1000,
                       alpha = 0.05,
-                      p.adj = "oleson",
+                      padj = "oleson",
                       cores = 0, ...) {
 
   if (cores < 1) cores <- detectCores()/2
@@ -144,17 +144,17 @@ bdotsBoot <- function(formula,
   curveList <- curveBooter(bdObj,
                            outerDiff = outerDiff,
                            innerDiff = innerDiff,
-                           N.iter = N.iter,
+                           N.iter = Niter,
                            curveFun = curveFun)
   ip <- curveList[['diff']][['paired']]
 
-  res <- alphaAdjust(curveList, p.adj, alpha, cores)
+  res <- alphaAdjust(curveList, padj, alpha, cores)
   pval <- res[['pval']]
   rho <- res[['rho']]
   alphastar <- res[['alphastar']]
   adjpval <- res[['adjpval']]
   time <- attr(bdObj, "time")
-  sigTime <- bucket(pval <= alphastar, time)
+  sigTime <- bucket(adjpval <= alpha, time)
   dod <- ifelse(is.null(innerDiff), FALSE, TRUE)
 
   ## maybe consider keeping ancillary data in list, i.e., res.

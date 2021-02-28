@@ -7,9 +7,9 @@
 bdotsBoot(
   formula,
   bdObj,
-  N.iter = 1000,
+  Niter = 1000,
   alpha = 0.05,
-  p.adj = "oleson",
+  padj = "oleson",
   cores = 0,
   ...
 )
@@ -19,11 +19,11 @@ bdotsBoot(
 
 \item{bdObj}{An object of class 'bdotsObj'}
 
-\item{N.iter}{Number of iterations of bootstrap to draw}
+\item{Niter}{Number of iterations of bootstrap to draw}
 
 \item{alpha}{Significance level}
 
-\item{p.adj}{Adjustment to make to pvalues for significance. Will be able to
+\item{padj}{Adjustment to make to pvalues for significance. Will be able to
 use anything from \code{p.adjust} function, but for now, just "oleson"}
 
 \item{cores}{Number of cores to use in parallel. Default is zero, which

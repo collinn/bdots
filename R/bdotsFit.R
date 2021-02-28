@@ -134,7 +134,7 @@ bdotsFit <- function(data, # dataset
  # tmp <- unique(fitList[, group, with = FALSE])
  # tmp <- names(split(tmp, by = group))
  vals <- do.call(function(...) paste(..., sep = "."),
-                 unique(fitList[, ..group]))
+                 unique(fitList[, group, with = FALSE]))
  groups <- list(groups = group,
                 vals = vals)
 

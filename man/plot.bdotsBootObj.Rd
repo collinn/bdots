@@ -28,5 +28,5 @@ Allows a number of different but also unstable option for plotting an object
 of class bdotsBoot
 }
 \details{
-Use with care
+This plot function is also a bit unstable and is expected to change
 }

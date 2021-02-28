@@ -23,7 +23,7 @@ Plot individual fits or model fit parameters from an object of class
 'bdotsObj'. These functions are not very stable
 }
 \details{
-Right now, these functions are very unstable and expected to change.
+Right now, these functions are a bit unstable and expected to change.
 The largest current issue is with the placement of the legend, which cannot
 be adjusted. If you are running into issues with seeing things correctly, try
 making the "Plots" window in RStudio larger before running this function

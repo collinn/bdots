@@ -128,7 +128,7 @@ summary.bdotsBootObj <- function(object, ...) {
   bdBootObj <- object
   ## Header info
   bdCall <- attr(bdBootObj, "call")
-  alphastar <- bdBootObj[['adj.alpha']]
+  alphastar <- bdBootObj[['adjalpha']]
   sigTime <- bdBootObj[['sigTime']]
   rho <- bdBootObj[['rho']]
   dod <- bdBootObj[['dod']]
@@ -139,7 +139,7 @@ summary.bdotsBootObj <- function(object, ...) {
   time <- attr(bdBootObj, "bdObjAttr")[['time']]
   timeRange <- range(time)
 
-  padj_method <- match.arg(attr(bdBootObj, "call")[['p.adj']],
+  padj_method <- match.arg(attr(bdBootObj, "call")[['padj']],
                            c("oleson", stats::p.adjust.methods))
 
 

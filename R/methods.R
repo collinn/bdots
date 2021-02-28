@@ -153,7 +153,7 @@ rbindlist.bdObjList <- function(x, ...) {
 #' @import stats
 #'
 #' @export
-p_adjust <- function(p, method = "oleson", n = length(p), tstat = FALSE,
+p_adjust <- function(p, method = "oleson", n = length(p),
                      alpha = 0.05, df, rho, cores = 0) {
 
   method <- match.arg(method, c("oleson", stats::p.adjust.methods))
@@ -161,12 +161,9 @@ p_adjust <- function(p, method = "oleson", n = length(p), tstat = FALSE,
   if (method == "oleson") {
     if (missing(df)) stop('Require value for df when using method "oleson"')
     if (cores < 1) cores <- detectCores()/2
-    if (missing(rho) & !tstat) {
+    if (missing(rho)) {
       message('rho not assigned with method "olseon". Using rho = 0.9')
       rho <- 0.9
-    } else if (missing(rho) & tstat) {
-      rho <- ar1Solver(p) ## assumes p is t-statistic
-      p <- 2 * (1 - pt(abs(p), df = df))
     }
 
     alphastar <- findModifiedAlpha(rho, n, df, alpha, cores = cores)
