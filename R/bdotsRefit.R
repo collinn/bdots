@@ -119,8 +119,6 @@ bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = FALSE, numRefits = 2L, 
 
 bdQuickRefit <- function(bdo, numRefits) {
 
-
-
   if (bdo$fitCode != 6L) {
     njitter <- 5L
     newPars <- coef(bdo[['fit']][[1]])
@@ -170,8 +168,6 @@ bdRefitter <- function(bdo, numRefits = 0L, rho = NULL, params = NULL, ...) {
   if (is.numeric(prob)) stop("issue in bdrefitter, likely with ncols")
   new_bdo
 }
-
-
 
 ## A lot of bits of these can be abstracted to functions
 ## Need to be able to handle fitCode == 6
