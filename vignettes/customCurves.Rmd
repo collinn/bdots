@@ -1,0 +1,144 @@
+---
+title: "User Curve Functions"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{User Curve Functions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(bdots)
+```
+
+We saw in the [general overview](bdots.html) when first generating our model fits with `bdotsFit` that we we could specify the curve with the argument `curveType`. Presently, the `bdots` package contains three options for this, `doubleGauss`, `logistic`, and `polynomial`. Documentation is included for each of these cuves. 
+
+```{r}
+fit <- bdotsFit(data = cohort_unrelated,
+                subject = "Subject",
+                time = "Time",
+                y = "Fixations",
+                group = c("DB_cond", "LookType"),
+                curveType = doubleGauss(concave = TRUE),
+                cores = 2)
+```
+
+Note that each of these is a function in their own right and must be passed in as a `call`. For curve functions that include arguments further specifying the curve, i.e., `doubleGauss(concave = TRUE)` and `polynomial(degree = n)`, these are passed in when `bdots` is called. Because each of the functions exists independently of `bdotsFit`, users can specify their own curve functions for the fitting and bootstrapping process. The purpose of this vignette is to demonstrate how to do so. If you find that you have a curve function that is especially useful, please create a request to have it added to the `bdots` package [here](https://github.com/collinn/bdots/issues).
+
+We will examine the `doubleGauss` function in more detail to see how we might go about creating our own. First, let's identify the pieces of this function
+
+```{r}
+doubleGauss
+```
+
+There are four things to note:
+
+1. Arguments
+  : In addition to the argument `concave = TRUE`, which specifies the curve, we also have `dat`, `y`, `time`, `params = NULL`, and `...`. These are the names that must be used for the function to be called correctly. The first represents a `data.frame` or `data.table` subset from the `data` argument to `bdotsFit`, while `y` and `time` correspond to their respective arguments in `bdotsFit`. It's important to remember to set `params = NULL`, as this is only used during the refitting step. 
+2. Body
+  : As can be seen here, when `params = NULL`, the body of the function computes the necessary parameters to be used with the `gnls` package. When `params` is not `NULL`, it's usually a good idea to verify that it is the correct length and has the correct parameter names. Otherwise, the starting parameters are computed from the data that has been passed in.
+4. Formula
+  : Care must be excercised when creating the `formula` object, as it must be quoted. One may use `bquote` and `str2lang` to substitue in the `character` values for `y` and `time`. Alternatively, if this is to only be used for a particular dataset, one can simply use `quote` with the appropriate values used for `y` and `time`. Finally, the quoted `formula` should contain a single attribute `parnames` which has the names of the parameters used. 
+3. Return Value
+  : All of the curve functions should return a named list with two elements: a quoted `formula` and `params`, a named `numeric` with the parameters. 
+
+Briefly, we can see how this function is used by subsetting the data and calling it directly.
+
+```{r}
+## Return a unique subject/group permutation
+dat <- cohort_unrelated[Subject == 1 & DB_cond == 50 & LookType == "Cohort", ]
+dat
+```
+
+```{r}
+## See return value
+doubleGauss(dat = dat, y = "Fixations", time = "Time", concave = TRUE)
+```
+
+We will now create an entirely new function that is not included in `bdots` and demonstrate that it works the same. The only change we will make is to substitute in the values for `y` and `time` without using `str2lang`.
+
+```{r}
+doubleGauss2 <- function (dat, params = NULL, concave = TRUE, ...) {
+    dgaussPars <- function(dat, conc = concave) {
+        time <- dat[["Time"]]
+        y <- dat[["Fixations"]]
+        mu <- ifelse(conc, time[which.max(y)], time[which.min(y)])
+        ht <- ifelse(conc, max(y), min(y))
+        base1 <- ifelse(conc, min(y[time < mu]), max(y[time < 
+            mu]))
+        base2 <- ifelse(conc, min(y[time > mu]), max(y[time > 
+            mu]))
+        y1 <- y - base1
+        y1 <- rev(y1[time <= mu])
+        time1 <- rev(time[time <= mu])
+        totalY1 <- sum(y1)
+        sigma1 <- mu - time1[which.min(abs((pnorm(1) - pnorm(-1)) * 
+            totalY1 - cumsum(y1)))]
+        y2 <- y - base2
+        y2 <- y2[time >= mu]
+        time2 <- time[time >= mu]
+        totalY2 <- sum(y2)
+        sigma2 <- time2[which.min(abs((pnorm(1) - pnorm(-1)) * 
+            totalY2 - cumsum(y2)))] - mu
+        return(c(mu = mu, ht = ht, sig1 = sigma1, sig2 = sigma2, 
+            base1 = base1, base2 = base2))
+    }
+    if (is.null(params)) {
+        params <- dgaussPars(dat, concave)
+    }
+    else {
+        if (length(params) != 6) 
+            stop("doubleGauss requires 6 parameters be specified for refitting")
+        if (!all(names(params) %in% c("mu", "ht", "sig1", "sig2", 
+            "base1", "base2"))) {
+            stop("doubleGauss parameters for refitting must be correctly labeled")
+        }
+    }
+
+    ## Here, we use Fixations and Time directly
+    ff <- bquote(Fixations ~ (Time < mu) * (exp(-1 * (Time - 
+        mu)^2/(2 * sig1^2)) * (ht - base1) + base1) + (mu <= 
+        Time) * (exp(-1 * (Time - mu)^2/(2 * sig2^2)) * 
+        (ht - base2) + base2))
+    return(list(formula = ff, params = params))
+}
+
+same_fit_different_day <- bdotsFit(data = cohort_unrelated,
+                                   subject = "Subject",
+                                   time = "Time",
+                                   y = "Fixations",
+                                   group = c("DB_cond", "LookType"),
+                                   curveType = doubleGauss2(concave = TRUE),
+                                   cores = 2)
+```
+
+Because the curves are fit randomly and seeds have not yet be implemented, we can only roughly verify that each function returns similar results.
+
+```{r}
+## Original fit
+head(coef(fit))
+
+## "New" fit
+head(coef(same_fit_different_day))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
