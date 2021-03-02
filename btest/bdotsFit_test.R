@@ -18,7 +18,7 @@ res <- bdotsFit(data = cohort_unrelated,
                 curveType = doubleGauss(concave = TRUE),
                 cor = TRUE,
                 numRefits = 2,
-                cores = 0,
+                cores = 4,
                 verbose = FALSE)
 
 #res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
