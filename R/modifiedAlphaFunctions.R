@@ -162,7 +162,11 @@ findModifiedAlpha <- function(rho, n, df, alpha = 0.05, errorAcc = 0.001,
   ## Functional that takes argument `k` for bounds
   effectiveAlpha <- effectiveAlpha_f(rho, n, df, method = method)
 
-  cl <- makePSOCKcluster(cores)
+  if (Sys.info()['sysname'] == "Darwin") {
+    cl <- makePSOCKcluster(cores, setup_strategy = "sequential")
+  } else {
+    cl <- makePSOCKcluster(cores)
+  }
 
   ## Pg 12 of detecting time-specific differences, FWER alpha
   minVal <- qt(1 - alpha / 2, df)

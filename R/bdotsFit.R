@@ -101,17 +101,46 @@ bdotsFit <- function(data, # dataset
   newdat <- split(dat, by = splitVars, drop = TRUE)
 
  # ## if(.platform$OStype == windows)
- cl <- makePSOCKcluster(cores)
-
- invisible(clusterEvalQ(cl, {library(nlme); library(bdots)}))
-
- res <- parLapply(cl, newdat, bdotsFitter,
-                  curveType = curveType,
-                  rho = rho, numRefits = numRefits,
-                  verbose = FALSE,
-                  splitVars = splitVars,
-                  datVarNames = datVarNames)
- stopCluster(cl)
+  
+  # if (Sys.info()['sysname'] == "Darwin") {
+  #   res <- lapply(newdat, bdotsFitter, 
+  #                 curveType = curveType,
+  #                 rho = rho, numRefits = numRefits,
+  #                 verbose = FALSE,
+  #                 splitVars = splitVars,
+  #                 datVarNames = datVarNames)
+  # } else {
+  #   cl <- makePSOCKcluster(cores)
+  #   
+  #   invisible(clusterEvalQ(cl, {library(nlme); library(bdots)}))
+  #   
+  #   res <- parLapply(cl, newdat, bdotsFitter,
+  #                    curveType = curveType,
+  #                    rho = rho, numRefits = numRefits,
+  #                    verbose = FALSE,
+  #                    splitVars = splitVars,
+  #                    datVarNames = datVarNames)
+  #   stopCluster(cl)
+  # }
+  
+  if (Sys.info()['sysname'] == "Darwin") {
+    cl <- makePSOCKcluster(cores, setup_strategy = "sequential")
+  } else {
+    cl <- makePSOCKcluster(cores)
+  }
+  
+  invisible(clusterEvalQ(cl, {library(nlme); library(bdots)}))
+  
+  res <- parLapply(cl, newdat, bdotsFitter,
+                   curveType = curveType,
+                   rho = rho, numRefits = numRefits,
+                   verbose = FALSE,
+                   splitVars = splitVars,
+                   datVarNames = datVarNames)
+  stopCluster(cl)
+  
+  
+ 
 
  ff <- attr(res[[1]], "formula")
  fitList <- rbindlist(res, fill = TRUE)

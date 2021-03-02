@@ -219,11 +219,17 @@ bdUpdate <- function(bdo, numRefits) {
       for (pname in names(oldPars)) {
         cat("Current value:\n")
         print(oldPars[pname])
-        tmpval <- readline(paste0("New value for ", pname, ": "))
-        if (!is.na(as.numeric(tmpval))) {
-          newPars[pname] <- tmpval
-        } else if (tmpval != "") {
-          warning("Invalid entry, keeping old value")
+        tmpval <- NA
+        while (is.na(as.numeric(tmpval))) { # possibly wrap this around try because otherwise it prints out warnings afterwards. 
+          tmpval <- readline(paste0("New value for ", pname, ": "))
+          if (!is.na(as.numeric(tmpval))) {
+            newPars[pname] <- tmpval
+          } else if (tmpval == "") {
+            newPars[pname] <- oldPars[pname]
+            break
+          } else {
+            cat("Invalid entry, please enter numeric value\n")
+          }
         }
       }
       class(newPars) <- "numeric"
@@ -338,7 +344,16 @@ bdUpdate_NULL <- function(bdo, numRefits) {
       while (!(resp %in% 1:2)) {
         resp <- readline("Choose (1-2): ")
       }
-      rounds <- rounds + 1L
+      ## resp = 1:4 changes, so need to map 2 here to delete subject (4)
+      # in case they change their mind (selecting 'n' for delete), it needs to come
+      # back to this original menu prompt. Consequently, update 'rounds' only if reps == 1
+      # in this case, we could change rounds to boolean, the logic is the same
+      if (resp == 2) {
+        resp <- 4
+      } else {
+        rounds <- rounds + 1L
+      }
+      
     } else {
       rf_msg <- paste0("\nActions:\n",
                        "1) Adjust starting parameters manually\n",
@@ -362,7 +377,7 @@ bdUpdate_NULL <- function(bdo, numRefits) {
           if (!is.na(as.numeric(tmpval)))
             newPars[pname] <- as.numeric(tmpval)
           else
-            warning("Invalid entry, please enter numeric value")
+            cat("Invalid entry, please enter numeric value\n")
         }
       }
 

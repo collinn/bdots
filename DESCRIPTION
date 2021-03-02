@@ -5,14 +5,16 @@ Version: 1.0.0
 Date: 2021-02-26
 Author: Collin Nolte, Michael Seedorff, Jacob Oleson, Grant Brown,
       Joseph Cavanaugh, and Bob McMurray
-Maintainer: Jacob Oleson <jacob-oleson@uiowa.edu>
+Maintainer: Collin Nolte <collin-nolte@uiowa.edu>
+BugReports: https://github.com/collinn/bdots/issues
 Depends: R (>= 4.0.0), data.table
 Imports: nlme, mvtnorm, parallel, stats, graphics, utils, ggplot2
 LazyData: TRUE
 Description: Analyze differences among time series curves with p-value adjustment for multiple comparisons introduced in Oleson et al (2015) <DOI:10.1177/0962280215607411>.
 License: GPL-3 | file LICENSE
+URL: https://github.com/collinn/bdots
 NeedsCompilation: no
 Encoding: UTF-8
 RoxygenNote: 7.1.1
 Suggests: knitr, rmarkdown, tinytest
-VignetteBuilder: knitr
+VignetteBuilder: knitr, rmarkdown
