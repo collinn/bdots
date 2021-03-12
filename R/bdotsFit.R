@@ -12,7 +12,7 @@
 #' @param cores number of cores. Default is \code{0}, indicating half cores available
 #' @param cor Boolean. Autocorrelation?
 #' @param numRefits Integer indicating number of attempts to fit an observation
-#' if the first attemp fails
+#' if the first attempt fails
 #' @param verbose currently not used
 #' @param returnX Boolean. Return data with bdObj? Currently not implemented
 #' @param ... Secret
@@ -101,9 +101,9 @@ bdotsFit <- function(data, # dataset
   newdat <- split(dat, by = splitVars, drop = TRUE)
 
  # ## if(.platform$OStype == windows)
-  
+
   # if (Sys.info()['sysname'] == "Darwin") {
-  #   res <- lapply(newdat, bdotsFitter, 
+  #   res <- lapply(newdat, bdotsFitter,
   #                 curveType = curveType,
   #                 rho = rho, numRefits = numRefits,
   #                 verbose = FALSE,
@@ -111,9 +111,9 @@ bdotsFit <- function(data, # dataset
   #                 datVarNames = datVarNames)
   # } else {
   #   cl <- makePSOCKcluster(cores)
-  #   
+  #
   #   invisible(clusterEvalQ(cl, {library(nlme); library(bdots)}))
-  #   
+  #
   #   res <- parLapply(cl, newdat, bdotsFitter,
   #                    curveType = curveType,
   #                    rho = rho, numRefits = numRefits,
@@ -122,15 +122,15 @@ bdotsFit <- function(data, # dataset
   #                    datVarNames = datVarNames)
   #   stopCluster(cl)
   # }
-  
+
   if (Sys.info()['sysname'] == "Darwin") {
     cl <- makePSOCKcluster(cores, setup_strategy = "sequential")
   } else {
     cl <- makePSOCKcluster(cores)
   }
-  
+
   invisible(clusterEvalQ(cl, {library(nlme); library(bdots)}))
-  
+
   res <- parLapply(cl, newdat, bdotsFitter,
                    curveType = curveType,
                    rho = rho, numRefits = numRefits,
@@ -138,9 +138,9 @@ bdotsFit <- function(data, # dataset
                    splitVars = splitVars,
                    datVarNames = datVarNames)
   stopCluster(cl)
-  
-  
- 
+
+
+
 
  ff <- attr(res[[1]], "formula")
  fitList <- rbindlist(res, fill = TRUE)

@@ -36,7 +36,7 @@ greater than one}
 \item{cor}{Boolean. Autocorrelation?}
 
 \item{numRefits}{Integer indicating number of attempts to fit an observation
-if the first attemp fails}
+if the first attempt fails}
 
 \item{cores}{number of cores. Default is \code{0}, indicating half cores available}
 
