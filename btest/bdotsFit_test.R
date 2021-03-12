@@ -7,7 +7,6 @@ library(data.table)
 library(parallel)
 library(nlme)
 library(mvtnorm)
-2 + 2
 
 
 res <- bdotsFit(data = cohort_unrelated,
