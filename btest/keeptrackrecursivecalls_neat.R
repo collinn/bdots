@@ -1,4 +1,5 @@
 
+## why did i write this?
 x <- matrix(1:8, ncol = 2)
 
 stripMat <- function(x) {
