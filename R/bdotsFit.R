@@ -106,7 +106,7 @@ bdotsFit <- function(data, # dataset
     cl <- makePSOCKcluster(cores)
   }
 
-  invisible(clusterEvalQ(cl, library(bdots))))
+  invisible(clusterEvalQ(cl, {library(bdots)}))
 
   res <- parLapply(cl, newdat, bdotsFitter,
                    curveType = curveType,
