@@ -12,6 +12,11 @@
 #' the original fit will be kept.
 #' @param numRefits Integer indicating the number of refit attempts after jittering
 #' parameters, either with quickRefit or when done individually
+#' @param paramDT A \code{data.table} or \code{data.frame} that matches the what is
+#' returned by \code{coefWriteout(bdObj)}. That is, it should have columns
+#' uniquely identifying observations with subjects and groups, as well as named
+#' columns for the paramters. NA parameters are OK. Can also be a subset of the original rows.
+#' Note, if this argument is not \code{NULL}, the remaining arguments will be ignored.
 #' @param ... not used
 #'
 #' @return Returns bdObj with updated fits
@@ -23,7 +28,9 @@
 #' user will be prompted through a menu to individually refit observations
 #' @import data.table
 #' @export
-bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = FALSE, numRefits = 2L, ...) {
+bdotsRefit <- function(bdObj, fitCode = 1L,
+                       quickRefit = FALSE, numRefits = 2L,
+                       paramDT = NULL, ...) {
 
   if (is.null(fitCode)) fitCode <- 1L
 
@@ -34,30 +41,30 @@ bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = FALSE, numRefits = 2L, 
 
   ## These uniquely identify each fit
   bdCall <- attr(bdObj, "call")
-  nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']]))
+  nn <- getIdentifierCols(bdObj) #c(eval(bdCall[['subject']]), eval(bdCall[['group']]))
 
-  ## Because of factors, which I should really think about removing
-  fitcode <- fitCode
-  idx <- which(bdObj$fitCode >= fitcode)
-  if (length(idx) == 0L) {
-    message(paste0("All observations fitCode greater than ",
-                   fitcode, ". Nothing to refit :)"))
-    return(bdObj)
-  }
-  bdObj2 <- split(bdObj[idx, ], by = nn)
-
-  if (quickRefit) {
-    ## Oddly, I get errors running parLapply not lapply. Will investigate
-    # cores <- attr(bdObj, "call")$cores
-    # if (cores == 0) cores <- detectCores()/2
-    # cl <- makePSOCKcluster(cores)
-    # invisible(clusterEvalQ(cl, library(bdots)))
-    # new_bd <- parLapply(cl, bdObj2, bdQuickRefit, numRefits)
-    # stopCluster(cl)
-    new_bd <- lapply(bdObj2, bdQuickRefit, numRefits)
+  if (!is.null(paramDT) & inherits(paramDT, what = "data.frame")) {
+    res <- mergecoef(bdObj, paramDT)
+    idx <- res[['idx']]
+    new_bd <- res[['new_bd']]
   } else {
-    new_bd <- lapply(bdObj2, bdUpdate, numRefits)
+    fitcode <- fitCode
+    idx <- which(bdObj$fitCode >= fitcode)
+    if (length(idx) == 0L) {
+      message(paste0("All observations fitCode greater than ",
+                     fitcode, ". Nothing to refit :)"))
+      return(bdObj)
+    }
+    bdObj2 <- split(bdObj[idx, ], by = nn)
+    if (quickRefit) {
+      ## Oddly, I get errors running parLapply not lapply. Will investigate
+      new_bd <- lapply(bdObj2, bdQuickRefit, numRefits)
+    } else {
+      new_bd <- lapply(bdObj2, bdUpdate, numRefits)
+    }
   }
+
+
 
   null_idx <- which(vapply(new_bd, is.null, logical(1)))
   if (length(null_idx) != 0) {
@@ -153,7 +160,7 @@ bdQuickRefit <- function(bdo, numRefits) {
 bdRefitter <- function(bdo, numRefits = 0L, rho = NULL, params = NULL, ...) {
   if (nrow(bdo) != 1L) stop("bdRefitter can only take a single observation")
   bdCall <- attr(bdo, "call")
-  nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']])) # this is split vars!
+  nn <- getIdentifierCols(bdo) #c(eval(bdCall[['subject']]), eval(bdCall[['group']])) # this is split vars!
   if (is.null(rho)) rho <- attr(bdo, "rho")
   crvFun <- curve2Fun(bdCall[['curveType']])
 
@@ -220,7 +227,7 @@ bdUpdate <- function(bdo, numRefits) {
         cat("Current value:\n")
         print(oldPars[pname])
         tmpval <- NA
-        while (is.na(as.numeric(tmpval))) { # possibly wrap this around try because otherwise it prints out warnings afterwards. 
+        while (is.na(as.numeric(tmpval))) { # possibly wrap this around try because otherwise it prints out warnings afterwards.
           tmpval <- readline(paste0("New value for ", pname, ": "))
           if (!is.na(as.numeric(tmpval))) {
             newPars[pname] <- tmpval
@@ -353,7 +360,7 @@ bdUpdate_NULL <- function(bdo, numRefits) {
       } else {
         rounds <- rounds + 1L
       }
-      
+
     } else {
       rf_msg <- paste0("\nActions:\n",
                        "1) Adjust starting parameters manually\n",
