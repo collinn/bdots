@@ -17,8 +17,25 @@ res <- bdotsFit(data = cohort_unrelated,
                 curveType = doubleGauss(concave = TRUE),
                 cor = TRUE,
                 numRefits = 2,
+                cores = 8,
+                verbose = FALSE)
+
+res2 <- bdotsFit(data = cohort_unrelated,
+                subject = "Subject",
+                time = "Time",
+                y = "Fixations",
+                group = c("Group", "LookType"),
+                curveType = doubleGauss2(concave = TRUE),
+                cor = TRUE,
+                numRefits = 2,
                 cores = 4,
                 verbose = FALSE)
+
+res <- bdotsRefit(res, quickRefit = TRUE, numRefits = 4, fitCode = 6)
+res2 <- bdotsRefit(res2, quickRefit = TRUE, numRefits = 4, fitCode = 6)
+
+table(res$fitCode)
+table(res2$fitCode)
 
 #res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
 res2 <- bdRemove(res)

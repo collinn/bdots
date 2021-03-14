@@ -1,6 +1,6 @@
-#' Double Gauss2 curve function for nlme
+#' DoubleGauss2 curve function for nlme
 #'
-#' Double Gauss2 function used in fitting nlme curve for observations
+#' DoubleGauss2 function used in fitting nlme curve for observations
 #'
 #' @param dat subject data to be used
 #' @param y outcome variable, character vector
@@ -28,8 +28,6 @@ doubleGauss2 <- function(dat, y, time, params = NULL, concave = TRUE, ...) {
     }
   }
 
-  ## Maybe have functions that just return this formula for
-  # ease of update for end user
   y <- str2lang(y)
   time <- str2lang(time)
   ff <- bquote(.(y) ~ (.(time) < mu) * (exp(-1 * (.(time) - mu) ^ 2
@@ -40,19 +38,8 @@ doubleGauss2 <- function(dat, y, time, params = NULL, concave = TRUE, ...) {
   return(list(formula = ff, params = params))
 }
 
-#
-# cohort <- as.data.table(cohort_unrelated)
-# dat <- cohort[Subject == 4, ]
-# dat <- dat[LookType == "Cohort" & Group == 65, ]
-#
-# y <- "Fixations"
-# time <- "Time"
-# conc <- TRUE
-#
-# doubleGauss2(dat, "Fixations", "Time")
-# doubleGauss(dat, "Fixations", "Time")
 
-dgaussPars2 <- function(dat, y, time, conc = concave) {
+dgaussPars2 <- function(dat, y, time, conc = TRUE) {
   time <- dat[[time]]
   y <- dat[[y]]
 
@@ -145,34 +132,12 @@ dgaussPars2 <- function(dat, y, time, conc = concave) {
     }
     s_pars <- scalePars(startp)
     newpars <- optim(s_pars, fn = dgls, time = time, y = y,
-                     method = "L-BFGS-B", lower = s_lb, upper = s_ub, control = optns)
+                     method = "L-BFGS-B", lower = s_lb, upper = s_ub, control = optns, hessian = TRUE)
     res[attempt, ] <- c(scalePars(newpars$par, 2), newpars$value)
   }
   ## Starting value with par ests
   best_idx <- which.min(res[, length(pars) + 1])
   best_pars <- setNames(res[best_idx, 1:length(pars)], names(pars))
   return(best_pars)
-  # s_pars <- scalePars(pars)
-  #
-  # newpars <- optim(s_pars, fn = dgls, time = time, y = y,
-  #                  method = "L-BFGS-B", lower = s_lb, upper = s_ub, control = optns)
-  # np <- scalePars(newpars$par, 2)
-  # # base1 <- ifelse(conc, min(y[time < mu]), max(y[time < mu]))
-  # # base2 <- ifelse(conc, min(y[time > mu]), max(y[time > mu]))
-  #
-  # ## A little more involved
-  # y1 <- y - base1
-  # y1 <- rev(y1[time <= mu])
-  # time1 <- rev(time[time <= mu])
-  # totalY1 <- sum(y1)
-  # sigma1 <- mu - time1[which.min(abs((pnorm(1) - pnorm(-1)) * totalY1 - cumsum(y1)))]
-  #
-  # y2 <- y - base2
-  # y2 <- y2[time >= mu]
-  # time2 <- time[time >= mu]
-  # totalY2 <- sum(y2)
-  # sigma2 <- time2[which.min(abs((pnorm(1) - pnorm(-1)) * totalY2 - cumsum(y2)))] - mu
-  #
-  # return(c(mu = mu, ht = ht, sig1 = sigma1, sig2 = sigma2,
-  #          base1 = base1, base2 = base2))
+
 }

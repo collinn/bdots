@@ -3,6 +3,47 @@
 
 ## ----------
 
+## Two functions to bind parameters to unique identifiers
+#' Create \code{data.table} with \code{bdotsObj} parameters
+#'
+#' Creates an object of class \code{data.table} that matches
+#' parameter values for each observation. This can then be
+#' passed to the \code{bdotsRefit} function
+#'
+#' @param bdObj An object returned from \code{bdotsFit} or \code{bdotsRefit}
+#'
+#' @return A \code{data.table} matching parameter values to observations
+#'
+#' @examples
+#' \dontrun{
+#' fit <- bdotsFit(data = cohort_unrelated,
+#'                 subject = "Subject",
+#'                 time = "Time",
+#'                 y = "Fixations",
+#'                 group = c("Group", "LookType"),
+#'                 curveType = doubleGauss(concave = TRUE),
+#'                 cor = TRUE,
+#'                 numRefits = 2,
+#'                 cores = 0,
+#'                 verbose = FALSE)
+#' parDT <- coefWriteout(fit)
+#' }
+#' @export
+coefWriteout <- function(bdObj) {
+  cmat <- coef(bdObj)
+  idcols <- getIdentifierCols(bdObj)
+  idcols <- bdObj[, idcols, with = FALSE]
+  res <- cbind(idcols, cmat) # attributes not preserved when writing out so don't add
+}
+
+getIdentifierCols <- function(bdo) {
+  sub <- attr(bdo, "call")$subject
+  grps <- eval(attr(bdo, "call")$group)
+  c(sub, grps)
+}
+
+
+
 ## getVarMat
 # takes subset data with single observation
 # returns covariance matrix of fit parameters
@@ -80,6 +121,8 @@ compact <- function(x) Filter(Negate(is.null), x)
 
 ## Pull from attributes names of vars to split
 # data by observation (subject, group)
+# this is exactly getIdentifierCols. Get rid of one of these. Probably this one
+# since the other is more generally named
 getSplitVars <- function(bdObj) {
   bdCall <- attr(bdObj, "call")
   nn <- c(eval(bdCall[['subject']]), eval(bdCall[['group']]))
@@ -89,7 +132,7 @@ getSplitVars <- function(bdObj) {
 ## Correctly subsets dataset for observation
 getSubX <- function(bdo) {
   X <- setDT(attr(bdo, "X")$X)
-  nn <- getSplitVars(bdo)
+  nn <- getIdentifierCols(bdo)
   Xnames <- do.call(paste, X[, nn, with = FALSE])
   bdNames <- do.call(paste, bdo[, nn, with = FALSE])
   x_idx <- Xnames %in% bdNames
