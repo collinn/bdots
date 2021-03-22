@@ -22,7 +22,6 @@ library(bdots)
 
 This vignette walks through using a text file of previously fit model parameters to use in the `bdotsRefit` function. This is convenient if you have already gone through the refitting process and would like to save/load the refitted parameters in a new session.
 
-
 To demonstate this process, we start with fitting a set of curves to our data
 
 ```{r}

@@ -37,8 +37,16 @@ coefWriteout <- function(bdObj) {
 }
 
 getIdentifierCols <- function(bdo) {
-  sub <- attr(bdo, "call")$subject
-  grps <- eval(attr(bdo, "call")$group)
+  if (inherits(bdo, "bdotsBootObj")) {
+    bdo_call <- attr(bdo, "bdObjAttr")$call
+    sub <- bdo_call[['subject']]
+    grps <- eval(bdo_call[['group']])
+  } else if (inherits(bdo, "bdotsObj")) {
+    sub <- attr(bdo, "call")$subject
+    grps <- eval(attr(bdo, "call")$group)
+  } else {
+    stop(paste("Can't get identifier cols on this type of object:", class(bdo)))
+  }
   c(sub, grps)
 }
 
@@ -130,13 +138,28 @@ getSplitVars <- function(bdObj) {
 }
 
 ## Correctly subsets dataset for observation
+# but note this only works for bdotsObj not bdotsBootObj
 getSubX <- function(bdo) {
-  X <- setDT(attr(bdo, "X")$X)
-  nn <- getIdentifierCols(bdo)
-  Xnames <- do.call(paste, X[, nn, with = FALSE])
-  bdNames <- do.call(paste, bdo[, nn, with = FALSE])
-  x_idx <- Xnames %in% bdNames
-  X[x_idx, ]
+  if (inherits(bdo, "bdotsObj")) {
+    X <- setDT(attr(bdo, "X")$X)
+    nn <- getIdentifierCols(bdo)
+    Xnames <- do.call(paste, X[, nn, with = FALSE])
+    bdNames <- do.call(paste, bdo[, nn, with = FALSE])
+    x_idx <- Xnames %in% bdNames
+    return(X[x_idx, ])
+  } else if (inherits(bdo, "bdotsBootObj")) {
+    # no this doesn't work, need to subset out groups
+    X <- setDT(attr(bdo, "bdObjAttr")$X$X)
+    sub_vals <- bdo$curveGroups
+    sub_cols <- names(sub_vals)
+    for (i in seq_along(sub_cols)) {
+      ss_vec <- X[[sub_cols[i]]] %in% sub_vals[[i]]
+      X <- X[ss_vec, ]
+    }
+    return(X)
+  } else {
+    stop(paste("Can't subset X on this type of object:", class(bdo)))
+  }
 }
 
 ## Create curve function from formula
