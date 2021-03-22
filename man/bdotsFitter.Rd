@@ -10,7 +10,7 @@ bdotsFitter(
   rho,
   numRefits = 0,
   verbose,
-  get.cov.only = NULL,
+  getCovOnly = NULL,
   params = NULL,
   splitVars = NULL,
   datVarNames = NULL,
@@ -28,7 +28,7 @@ bdotsFitter(
 
 \item{verbose}{not used}
 
-\item{get.cov.only}{holdover from old bdots. Follow up with Jake to see if used}
+\item{getCovOnly}{only find covariance matrix from starting parameter values}
 
 \item{params}{starting parameters, if wanting to add manually}
 

@@ -41,8 +41,7 @@ Creates bootstrapped curves and performs alpha adjustment. Can perform
 \details{
 The formula is the only tricky part of this. There will be a minor
 update to how it works in the future.  The three parts we will examine here
-are Groups, the LHS, and the RHS. This is incompelete below, but is detailed
-in the original vignette sent out
+are Groups, the LHS, and the RHS.
 
 ## Groups
 

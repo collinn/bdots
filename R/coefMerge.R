@@ -46,7 +46,7 @@ mergecoef <- function(bdObj, infile) {
   }
   invisible(clusterEvalQ(cl, {library(bdots)}))
 
-  new_bd <- clusterMap(cl, bdRefitter, bdo = bdObj2, params = newpars)
+  new_bd <- clusterMap(cl, bdRefitter, bdo = bdObj2, params = newpars, getCovOnly = TRUE)
   stopCluster(cl)
 
   return(list(new_bd = new_bd, idx = idx))

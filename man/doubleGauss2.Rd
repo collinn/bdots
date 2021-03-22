@@ -2,7 +2,7 @@
 % Please edit documentation in R/doubleGauss2.R
 \name{doubleGauss2}
 \alias{doubleGauss2}
-\title{Double Gauss2 curve function for nlme}
+\title{DoubleGauss2 curve function for nlme}
 \usage{
 doubleGauss2(dat, y, time, params = NULL, concave = TRUE, ...)
 }
@@ -20,7 +20,7 @@ doubleGauss2(dat, y, time, params = NULL, concave = TRUE, ...)
 \item{...}{just in case}
 }
 \description{
-Double Gauss2 function used in fitting nlme curve for observations
+DoubleGauss2 function used in fitting nlme curve for observations
 }
 \details{
 User should only have to worry about setting concavity

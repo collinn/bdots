@@ -11,7 +11,7 @@
 #' @param rho correlation coefficient
 #' @param numRefits number of refit attempts
 #' @param verbose not used
-#' @param get.cov.only holdover from old bdots. Follow up with Jake to see if used
+#' @param getCovOnly only find covariance matrix from starting parameter values
 #' @param params starting parameters, if wanting to add manually
 #' @param splitVars variables used to identify group. Might combine with datVarNames
 #' @param datVarNames character vector indicating reponse and time values from parent call
@@ -19,7 +19,7 @@
 #'
 #' @import data.table
 bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
-                        verbose, get.cov.only = NULL,
+                        verbose, getCovOnly = NULL,
                         params = NULL, splitVars = NULL,
                         datVarNames = NULL, ...) {
 
@@ -42,7 +42,7 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
   res <- curveType()
   ff <- res[['formula']]
   params <- res[['params']]
-  fit <- curveFitter(dat, ff, params, rho, numRefits, get.cov.only, ...)
+  fit <- curveFitter(dat, ff, params, rho, numRefits, getCovOnly, ...)
 
 
   ## Return DT for failed fit
@@ -96,14 +96,14 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
 #' @param params starting parameters
 #' @param rho correlation coefficient
 #' @param numRefits number of refit attempts
-#' @param get.cov.only idk that this is actually used
+#' @param getCovOnly only find covariance matrix from starting parameter values
 #' @param ... don't know that this is used, can maybe get rid of it
 #'
 #' @import data.table
 #' @import nlme
-curveFitter <- function(dat, ff, params, rho, numRefits = 0, get.cov.only = NULL, ...) {
+curveFitter <- function(dat, ff, params, rho, numRefits = 0, getCovOnly = NULL, ...) {
 
-  if (!is.null(get.cov.only) && get.cov.only) {
+  if (!is.null(getCovOnly) && getCovOnly) {
     fit <- gnls(eval(ff), start = params, data = dat,
                 correlation = corAR1(rho),
                 control = gnlsControl(maxIter = 0, nlsMaxIter = 0, msMaxIter = 0, returnObject = TRUE))
@@ -116,8 +116,10 @@ curveFitter <- function(dat, ff, params, rho, numRefits = 0, get.cov.only = NULL
         attempts <- numRefits
         while (attempts > 0 & is.null(fit)) {
           attempts <- attempts - 1
-          params <- jitter(params)
-          fit <- tryCatch(gnls(eval(ff), data = dat, start = params, correlation = corAR1(rho)),
+          #params <- jitter(params)
+          nudgeVal <- runif(length(params), -0.05, 0.05) * (numRefits - attempts)
+          n_params <- params * (1 + nudgeVal)
+          fit <- tryCatch(gnls(eval(ff), data = dat, start = n_params, correlation = corAR1(rho)),
                           error = function(e) NULL)
         }
         if (is.null(fit)) rho <- 0
@@ -131,9 +133,18 @@ curveFitter <- function(dat, ff, params, rho, numRefits = 0, get.cov.only = NULL
         attempts <- numRefits
         while (attempts > 0 & is.null(fit)) {
           attempts <- attempts - 1
-          params <- jitter(params)
-          fit <- tryCatch(gnls(eval(ff), data = dat, start = params), error = function(e) NULL)
+          nudgeVal <- runif(length(params), -0.05, 0.05) * (numRefits - attempts)
+          n_params <- params * (1 + nudgeVal)
+          fit <- tryCatch(gnls(eval(ff), data = dat, start = n_params), error = function(e) NULL)
         }
+      }
+
+      ## As last resort, have potentially bad fit (also meaning no more NULL fitCode)
+      if (is.null(fit)) {
+        fit <- gnls(eval(ff), start = params, data = dat,
+                    correlation = corAR1(rho),
+                    control = gnlsControl(maxIter = 0, nlsMaxIter = 0,
+                                          msMaxIter = 0, returnObject = TRUE))
       }
     }
   }

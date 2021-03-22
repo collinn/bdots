@@ -64,8 +64,6 @@ bdotsRefit <- function(bdObj, fitCode = 1L,
     }
   }
 
-
-
   null_idx <- which(vapply(new_bd, is.null, logical(1)))
   if (length(null_idx) != 0) {
     new_bd <- compact(new_bd)
