@@ -7,7 +7,6 @@ library(data.table)
 library(parallel)
 library(nlme)
 library(mvtnorm)
-library(pryr)
 
 
 res <- bdotsFit(data = cohort_unrelated,
@@ -18,8 +17,37 @@ res <- bdotsFit(data = cohort_unrelated,
                 curveType = doubleGauss(concave = TRUE),
                 cor = TRUE,
                 numRefits = 2,
-                cores = 4,
+                cores = 8,
                 verbose = FALSE)
+
+res2 <- bdotsFit(data = cohort_unrelated,
+                subject = "Subject",
+                time = "Time",
+                y = "Fixations",
+                group = c("Group", "LookType"),
+                curveType = doubleGauss2(concave = TRUE),
+                cor = TRUE,
+                numRefits = 2,
+                cores = 8,
+                verbose = FALSE)
+
+res3 <- bdotsFit(data = cohort_unrelated,
+                 subject = "Subject",
+                 time = "Time",
+                 y = "Fixations",
+                 group = c("Group", "LookType"),
+                 curveType = doubleGauss2(concave = TRUE),
+                 cor = TRUE,
+                 numRefits = 2,
+                 cores = 8,
+                 verbose = FALSE)
+
+
+res <- bdotsRefit(res, quickRefit = TRUE, numRefits = 4, fitCode = 6)
+res2 <- bdotsRefit(res2, quickRefit = TRUE, numRefits = 4, fitCode = 6)
+
+table(res$fitCode)
+table(res2$fitCode)
 
 #res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
 res2 <- bdRemove(res)
@@ -28,7 +56,7 @@ debug(bdUpdate)
 debug(bdUpdate_NULL)
 res <- res[fitCode == 6, ]
 res <- res[2:4, ]
-test <- bdotsRefit(res, fitCode = 6, quickRefit = FALSE)
+test <- bdotsRefit(res2, fitCode = 3, quickRefit = FALSE)
 
 ## Not really much luck for doublegauss
 test <- bdotsRefit(res, numRefits = 2L)
@@ -37,12 +65,20 @@ table(test$fitCode)
 
 # debugonce(bdotsBoot)
 #debugonce(curveBooter)
-boot.test <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
+
+boot.test <- bdotsBoot(formula = Fixations ~ Group(50, 65) + LookType(Cohort),
+                       bdObj = res2,
+                       Niter = 1000,
+                       alpha = 0.05,
+                       padj = "oleson",
+                       cores = 8)
+
+boot.test2 <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
                        bdObj = res2,
                        Niter = 1000,
                        alpha = 0.05,
                        padj = "fdr",
-                       cores = 4)
+                       cores = 8)
 #plotCompare(boot.test)
 
 boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unrelated_Cohort),

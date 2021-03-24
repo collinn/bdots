@@ -29,19 +29,19 @@ This vignette walks through the use of the bdots package for analyzing the boots
 3. Bootstrap
   : Having an adequate collection of curves, this function determines the bootstrapped difference, along with computing an adjusted alpha to account for AR1 correlation
   
-This process is represented with three main functions,  `bdotsFit -> bdotsRefit -> bdotsBoot`
+This process is represented with three main functions, `bdotsFit -> bdotsRefit -> bdotsBoot`
 
 This package is under active development. The most recent version can be installed with `devtools::install_github("collinn/bdots")`.
 
 ## Fitting Step
 
-For our examples, we are going to be using eye tracking data from normal hearing individuals and those with cochlear impalnts using the Visaul Word Paradigm (VWP). 
+For our examples, we are going to be using eye tracking data from normal hearing individuals and those with cochlear implants using data from the Visaul Word Paradigm (VWP). 
 
 ```{r}
 head(cohort_unrelated)
 ```
 
-The `bdotsFit` function will create curve for each unique permutation of subject group variable. Here, we will let LookType and DB_cond be our grouping variables, though we may include as many as we wish (or only a single group assuming that it has multiple values). See `?bdotsFit` for argument information.
+The `bdotsFit` function will create curve for each unique permutation of `subject`/`group` variables. Here, we will let `LookType` and `DB_cond` be our grouping variables, though we may include as many as we wish (or only a single group assuming that it has multiple values). See `?bdotsFit` for argument information.
 
 ```{r}
 fit <- bdotsFit(data = cohort_unrelated,
@@ -53,9 +53,9 @@ fit <- bdotsFit(data = cohort_unrelated,
                 cores = 2)
 ```
 
-A key thing to note here is the argument for `curveType` is passed as a function with arguments that further specify the curve. Currently within the bdots package, the available curves are `doubleGauss(concave = TRUE/FALSE),` `logistic()` (no arguments), and `polynomial(degree = n)`. While more curves will be added, users can also specify their own curves, as shown [here](customCurves.html).
+A key thing to note here is the argument for `curveType` is passed as a function with arguments that further specify the curve. Currently within the `bdots` package, the available curves are `doubleGauss(concave = TRUE/FALSE),` `logistic()` (no arguments), and `polynomial(degree = n)`. While more curves will be added going forward, users can also specify their own curves, as shown [here](customCurves.html).
 
-The `bdotsFit` function returns an object of class `bdotsObj`, which inherits from `data.table.` As such, this object can be manipulated and explored with standard `data.table` syntax. In addition to the subject and the grouping columns, we also have a fit column, containing the fit from the gnls package, a value for `R2`, a boolean indicating `AR1` status, and a final column for `fitCode.` The fit code is a numeric quantity representing the quality of the fit as such:
+The `bdotsFit` function returns an object of class `bdotsObj`, which inherits from `data.table.` As such, this object can be manipulated and explored with standard `data.table` syntax. In addition to the subject and the grouping columns, we also have a `fit` column, containing the fit from the `gnls` package, a value for `R2`, a boolean indicating `AR1` status, and a final column for `fitCode.` The fit code is a numeric quantity representing the quality of the fit as such:
 
 |fitCode |	AR1 |	R2 |
 |:------:|:----:|:----:|
@@ -69,7 +69,7 @@ The `bdotsFit` function returns an object of class `bdotsObj`, which inherits fr
 
 A `fitCode` of 6 indicates that a fit was not able to be made. 
 
-In addition to plot and summary functions, we also have a method to return a matrix of coefficients from the model fits. Because of the `data.table` syntax, we can examine subsets of this object as well
+In addition to `plot` and `summary` functions, we also have a method to return a matrix of coefficients from the model fits. Because of the `data.table` syntax, we can examine subsets of this object as well
 
 ```{r}
 head(coef(fit))
@@ -77,7 +77,7 @@ head(coef(fit))
 head(coef(fit[DB_cond == 50, ]))
 ```
 
-The plots for this object will compare the observed data with the fitted code. Here is an example of the first four
+The plots for this object will compare the observed data with the fitted curve. Here is an example of the first four:
 
 ```{r, fig.align='center', fig.width = 8, fig.height=6}
 plot(fit[1:4, ])
@@ -107,7 +107,7 @@ refit <- bdRemove(fit, fitCode = 6L)
 table(refit$fitCode)
 ```
 
-There is an additional option, `removePairs` which is `TRUE` by default. This indicates that if an observation is removed, all observations for the same subject should also be removed, regardless of fit. This ensures that all subjects have their corresponding pairs in the bootstrapping function for the use of the paired t-test. If the data are not paired, this can be set to `FALSE`
+There is an additional option, `removePairs` which is `TRUE` by default. This indicates that if an observation is removed, all observations for the same subject should also be removed, regardless of fit. This ensures that all subjects have their corresponding pairs in the bootstrapping function for the use of the paired t-test. If the data are not paired, this can be set to `FALSE`.
 
 
 ## Bootstrap
@@ -115,7 +115,7 @@ There is an additional option, `removePairs` which is `TRUE` by default. This in
 The final step is the bootstrapping process, performed with `bdotsBoot`. First, let’s examine the set of curves that we have available from the first step
 
 1. Difference of Curves
-  : Here, we are interested specifically in the difference between two fitted curves. For our example case here, this may be the difference between curves for DB_cond 50 and 65 nested within either the Cohort or Unrelated_Cohort LookTypes (but not both). 
+  : Here, we are interested specifically in the difference between two fitted curves. For our example case here, this may be the difference between curves for `DB_cond == 50` and `DB_cond == 65` nested within either the `Cohort` or `Unrelated_Cohort` `LookTypes` (but not both). 
 
 2. Difference of Difference Curves
  : In this case, we are considering the difference of two difference curves similar to the one found above. For example, we may denote the difference between `DB_cond` `50` and `65` within the `Corhort` group as $\text{diff}_{\text{Cohort}}$ and the differences between `DB_cond` `50` and `65` within `Unrelated_Corhort` as $\text{diff}_{\text{Unrelated_Cohort}}$. The difference of difference function will then return an analysis of $\text{diff}_{\text{Cohort}}$  - $\text{diff}_{\text{Unrelated_Cohort}}$ 
@@ -134,14 +134,14 @@ Outcome ~ Group1(value1, value2) + Group2(value3)
 
 That is, we might read this as “difference of Outcome for value1 and value2 within Group1.”
 
-With our working example, we would find the difference of `DB_cond` `50` and `65` within `LookType == "Cohort"` with
+With our working example, we would find the difference of `DB_cond == 50` and `DB_cond == 65` within `LookType == "Cohort"` with
 
 ```{r, eval = FALSE}
 ## Must add LookType(Cohort) to specify
 Fixations ~ DB_cond(50, 65) + LookType(Cohort)
 ```
 
-The the second type of curve, we specify an "inner difference" to be the difference of groups for which we are taking the difference of. The syntax for this case uses a `diffs` function in the formula:
+For this second type of curve, we specify an "inner difference" to be the difference of groups for which we are taking the difference of. The syntax for this case uses a `diffs` function in the formula:
 
 ```{r, eval = FALSE}
 ## Difference of difference. Here, outer difference is Group1, inner is Group2
@@ -151,7 +151,7 @@ diffs(Outcome, Group2(value3, value4)) ~ Group1(value1, value2)
 diffs(Outcome, Group2(value3, value4)) ~ Group1(value1, value2) + Group3(value5)
 ```
 
-For the example illustrated in (2) above, the difference $\text{diff}_{50} - \text{diff}_{65}$ represents our inner difference, each nested within one of the values for LookType. The "outer difference" is then difference of these between LookTypes. The syntax here would be 
+For the example illustrated in (2) above, the difference $\text{diff}_{50} - \text{diff}_{65}$ represents our inner difference, each nested within one of the values for `LookType.` The "outer difference" is then difference of these between `LookTypes`. The syntax here would be 
 
 ```{r, eval = FALSE}
 diffs(Fixations, DB_cond(50, 65)) ~ LookType(Cohort, Unrelated_Cohort)

@@ -18,7 +18,6 @@
 #' The largest current issue is with the placement of the legend, which cannot
 #' be adjusted. If you are running into issues with seeing things correctly, try
 #' making the "Plots" window in RStudio larger before running this function
-#' @import ggplot2
 #' @export
 plot.bdotsObj <- function(x, fitCode = NULL, gridSize = NULL, plotfun = "fits", ...) {
 

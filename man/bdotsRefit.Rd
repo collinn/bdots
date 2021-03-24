@@ -4,7 +4,14 @@
 \alias{bdotsRefit}
 \title{Refit Observations Returned from bdotsFit}
 \usage{
-bdotsRefit(bdObj, fitCode = 1L, quickRefit = FALSE, numRefits = 2L, ...)
+bdotsRefit(
+  bdObj,
+  fitCode = 1L,
+  quickRefit = FALSE,
+  numRefits = 2L,
+  paramDT = NULL,
+  ...
+)
 }
 \arguments{
 \item{bdObj}{An object of class 'bdotsObj' returned from \code{bdotsFit}}
@@ -20,6 +27,12 @@ the original fit will be kept.}
 
 \item{numRefits}{Integer indicating the number of refit attempts after jittering
 parameters, either with quickRefit or when done individually}
+
+\item{paramDT}{A \code{data.table} or \code{data.frame} that matches the what is
+returned by \code{coefWriteout(bdObj)}. That is, it should have columns
+uniquely identifying observations with subjects and groups, as well as named
+columns for the paramters. NA parameters are OK. Can also be a subset of the original rows.
+Note, if this argument is not \code{NULL}, the remaining arguments will be ignored.}
 
 \item{...}{not used}
 }

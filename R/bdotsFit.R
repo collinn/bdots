@@ -12,7 +12,7 @@
 #' @param cores number of cores. Default is \code{0}, indicating half cores available
 #' @param cor Boolean. Autocorrelation?
 #' @param numRefits Integer indicating number of attempts to fit an observation
-#' if the first attemp fails
+#' if the first attempt fails
 #' @param verbose currently not used
 #' @param returnX Boolean. Return data with bdObj? Currently not implemented
 #' @param ... Secret
@@ -57,7 +57,6 @@ bdotsFit <- function(data, # dataset
 
   if (cores < 1) cores <- detectCores()/2
   curveType <- substitute(curveType)
-  #curveName <- gsub("\\(|\\)", "", deparse1(curveType))
   curveName <- curveType[[1]]
   curveType <- curve2Fun(curveType)
 
@@ -100,37 +99,15 @@ bdotsFit <- function(data, # dataset
   splitVars <- c(subject, group)
   newdat <- split(dat, by = splitVars, drop = TRUE)
 
- # ## if(.platform$OStype == windows)
-  
-  # if (Sys.info()['sysname'] == "Darwin") {
-  #   res <- lapply(newdat, bdotsFitter, 
-  #                 curveType = curveType,
-  #                 rho = rho, numRefits = numRefits,
-  #                 verbose = FALSE,
-  #                 splitVars = splitVars,
-  #                 datVarNames = datVarNames)
-  # } else {
-  #   cl <- makePSOCKcluster(cores)
-  #   
-  #   invisible(clusterEvalQ(cl, {library(nlme); library(bdots)}))
-  #   
-  #   res <- parLapply(cl, newdat, bdotsFitter,
-  #                    curveType = curveType,
-  #                    rho = rho, numRefits = numRefits,
-  #                    verbose = FALSE,
-  #                    splitVars = splitVars,
-  #                    datVarNames = datVarNames)
-  #   stopCluster(cl)
-  # }
-  
+
   if (Sys.info()['sysname'] == "Darwin") {
     cl <- makePSOCKcluster(cores, setup_strategy = "sequential")
   } else {
     cl <- makePSOCKcluster(cores)
   }
-  
-  invisible(clusterEvalQ(cl, {library(nlme); library(bdots)}))
-  
+
+  invisible(clusterEvalQ(cl, {library(bdots)}))
+
   res <- parLapply(cl, newdat, bdotsFitter,
                    curveType = curveType,
                    rho = rho, numRefits = numRefits,
@@ -138,12 +115,10 @@ bdotsFit <- function(data, # dataset
                    splitVars = splitVars,
                    datVarNames = datVarNames)
   stopCluster(cl)
-  
-  
- 
 
- ff <- attr(res[[1]], "formula")
- fitList <- rbindlist(res, fill = TRUE)
+
+  ff <- attr(res[[1]], "formula")
+  fitList <- rbindlist(res, fill = TRUE)
 
  ## If too large, should get "name" of data
  # and option to call it from global env

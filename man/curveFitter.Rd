@@ -4,7 +4,7 @@
 \alias{curveFitter}
 \title{Curve Fitter}
 \usage{
-curveFitter(dat, ff, params, rho, numRefits = 0, get.cov.only = NULL, ...)
+curveFitter(dat, ff, params, rho, numRefits = 0, getCovOnly = NULL, ...)
 }
 \arguments{
 \item{dat}{data used in building curve}
@@ -17,7 +17,7 @@ curveFitter(dat, ff, params, rho, numRefits = 0, get.cov.only = NULL, ...)
 
 \item{numRefits}{number of refit attempts}
 
-\item{get.cov.only}{idk that this is actually used}
+\item{getCovOnly}{only find covariance matrix from starting parameter values}
 
 \item{...}{don't know that this is used, can maybe get rid of it}
 }

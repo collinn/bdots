@@ -1,0 +1,77 @@
+---
+title: "Refit with Saved Parameters"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Refit with Saved Parameters}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(bdots)
+```
+
+## Overview
+
+This vignette walks through using a text file of previously fit model parameters to use in the `bdotsRefit` function. This is convenient if you have already gone through the refitting process and would like to save/load the refitted parameters in a new session.
+
+To demonstate this process, we start with fitting a set of curves to our data
+
+```{r}
+fit <- bdotsFit(data = cohort_unrelated,
+                subject = "Subject",
+                time = "Time",
+                y = "Fixations",
+                group = c("Group", "LookType"),
+                curveType = doubleGauss(concave = TRUE),
+                cor = TRUE,
+                numRefits = 2,
+                cores = 2,
+                verbose = FALSE)
+
+refit <- bdotsRefit(fit, quickRefit = TRUE, fitCode = 5)
+```
+
+From this, we can create an appropriate `data.table` that can be used in a later session
+
+```{r}
+parDT <- coefWriteout(refit)
+head(parDT)
+```
+
+It's important that columns are included that match the unique identifying columns in our `bdotsObj`, and that the parameters match the coefficients used from `bdotsFit`
+
+```{r}
+## Subject, Group, and LookType
+head(refit)
+
+## doubleGauss pars
+colnames(coef(refit))
+```
+
+We can save our parameter `data.table` for later use, or read in any other appropriately formatted `data.frame`
+
+```{r, eval = FALSE}
+## Save this for later using data.table::fwrite
+fwrite(parDT, file = "mypars.csv")
+parDT <- fread("mypars.csv")
+```
+
+Once we have this, we can pass it as an argument to the `bdotsRefit` function. Doing so will ignore the remaining arguments
+
+```{r}
+new_refit <- bdotsRefit(refit, paramDT = parDT)
+```
+
+We end up with a `bdotsObj` that matches what we had previously. As seeds have not yet been implemented, the resulting parameters may not be exact. It will, however, assist with not having to go through the entire refitting process again manually (although, there is always the option to save the entire object with `save(refit, file = "refit.RData))`
+
+```{r}
+head(new_refit)
+```
