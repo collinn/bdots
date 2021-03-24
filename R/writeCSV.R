@@ -49,7 +49,7 @@ writeCSV <- function(bootObj, file, alpha = 0.05, ...) {
     cl[['diff']] <- main_diff
   }
 
-  fitMat <- lapply(cl, bdots:::makePlotCI, alpha = alpha)
+  fitMat <- lapply(cl, makePlotCI, alpha = alpha)
   fitMat <- Map(function(x, y) {
     nn <- paste(y, c("Lower CI", "Fit", "Upper CI"), sep = " - ")
     colnames(x) <- nn
