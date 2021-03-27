@@ -35,13 +35,13 @@ This package is under active development. The most recent version can be install
 
 ## Fitting Step
 
-For our examples, we are going to be using eye tracking data from normal hearing individuals and those with cochlear implants using data from the Visaul Word Paradigm (VWP). 
+For our example, we are going to be using eye tracking data from normal hearing individuals and those with cochlear implants using data from the Visual Word Paradigm (VWP). 
 
 ```{r}
 head(cohort_unrelated)
 ```
 
-The `bdotsFit` function will create curve for each unique permutation of `subject`/`group` variables. Here, we will let `LookType` and `DB_cond` be our grouping variables, though we may include as many as we wish (or only a single group assuming that it has multiple values). See `?bdotsFit` for argument information.
+The `bdotsFit` function will create a curve for each unique permutation of `subject`/`group` variables. Here, we will let `LookType` and `DB_cond` be our grouping variables, though we may include as many as we wish (or only a single group assuming that it has multiple values). See `?bdotsFit` for argument information.
 
 ```{r}
 fit <- bdotsFit(data = cohort_unrelated,
@@ -53,7 +53,7 @@ fit <- bdotsFit(data = cohort_unrelated,
                 cores = 2)
 ```
 
-A key thing to note here is the argument for `curveType` is passed as a function with arguments that further specify the curve. Currently within the `bdots` package, the available curves are `doubleGauss(concave = TRUE/FALSE),` `logistic()` (no arguments), and `polynomial(degree = n)`. While more curves will be added going forward, users can also specify their own curves, as shown [here](customCurves.html).
+A key thing to note here is the argument for `curveType` is passed as a function call with arguments that further specify the curve. Currently within the `bdots` package, the available curves are `doubleGauss(concave = TRUE/FALSE),` `logistic()` (no arguments), and `polynomial(degree = n)`. While more curves will be added going forward, users can also specify their own curves, as shown [here](customCurves.html).
 
 The `bdotsFit` function returns an object of class `bdotsObj`, which inherits from `data.table.` As such, this object can be manipulated and explored with standard `data.table` syntax. In addition to the subject and the grouping columns, we also have a `fit` column, containing the fit from the `gnls` package, a value for `R2`, a boolean indicating `AR1` status, and a final column for `fitCode.` The fit code is a numeric quantity representing the quality of the fit as such:
 
@@ -177,7 +177,7 @@ boot2 <- bdotsBoot(formula = diffs(Fixation, LookType(Cohort, Unrelated_Cohort))
 
 For each, we can then produce a model summary, as well as a plot of difference curves
 
-```{r}
+```{r, fig.align='center', fig.width = 8, fig.height=6}
 summary(boot1)
 
 plot(boot1)

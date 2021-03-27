@@ -68,11 +68,11 @@ doubleGauss(dat = dat, y = "Fixations", time = "Time", concave = TRUE)
 We will now create an entirely new function that is not included in `bdots` to demonstrate that it works the same; the only change we will make is to substitute in the values for `y` and `time` without using `str2lang`. For our data set here, the corresponding values to `y` and `time` are `"Fixations"` and `"Time"`, respectively
 
 ```{r}
-doubleGauss2 <- function (dat, params = NULL, concave = TRUE, ...) {
+doubleGauss2 <- function (dat, y, time, params = NULL, concave = TRUE, ...) {
   
   if (is.null(params)) {
     ## Instead of defining our own, just reuse the one in bdots
-    params <- bdots:::dgaussPars(dat, concave)
+    params <- bdots:::dgaussPars(dat, y, time, concave)
   }
   else {
     if (length(params) != 6) 
