@@ -8,3 +8,6 @@
 - updated vignettes
 - added temporary `writeCSV` function to write out `bdotsBoot` curve information for plotting
 
+# bdots 05-03-2021
+- Fixes to choosing AR1 status during refit steps
+

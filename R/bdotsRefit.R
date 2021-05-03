@@ -238,6 +238,21 @@ bdUpdate <- function(bdo, numRefits) {
         }
       }
       class(newPars) <- "numeric"
+
+      ## modify AR1 status
+      cat("Current AR1 Assumption:\n")
+      print(bdo$AR1)
+      #tmpval <- NA
+      while (TRUE) {
+        ar_val <- readline("Use AR1 assumption? (y/n): ")
+        if (ar_val %in% c("y", "n", "")) {
+          rho <- ifelse(ar_val == "n", 0, rho)
+          break
+        } else {
+          cat("Please enter 'y' or 'n'\n")
+        }
+      }
+
     } else if (resp == 4) {
       rho <- 0
       newPars <- oldPars
@@ -261,7 +276,11 @@ bdUpdate <- function(bdo, numRefits) {
         next # reset while loop
     }
 
-    new_bdo <- bdRefitter(bdo, rho, numRefits, params = newPars)
+    new_bdo <- bdRefitter(bdo, numRefits, rho, params = newPars)
+
+    ## Reset rho in case it was turned to zero
+    rho <- attr(bdo, "rho")
+
     both_bdo <- structure(.Data = list(bdo, new_bdo),
                           class = "bdObjList")
 
@@ -386,7 +405,18 @@ bdUpdate_NULL <- function(bdo, numRefits) {
         }
       }
 
-      new_bdo <- bdRefitter(bdo, rho = 0.9, numRefits, params = newPars)
+      ## determine AR status to be used
+      while (TRUE) {
+        ar_val <- readline("Use AR1 assumption? (y/n): ")
+        if (ar_val %in% c("y", "n", "")) {
+          rho <- ifelse(ar_val == "n", 0, 0.9)
+          break
+        } else {
+          cat("Please enter 'y' or 'n'\n")
+        }
+      }
+
+      new_bdo <- bdRefitter(bdo, numRefits, rho, params = newPars)
 
       if (new_bdo$fitCode == 6) {
         cat("Fit unsuccessful. Plotting curve from your input parameters in red.\n",
@@ -427,7 +457,18 @@ bdUpdate_NULL <- function(bdo, numRefits) {
             warning("Invalid entry, please enter a numeric value")
         }
       }
-      new_bdo <- bdRefitter(bdo, rho = 0.9, numRefits, params = newPars)
+      ## adjust ar1 status
+      while (TRUE) {
+        ar_val <- readline("Use AR1 assumption? (y/n): ")
+        if (ar_val %in% c("y", "n", "")) {
+          rho <- ifelse(ar_val == "n", 0, 0.9)
+          break
+        } else {
+          cat("Please enter 'y' or 'n'\n")
+        }
+      }
+
+      new_bdo <- bdRefitter(bdo, numRefits, rho, params = newPars)
       if (new_bdo$fitCode == 6) {
         cat("Fit unsuccessful. Plotting curve from your input parameters in red.\n",
             "Use this to adjust parameter estimates accordingly\n")
