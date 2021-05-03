@@ -141,10 +141,18 @@ curveFitter <- function(dat, ff, params, rho, numRefits = 0, getCovOnly = NULL, 
 
       ## As last resort, have potentially bad fit (also meaning no more NULL fitCode)
       if (is.null(fit)) {
-        fit <- gnls(eval(ff), start = params, data = dat,
-                    correlation = corAR1(rho),
-                    control = gnlsControl(maxIter = 0, nlsMaxIter = 0,
-                                          msMaxIter = 0, returnObject = TRUE))
+
+        ## This last resort should also be able to specify AR1 or not
+        if (rho) {
+          fit <- gnls(eval(ff), start = params, data = dat,
+                      correlation = corAR1(rho),
+                      control = gnlsControl(maxIter = 0, nlsMaxIter = 0,
+                                            msMaxIter = 0, returnObject = TRUE))
+        } else {
+          fit <- gnls(eval(ff), start = params, data = dat,
+                      control = gnlsControl(maxIter = 0, nlsMaxIter = 0,
+                                            msMaxIter = 0, returnObject = TRUE))
+        }
       }
     }
   }
