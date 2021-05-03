@@ -115,7 +115,6 @@ makeOuterDiffList <- function(res, obj) {
     }, x, y)
   }, res[idx[1]], res[idx[2]])
 
-
   ## Map returns a lenght 1 list
   diffList <- diffList[[1]]
 
