@@ -16,6 +16,7 @@ bdotsFit(
   cores = 0,
   verbose = FALSE,
   returnX = NULL,
+  jackknife = FALSE,
   ...
 )
 }
@@ -43,6 +44,8 @@ if the first attempt fails}
 \item{verbose}{currently not used}
 
 \item{returnX}{Boolean. Return data with bdObj? Currently not implemented}
+
+\item{jackknife}{is here}
 
 \item{...}{Secret}
 }

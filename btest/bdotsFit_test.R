@@ -9,12 +9,12 @@ library(nlme)
 library(mvtnorm)
 
 
-res <- bdotsFit(data = cohort_unrelated,
+res.l <- bdotsFit(data = cohort_unrelated,
                 subject = "Subject",
                 time = "Time",
                 y = "Fixations",
                 group = c("Group", "LookType"),
-                curveType = doubleGauss2(concave = TRUE),
+                curveType = doubleGauss(concave = TRUE),
                 cor = TRUE,
                 numRefits = 2,
                 cores = 8,
@@ -44,7 +44,7 @@ res3 <- bdotsFit(data = cohort_unrelated,
 
 
 res2 <- bdotsRefit(res, fitCode = 2)
-res <- bdotsRefit(res, quickRefit = TRUE, numRefits = 4, fitCode = 6)
+res <- bdotsRefit(res, quickRefit = TRUE, numRefits = 4, fitCode = 1)
 res2 <- bdotsRefit(res2, quickRefit = TRUE, numRefits = 4, fitCode = 6)
 
 table(res$fitCode)
@@ -268,3 +268,13 @@ boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unr
 #plotCompare(boot.test)
 
 
+## Noisy sentence data (for group parameter test)
+cohort <- fread("~/projects/noisy_sentence/data/c-uJK.txt")
+cohort <- cohort[rTime >= 0 & rTime <= 1500, ]
+cohort[, trial := Trialcodecondition]
+fit_cohort <- bdotsFit(data = cohort,
+                       y = "CUR",
+                       subject = "subjectID",
+                       time = "rTime",
+                       group = "trial",
+                       curveType = doubleGauss())

@@ -12,6 +12,8 @@
 #' @param gridSize Length one numeric indicating size of plot grid. Default is
 #' 2x2. For right now, they are square
 #' @param plotfun Plot either subject fits or model parameters with "fits" or "pars"
+#' @param no_gg Set to \code{TRUE} to use base R graphics. They are much faster if
+#' you are just looking for some quick and dirty plots
 #' @param ... ignore for now (other args to plot.generic)
 #'
 #' @details Right now, these functions are a bit unstable and expected to change.
@@ -19,16 +21,19 @@
 #' be adjusted. If you are running into issues with seeing things correctly, try
 #' making the "Plots" window in RStudio larger before running this function
 #' @export
-plot.bdotsObj <- function(x, fitCode = NULL, gridSize = NULL, plotfun = "fits", ...) {
+plot.bdotsObj <- function(x, fitCode = NULL, gridSize = NULL, plotfun = "fits", no_gg = FALSE, ...) {
 
   ## Generic currently works. Hurray
   ## Need to do some sort of match.call here for plotfun
   # option to print to file?
-  if (plotfun == 'fits') {
+  if (plotfun == 'fits' & !no_gg) {
     plotFits(x, gridSize, ...)
   } else if (plotfun == 'pars') {
     plotPars(x, gridSize, ...)
-  } else {
+  } else if (plotfun == 'fits' & no_gg) {
+    base_plotFits(x, gridSize, ...) # this is stupid
+  }
+  else {
     stop("Invalid plotfun type. See ?plot.bdotsObj")
   }
 }
@@ -50,7 +55,129 @@ plotPars <- function(bdObj, ...) {
 }
 
 #' @importFrom graphics par lines legend
+#' @import ggplot2
+#' @importFrom gridExtra grid.arrange
 plotFits <- function(bdObj, gridSize = NULL, ...) {
+
+  bdCall <- attr(bdObj, "call")
+  splitVars <- c(bdCall$subject, eval(bdCall$group))
+  yname <- bdCall$y
+  tname <- bdCall$time
+
+  if (!is.character(yname)) stop("Error 123")
+
+  X <- attr(bdObj, "X")$X
+  dfname <- deparse1(bdCall$data)
+  if (is.null(X) & exists(dfname)) {
+    X <- get(dfname)
+  } else if (is.null(X) & !exists(dfname)) {
+    stop("Cannot find dataset used to construct bdObj, please pass as argument")
+  }
+
+  ## Assume that subsets have been made
+  oldPar <- par()$mfrow
+  on.exit(par(mfrow = oldPar))
+
+  if (is.null(gridSize)) {
+    gridSize <- 2
+    par(mfrow = c(gridSize, gridSize))
+  } else if (gridSize == "refit") {
+    par(mfrow = c(1, 2))
+  } else {
+    par(mfrow = c(gridSize, gridSize))
+  }
+
+  Xs <- split(X, by = splitVars)
+  time <- attr(bdObj, "time")
+
+  # should also make sure that axes are all the same
+  plotList <- vector("list", length = nrow(bdObj))
+  ## The inside of this loop itself could be a function
+  for (i in seq_len(nrow(bdObj))) {
+    code <- bdObj[i, ]$fitCode
+    r2 <- round(as.numeric(bdObj[i, ]$R2), 3)
+    obs <- unlist(bdObj[i, splitVars, with = FALSE])
+    obs2 <- paste(obs, collapse = ".")
+    obsY <- Xs[[obs2]][[yname]]
+    if (code != 6) {
+      fitY <- fitted.values(bdObj[i, ]$fit[[1]])
+      df <- as.data.table(cbind(time, fitY, obsY))
+      #df2 <- melt(df, id.vars = "time", measure.vars = c("obsY", "fitY"))
+    } else {
+      df <- as.data.table(cbind(time, obsY))
+    }
+    df2 <- melt(df, id.vars = "time")
+    df2$lty <- "dashed"
+    df2[variable != "obsY", ]$lty <- "solid"
+
+    df2$clr <- "tomato"
+    df2[variable != "obsY", ]$clr <- "steelblue"
+
+    ## Janky fix for update. Should just make a separate for refits
+    if (gridSize == "refit") {
+      if (i == 1) {
+        title <- paste("Original Fit", "\n fitCode = ", code, ", R2 = ", r2)
+      } else {
+        title <- paste("Updated Fit", "\n fitCode = ", code, ", R2 = ", r2)
+      }
+    } else {
+      title <- paste0(paste0(obs, collapse = " "),
+                      "\nfitCode = ", code, ", R2 = ", r2, collapse = "")
+    }
+
+    ## This can't be the way to do it
+    y <- NULL; variable <- NULL; value <- NULL; clr <- NULL; lty <- NULL
+
+    ## This thing is kinda gross
+    plotList[[i]] <-
+
+      ggplot(df2, aes(time, value)) +
+      geom_line(aes(color = clr,
+                    linetype = lty), size = 1) +
+      scale_color_discrete("Fits", labels = c("Observed Values", "Fitted Values"),
+                           guide = guide_legend(title.position = "top", reverse = TRUE)) +
+      scale_linetype("Fits", labels = c("Observed Values", "Fitted Values"),
+                     guide = guide_legend(title.position = "top", reverse = TRUE)) +
+      xlab(tname) + ylab(yname) + theme_bw() + ggtitle(title) +
+      theme(legend.position = "bottom")
+
+    # ggplot(df2, aes(time, value)) +
+    #   geom_line(aes(color = clr,
+    #                 linetype = lty), size = 1) +
+    #   scale_color_discrete("Fits", labels = c("Observed Values", "Fitted Values"),
+    #                        guide = guide_legend(title.position = "top")) +
+    #   scale_linetype("Fits", labels = c("Fitted Values", "Observed Values"),
+    #                  guide = guide_legend(title.position = "top")) +
+    #   xlab(tname) + ylab(yname) + theme_bw() + ggtitle(title) +
+    #   theme(legend.position = "bottom")
+
+
+  }
+
+  ## this is a dumb way to do this
+  n <- nrow(bdObj)
+  gz <- ifelse(gridSize == "refit", 2, 4)
+  idxList <- vector("list", length = ceiling(n/gz))
+  rr <- seq(1, n, by = gz)
+  for (i in seq_along(rr)) {
+    if (rr[i] + gz - 1 > n) {
+      idxList[[i]] <- rr[i]:n
+    } else {
+      idxList[[i]] <- rr[i]:(rr[i]+gz-1)
+    }
+  }
+
+  nnrow <- ifelse(gz == 2, 1, 2)
+  for (i in seq_along(idxList)) {
+    do.call(grid.arrange, c(plotList[idxList[[i]]], nrow = nnrow, ncol = 2))
+  }
+
+  return(invisible(plotList))
+
+}
+
+#' @importFrom graphics par lines legend
+base_plotFits <- function(bdObj, gridSize = NULL, nolegend = FALSE, ...) {
 
   bdCall <- attr(bdObj, "call")
   splitVars <- c(bdCall$subject, eval(bdCall$group))
@@ -79,8 +206,6 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
     par(mfrow = c(gridSize, gridSize))
   }
 
-
-
   Xs <- split(X, by = splitVars)
 
   ## Not sure if this is what I want yet
@@ -88,11 +213,10 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
   time <- attr(bdObj, "time")
 
   # set legend placement (?)
-  # lgn <- switch(attr(bdObj, "curveType"),
-  #        "logistic" = "bottomright",
-  #        "doubleGauss" = "topright",
-  #        "topright")
-  lgn <- "topright" # for now
+  lgn <- switch(as.character(attr(bdObj, "curveType")),
+         "logistic" = "bottomright",
+         "doubleGauss" = "topright",
+         "topright")
 
   # should also make sure that axes are all the same
   for (i in seq_len(nrow(bdObj))) {
@@ -101,8 +225,9 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
     obs <- unlist(bdObj[i, splitVars, with = FALSE])
     obs2 <- paste(obs, collapse = ".")
     obsY <- Xs[[obs2]][[y]]
-    if (code != 6)
+    if (code != 6) {
       fitY <- fitted.values(bdObj[i, ]$fit[[1]])
+    }
 
     ## Janky fix for update. Should just make a separate for refits
     if (gridSize == "refit") {
@@ -127,10 +252,7 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
       legend(lgn, legend = c("Observed"), lty = 1,
              lwd = 2, col = c('blue'))
     }
-
-
   }
-
 }
 
 ## Needs title
@@ -236,11 +358,11 @@ plotInnerGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ciBands, .
           xlab = xxlab, ylab = yylab, main = mmain)
 
   # set legend placement (?) ideally xpd out of plot or below
-  # lgn <- switch(attr(bdBootObj, "bdObjAttr")[['curveType']],
-  #               "logistic" = "topleft",
-  #               "doubleGauss" = "topleft",
-  #               "topleft")
-  lgn <- "topright" # for now
+  lgn <- switch(as.character(attr(bdBootObj, "bdObjAttr")[['curveType']]),
+                "logistic" = "topleft",
+                "doubleGauss" = "topleft",
+                "topleft")
+  #lgn <- "topright" # for now
 
   ## This only holds if diff of diff not used. Need to handle other case
   if (is.null(NULL) & !is.null(bdBootObj[['sigTime']])) {

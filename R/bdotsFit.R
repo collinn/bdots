@@ -15,6 +15,7 @@
 #' if the first attempt fails
 #' @param verbose currently not used
 #' @param returnX Boolean. Return data with bdObj? Currently not implemented
+#' @param jackknife is here
 #' @param ... Secret
 #'
 #' @return Object of class 'bdotsObj', inherits from data.table
@@ -53,6 +54,7 @@ bdotsFit <- function(data, # dataset
                      cores = 0, # cores to use, 0 == 50% of available
                      verbose = FALSE,
                      returnX = NULL,
+                     jackknife = FALSE,
                      ...) {
 
   if (cores < 1) cores <- detectCores()/2
@@ -71,7 +73,7 @@ bdotsFit <- function(data, # dataset
   if (!exists("rho")) {
     rho <- ifelse(cor, 0.9, 0)
   } else {
-    if(cor & (rho >= 1 | rho < 0)) {
+    if (cor & (rho >= 1 | rho < 0)) {
       warning("cor set to TRUE with invalid rho. Setting rho to 0.9")
       rho <- 0.9
     }
@@ -82,18 +84,44 @@ bdotsFit <- function(data, # dataset
   dat[, (group) := lapply(.SD, as.character), .SDcols = group]
   dat[, (subject) := lapply(.SD, as.character), .SDcols = subject]
 
+  ## Let's only keep the columns we need (have not tested this yet)
+  dat <- dat[, c(y, time, subject, group), with = FALSE]
+
+
   timetest <- split(dat, by = group, drop = TRUE)
   timetest <- lapply(timetest, function(x) unique(x[[time]]))
   timeSame <- identical(Reduce(intersect, timetest, init = timetest[[1]]),
                         Reduce(union, timetest, init = timetest[[1]]))
   if (!timeSame) stop("Yo, these times are different between groups, and until collin fixes it, that's going to make bdotsBoot wrong-ish")
 
-  ## This shuld work inside function. Let's check
+  ## This should work inside function. Let's check
+  # if this happens, need to modify X for plots to work
   if (any(dat[, .N, by = c(subject, time, group)]$N > 1)) {
     warning("Some subjects have multiple observations for unique time. These will be averaged")
     yval <- deparse(substitute(y))
     dat[, substitute(y) := mean(get(y)), by = c(subject, time, group)]
     dat <- unique(dat, by = c(subject, time, group))
+  }
+
+  ## Currently undocumented feature
+  # jackknife <- TRUE
+  if (jackknife) {
+    ## First extend out data.table for curve fitting
+    dat_groups <- split(dat, by = group)
+    dat_groups <- lapply(dat_groups, function(x) {
+      nsub <- unique(x[[subject]])
+      df_list <- vector("list", length = length(nsub))
+      for (i in seq_along(nsub)) {
+        df_list[[i]] <- x[x[[subject]] != nsub[i], ]
+        df_list[[i]][[subject]] <- nsub[i]
+      }
+      data.table::rbindlist(df_list)
+    })
+    dat <- data.table::rbindlist(dat_groups)
+
+    ## Now pretty easy to create jackknifed df
+    newX <- dat[, substitute(y) := mean(get(y)), by = c(subject, time, group)]
+    newX <- unique(newX, by = c(subject, time, group))
   }
 
   splitVars <- c(subject, group)
@@ -113,44 +141,50 @@ bdotsFit <- function(data, # dataset
                    rho = rho, numRefits = numRefits,
                    verbose = FALSE,
                    splitVars = splitVars,
-                   datVarNames = datVarNames)
+                   datVarNames = datVarNames,
+                   jackknife = jackknife)
   stopCluster(cl)
 
 
   ff <- attr(res[[1]], "formula")
   fitList <- rbindlist(res, fill = TRUE)
 
- ## If too large, should get "name" of data
- # and option to call it from global env
- if (is.null(returnX)) {
-   sz <- object.size(data)
-   if (sz < 1e8L) X <- data
- } else if (returnX) {
-   X <- data
- } else {
-   X <- NULL # for now
- }
+  ## If too large, should get "name" of data
+  # and option to call it from global env
+  if (is.null(returnX)) {
+    sz <- object.size(dat)
+    if (sz < 1e8L) X <- dat
+  } else if (returnX) {
+    X <- dat
+  } else {
+    X <- NULL # for now
+  }
 
- X_env <- new.env(parent = emptyenv())
- X_env$X <- X
+  ## Accomodate changed X (need to revisit code above)
+  if (jackknife) {
+    X <- newX
+  }
 
- ## Janky for now, but we want a groupName List
- # tmp <- unique(fitList[, group, with = FALSE])
- # tmp <- names(split(tmp, by = group))
- vals <- do.call(function(...) paste(..., sep = "."),
-                 unique(fitList[, group, with = FALSE]))
- groups <- list(groups = group,
-                vals = vals)
+  X_env <- new.env(parent = emptyenv())
+  X_env$X <- X
 
- res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
-                  .Data = fitList,
-                  formula = ff,
-                  curveType = curveName,
-                  call = match.call(),
-                  time = timetest[[1]],
-                  rho = rho,
-                  groups = groups,
-                  X = X_env)
+  ## Janky for now, but we want a groupName List
+  # tmp <- unique(fitList[, group, with = FALSE])
+  # tmp <- names(split(tmp, by = group))
+  vals <- do.call(function(...) paste(..., sep = "."),
+                  unique(fitList[, group, with = FALSE]))
+  groups <- list(groups = group,
+                 vals = vals)
+
+  res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
+                   .Data = fitList,
+                   formula = ff,
+                   curveType = curveName,
+                   call = match.call(),
+                   time = timetest[[1]],
+                   rho = rho,
+                   groups = groups,
+                   X = X_env)
 }
 
 

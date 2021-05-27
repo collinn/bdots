@@ -4,7 +4,7 @@
 \alias{plot.bdotsObj}
 \title{Plot a bdotsFit object}
 \usage{
-\method{plot}{bdotsObj}(x, fitCode = NULL, gridSize = NULL, plotfun = "fits", ...)
+\method{plot}{bdotsObj}(x, fitCode = NULL, gridSize = NULL, plotfun = "fits", no_gg = FALSE, ...)
 }
 \arguments{
 \item{x}{An object of class 'bdotsObj' returned from \code{bdotsFit}}
@@ -15,6 +15,9 @@
 2x2. For right now, they are square}
 
 \item{plotfun}{Plot either subject fits or model parameters with "fits" or "pars"}
+
+\item{no_gg}{Set to \code{TRUE} to use base R graphics. They are much faster if
+you are just looking for some quick and dirty plots}
 
 \item{...}{ignore for now (other args to plot.generic)}
 }

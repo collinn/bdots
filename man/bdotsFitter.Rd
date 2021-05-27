@@ -14,6 +14,7 @@ bdotsFitter(
   params = NULL,
   splitVars = NULL,
   datVarNames = NULL,
+  jackknife = FALSE,
   ...
 )
 }
@@ -35,6 +36,8 @@ bdotsFitter(
 \item{splitVars}{variables used to identify group. Might combine with datVarNames}
 
 \item{datVarNames}{character vector indicating reponse and time values from parent call}
+
+\item{jackknife}{boolean indicating if dataset is jackknifed}
 
 \item{...}{not used}
 }
