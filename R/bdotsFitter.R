@@ -41,10 +41,15 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
     formals(curveType)[[nn]] <- arggs[[nn]]
   }
   res <- curveType()
-  ff <- res[['formula']]
-  params <- res[['params']]
-  fit <- curveFitter(dat, ff, params, rho, numRefits, getCovOnly, ...)
 
+  ## This occurs in situation with var(y) == 0
+  if (is.null(res)) {
+    return(NULL)
+  } else {
+    ff <- res[['formula']]
+    params <- res[['params']]
+    fit <- curveFitter(dat, ff, params, rho, numRefits, getCovOnly, ...)
+  }
 
   ## Return DT for failed fit
   if (is.null(fit)) {

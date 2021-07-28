@@ -15,7 +15,6 @@
 #' if the first attempt fails
 #' @param verbose currently not used
 #' @param returnX Boolean. Return data with bdObj? Currently not implemented
-#' @param jackknife is here
 #' @param ... Secret
 #'
 #' @return Object of class 'bdotsObj', inherits from data.table
@@ -23,7 +22,7 @@
 #' @details This is step one of the three step bdots process. Things should be
 #' more or less straight forward. The only tricky part involves curveType. For now
 #' know that one can use doubleGauss(concave = TRUE/FALSE) or logistic(). Should
-#' be passed in as a function. See the vignette on customizing this
+#' be passed in as a call. See the vignette on customizing this
 #'
 #' @examples
 #' \dontrun{
@@ -54,7 +53,6 @@ bdotsFit <- function(data, # dataset
                      cores = 0, # cores to use, 0 == 50% of available
                      verbose = FALSE,
                      returnX = NULL,
-                     jackknife = FALSE,
                      ...) {
 
   if (cores < 1) cores <- detectCores()/2
@@ -105,24 +103,24 @@ bdotsFit <- function(data, # dataset
 
   ## Currently undocumented feature
   # jackknife <- TRUE
-  if (jackknife) {
-    ## First extend out data.table for curve fitting
-    dat_groups <- split(dat, by = group)
-    dat_groups <- lapply(dat_groups, function(x) {
-      nsub <- unique(x[[subject]])
-      df_list <- vector("list", length = length(nsub))
-      for (i in seq_along(nsub)) {
-        df_list[[i]] <- x[x[[subject]] != nsub[i], ]
-        df_list[[i]][[subject]] <- nsub[i]
-      }
-      data.table::rbindlist(df_list)
-    })
-    dat <- data.table::rbindlist(dat_groups)
-
-    ## Now pretty easy to create jackknifed df
-    newX <- dat[, substitute(y) := mean(get(y)), by = c(subject, time, group)]
-    newX <- unique(newX, by = c(subject, time, group))
-  }
+  # if (jackknife) {
+  #   ## First extend out data.table for curve fitting
+  #   dat_groups <- split(dat, by = group)
+  #   dat_groups <- lapply(dat_groups, function(x) {
+  #     nsub <- unique(x[[subject]])
+  #     df_list <- vector("list", length = length(nsub))
+  #     for (i in seq_along(nsub)) {
+  #       df_list[[i]] <- x[x[[subject]] != nsub[i], ]
+  #       df_list[[i]][[subject]] <- nsub[i]
+  #     }
+  #     data.table::rbindlist(df_list)
+  #   })
+  #   dat <- data.table::rbindlist(dat_groups)
+  #
+  #   ## Now pretty easy to create jackknifed df
+  #   newX <- dat[, substitute(y) := mean(get(y)), by = c(subject, time, group)]
+  #   newX <- unique(newX, by = c(subject, time, group))
+  # }
 
   splitVars <- c(subject, group)
   newdat <- split(dat, by = splitVars, drop = TRUE)
@@ -136,16 +134,36 @@ bdotsFit <- function(data, # dataset
 
   invisible(clusterEvalQ(cl, {library(bdots)}))
 
+  ## Only for error checking
+  # res <- vector("list", length(newdat))
+  # for (i in seq_along(newdat)) {
+  #   res[[i]] <- bdotsFitter(newdat[[i]], curveType, rho,
+  #                           numRefits, verbose = FALSE,
+  #                           splitVars = splitVars, datVarNames = datVarNames)
+  # }
+
   res <- parLapply(cl, newdat, bdotsFitter,
                    curveType = curveType,
                    rho = rho, numRefits = numRefits,
                    verbose = FALSE,
                    splitVars = splitVars,
-                   datVarNames = datVarNames,
-                   jackknife = jackknife)
+                   datVarNames = datVarNames)
   stopCluster(cl)
 
+  ## Remove entries that had zero outcome variance
+  nullEntries <- vapply(res, is.null, logical(1))
+  if (sum(nullEntries) != 0) {
+    nn <- names(newdat)[which(nullEntries)]
+    message(paste0("Observations with zero outcome variance were removed (n = ", length(nn), "):"))
+    for (i in seq_along(nn)) {
+      message(nn[i])
+    }
+    res <- compact(res)
+  }
 
+  ## Be sure that we have a formula available
+  # valid <- vapply(res, function(x) x[['fitCode']] < 6, logical(1))
+  # idx <- which(valid, arr.ind = TRUE)[1]
   ff <- attr(res[[1]], "formula")
   fitList <- rbindlist(res, fill = TRUE)
 
@@ -161,9 +179,9 @@ bdotsFit <- function(data, # dataset
   }
 
   ## Accomodate changed X (need to revisit code above)
-  if (jackknife) {
-    X <- newX
-  }
+  # if (jackknife) {
+  #   X <- newX
+  # }
 
   X_env <- new.env(parent = emptyenv())
   X_env$X <- X

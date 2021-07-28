@@ -10,7 +10,7 @@
 #' @param ... just in case
 #'
 #' @details User should only have to worry about setting concavity
-#' of this function
+#' of this function. Presently only work for time series scaled out to 2000ms
 #'
 #' \code{y ~ (time < mu) * (exp(-1 * (time - mu) ^ 2
 #' / (2 * sig1 ^ 2)) * (ht - base1) + base1)
@@ -27,6 +27,10 @@ doubleGauss2 <- function(dat, y, time, params = NULL, concave = TRUE, ...) {
       stop("doubleGauss parameters for refitting must be correctly labeled")
     }
   }
+  ## Return NA list if var(y) is 0
+  if (is.null(params)) {
+    return(NULL)
+  }
 
   y <- str2lang(y)
   time <- str2lang(time)
@@ -42,6 +46,11 @@ doubleGauss2 <- function(dat, y, time, params = NULL, concave = TRUE, ...) {
 dgaussPars2 <- function(dat, y, time, conc = TRUE) {
   time <- dat[[time]]
   y <- dat[[y]]
+
+  ## Remove cases with zero variance
+  if (var(y) == 0) {
+    return(NULL)
+  }
 
   pars <- setNames(rep(0, 6), c("mu", "ht", "sig1", "sig2", "base1", "base2"))
 

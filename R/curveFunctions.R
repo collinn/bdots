@@ -16,6 +16,11 @@ logistic <- function(dat, y, time, params = NULL, ...) {
     time <- dat[[time]]
     y <- dat[[y]]
 
+    ## Remove cases with zero variance
+    if (var(y) == 0) {
+      return(NULL)
+    }
+
     mini <- min(y)
     peak <- max(y)
     r <- (peak - mini)
@@ -38,6 +43,10 @@ logistic <- function(dat, y, time, params = NULL, ...) {
     if (!all(names(params) %in% c("mini", "peak", "slope", "cross"))) {
       stop("logistic parameters for refitting must be correctly labeled")
     }
+  }
+  ## Return NA list if var(y) is 0
+  if (is.null(params)) {
+    return(NULL)
   }
   y <- str2lang(y)
   time <- str2lang(time)
@@ -78,6 +87,10 @@ doubleGauss <- function(dat, y, time, params = NULL, concave = TRUE, ...) {
       stop("doubleGauss parameters for refitting must be correctly labeled")
     }
   }
+  ## Return NA list if var(y) is 0
+  if (is.null(params)) {
+    return(NULL)
+  }
 
   y <- str2lang(y)
   time <- str2lang(time)
@@ -93,6 +106,11 @@ doubleGauss <- function(dat, y, time, params = NULL, concave = TRUE, ...) {
 dgaussPars <- function(dat, y, time, conc) {
   time <- dat[[time]]
   y <- dat[[y]]
+
+  ## Remove cases with zero variance
+  if (var(y) == 0) {
+    return(NULL)
+  }
 
   mu <- ifelse(conc, time[which.max(y)], time[which.min(y)])
   ht <- ifelse(conc, max(y), min(y))
@@ -139,6 +157,10 @@ dgaussPars <- function(dat, y, time, conc) {
 polynomial <- function(dat, y, time, degree, raw = TRUE, params = NULL, ...) {
 
   polyPars <- function(dat, y, time, degree, raw) {
+    ## Remove cases with zero variance
+    if (var(dat[[y]]) == 0) {
+      return(NULL)
+    }
     pp <- lm(dat[[y]] ~ poly(dat[[time]], degree = degree, raw = raw))
     setNames(coef(pp), c(paste0("beta", seq(degree + 1L))))
   }
@@ -150,6 +172,10 @@ polynomial <- function(dat, y, time, degree, raw = TRUE, params = NULL, ...) {
     if (!all(names(params) %in% paste0("beta", seq(degree + 1L)))) {
       stop("polynomial parameters must be labeled beta1, ..., beta[degree + 1]")
     }
+  }
+  ## Return NA list if var(y) is 0
+  if (is.null(params)) {
+    return(NULL)
   }
 
   time_names <- paste0("I(Time^", seq(degree + 1L) - 1L , ")")
