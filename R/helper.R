@@ -214,6 +214,19 @@ nopairSD <- function(l) {
   s <- sqrt(s)
 }
 
+
+## I really ought have something that just does
+# the first part of this, i.e., split up bdobj into groups
+## Given bdobj, get list of coef matrices. Indicates if paired in attr
+coefList <- function(bdObj) {
+  gsplit <- eval(attr(bdObj, "call")$group)
+  clist <- split(bdObj, by = gsplit)
+  ip <- isPaired(clist)
+  cmats <- lapply(clist, coef)
+  structure(.Data = cmats,
+            names = names(clist),
+            paired = ip)
+}
 ## this ONLY returns the sd for the t stat, not the multiplier
 ## For now, making it the entire denominator. we will check plot and see if it makes sense
 # nopairSD2 <- function(l) {
