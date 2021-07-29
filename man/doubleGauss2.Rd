@@ -24,7 +24,7 @@ DoubleGauss2 function used in fitting nlme curve for observations
 }
 \details{
 User should only have to worry about setting concavity
-of this function
+of this function. Presently only work for time series scaled out to 2000ms
 
 \code{y ~ (time < mu) * (exp(-1 * (time - mu) ^ 2
 / (2 * sig1 ^ 2)) * (ht - base1) + base1)

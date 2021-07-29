@@ -1,3 +1,5 @@
+## Need to review commented out stuff.
+# note this is only univariate tests. hotellings better
 
 # groups are ExpectNoise, NoiseBoth, Quiet
 
@@ -40,10 +42,11 @@
 #' tstats <- parTest(res, group = "LookType", vals = c("Cohort", "Unrelated_Cohort"))
 #' }
 #' @importFrom utils combn
-#' @export
-parTest <- function(bdObj, group, vals = NULL) {
+# @export
+parTest2 <- function(bdObj, group, vals = NULL) {
 
   #### This whole section needs to be logic validated
+  ## Why specify? should just return all pairwise combos.
   if (is.null(vals)) {
     vals <- names(table(bdObj[[group]]))
   }
@@ -108,7 +111,7 @@ parTest <- function(bdObj, group, vals = NULL) {
     tabs <- lapply(ttests, make_tabs)
   }
 
-  structure(.Data = tabs, class = "bdotsPars_ttest")
+  structure(.Data = tabs, class = "bdotsPars_ttest2")
 }
 
 #' Print Parameter Test Summary
@@ -120,8 +123,8 @@ parTest <- function(bdObj, group, vals = NULL) {
 #'
 #' @details That's pretty much it. This is a print method, so there is likely
 #' not much need to call it directly
-#' @export
-print.bdotsPars_ttest <- function(x, ...) {
+# @export
+print.bdotsPars_ttest2 <- function(x, ...) {
 
   ## Figure out header, i.e., degrees of freedom + isPaired
   for (i in seq_along(x)) {
@@ -143,3 +146,82 @@ print.bdotsPars_ttest <- function(x, ...) {
 # rr
 # qq <- parTest(res.b, "Group")
 # qq
+
+
+
+## Test for parameters (hotellings)
+## This extra arguments only work in paired case
+# here, n is total number of  pairs and
+# mult is multiplier of magnitude as  percentage
+parTest_H <- function(bdObj, n = NULL, mult = 1) {
+  cmats <- coefList(bdObj)
+
+  ## Remove base term for each
+  # (this is gross)
+  rr <- cmats[[1]]
+
+  keepidx <- if (ncol(rr) == 6L) {
+    c(1:4, 6)
+  } else {
+    2:4
+  }
+
+  for (i in seq_along(cmats)) {
+    cmats[[i]] <- cmats[[i]][, keepidx]
+  }
+
+  t_idx <- utils::combn(names(cmats), 2, c, simplify = FALSE)
+
+  ## paired?
+  ip <- attr(cmats, "paired")
+
+  ## if paired, do difference
+  if (ip) {
+    ttests <- lapply(t_idx, function(xx) {
+      mats <- cmats[xx]
+      dmat <- Reduce(`-`, mats)
+      if (is.null(n)) {
+        n <- nrow(dmat)
+      }
+      p <- ncol(dmat)
+      sig <- cov(dmat)
+      sigInv <- solve(sig / n)
+      tv <- colMeans(dmat)
+      tv <- tv * mult
+      tsq <- t(tv) %*% sigInv %*% tv
+      tres <- ((n - p) / (p*(n-1))) * tsq
+      tres <- as.numeric(tres)
+      1 - pf(tres, p, n-p)
+    })
+  } else {
+    ttests <- lapply(t_idx, function(xx) {
+      mats <- cmats[xx]
+
+      x <- mats[[1]]
+      y <- mats[[2]]
+
+      nx <- nrow(x)
+      ny <- nrow(y)
+      p <- ncol(x) # will be same as y
+
+      xm <- colMeans(x)
+      ym <- colMeans(y)
+      sx <- cov(x)
+      sy <- cov(y)
+
+      poolVar <- ((nx - 1) * sx + (ny - 1)*sy) / (nx + ny - 2)
+      sigInv <- solve(poolVar)
+
+      dd <- xm - ym
+      tsq <- ((nx*ny) / (nx + ny)) * t(dd) %*% sigInv %*% dd
+      tres <- ((nx + ny - p - 1)/((nx + ny - 2)*p)) * tsq
+      tres <- as.numeric(tres)
+      1 - pf(tres, p, nx + ny - 1 - p)
+    })
+  }
+
+  names(ttests) <- lapply(t_idx, function(x) {
+    paste(x, collapse = " vs. ")
+  })
+  ttests
+}

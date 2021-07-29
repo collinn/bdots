@@ -11,3 +11,9 @@
 # bdots 05-03-2021
 - Fixes to choosing AR1 status during refit steps
 
+# bdots 07-29-2021
+- Major updates to fit, parameter, and bootstrap plots with ggplot2
+- Handle case in which observation has zero variance in outcome
+- Relaxed fit criteria in refitting step
+- Fixed bugs in `bdotsRefit` walkthrough
+

@@ -16,7 +16,6 @@ bdotsFit(
   cores = 0,
   verbose = FALSE,
   returnX = NULL,
-  jackknife = FALSE,
   ...
 )
 }
@@ -45,8 +44,6 @@ if the first attempt fails}
 
 \item{returnX}{Boolean. Return data with bdObj? Currently not implemented}
 
-\item{jackknife}{is here}
-
 \item{...}{Secret}
 }
 \value{
@@ -59,7 +56,7 @@ Creates observation level curves to use in bdotsBoot
 This is step one of the three step bdots process. Things should be
 more or less straight forward. The only tricky part involves curveType. For now
 know that one can use doubleGauss(concave = TRUE/FALSE) or logistic(). Should
-be passed in as a function. See the vignette on customizing this
+be passed in as a call. See the vignette on customizing this
 }
 \examples{
 \dontrun{

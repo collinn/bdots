@@ -246,7 +246,8 @@ bdUpdate <- function(bdo, numRefits) {
       while (TRUE) {
         ar_val <- readline("Use AR1 assumption? (y/n): ")
         if (ar_val %in% c("y", "n", "")) {
-          rho <- ifelse(ar_val == "n", 0, rho)
+          has_ar <- bdo$fitCode < 3
+          rho <- ifelse(ar_val == "n", 0, rho*has_ar)
           break
         } else {
           cat("Please enter 'y' or 'n'\n")

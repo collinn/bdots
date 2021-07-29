@@ -4,24 +4,25 @@
 \alias{plot.bdotsBootObj}
 \title{Plot for object of class bdotsBootObj}
 \usage{
-\method{plot}{bdotsBootObj}(x, alpha = NULL, plotDiffs = TRUE, group = NULL, ciBands = TRUE, ...)
+\method{plot}{bdotsBootObj}(x, alpha = NULL, ciBands = TRUE, plotDiffs = TRUE, group = NULL, ...)
 }
 \arguments{
 \item{x}{An object of class bdotsBootObj}
 
-\item{alpha}{Significance level for plotting confidence intervals. To readjust
-areas of significance will value different than alpha used in \code{bdotsBoot} is
-computationally expensive and is currently not an option but will be offered soon.}
+\item{alpha}{Significance level for plotting confidence intervals.}
+
+\item{ciBands}{Boolean indicating whether or not to include confidence intervals
+around fitted curves}
 
 \item{plotDiffs}{Boolean to plot difference curve}
 
 \item{group}{Specify group to plot if difference of difference was used. The
-user can also subset the bdotsBootObj prior to plotting}
-
-\item{ciBands}{Boolean indicating whether or not to include confidence intervals
-around fitted curves (currently only option is TRUE)}
+user can also subset the bdotsBootObj prior to plotting. Currently not used}
 
 \item{...}{ignore for now, but will eventually allow plot parameters}
+}
+\value{
+List of ggplot objects, which may be helpful if the margins are weird
 }
 \description{
 Allows a number of different but also unstable option for plotting an object

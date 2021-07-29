@@ -49,10 +49,14 @@ plotPars <- function(bdObj, ...) {
   plotList <- vector("list", length(cList))
   names(plotList) <- names(cList)
   for (i in seq_along(cList)) {
-    plotList[[i]] <- ggplot(cList[[i]], aes(value, group = parameter, color = 'gray')) + geom_histogram(bins = 8) +
+    plotList[[i]] <- ggplot(cList[[i]], aes(value, group = parameter, color = 'gray')) +
+      geom_histogram(bins = 8) +
       facet_wrap(~parameter, scales = "free_x") +
-      scale_color_manual(values = "white") + ggtitle(names(cList)[i]) +
-      theme(legend.position = "none")
+      scale_color_manual(values = "white") +
+      ggtitle(names(cList)[i], subtitle = paste0("page ", i, " of ", length(cList))) +
+      theme(legend.position = "none") + xlab("Value") + ylab("")
+
+    print(plotList[[i]])
   }
   return(invisible(plotList))
 }
@@ -70,26 +74,26 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
 
   if (!is.character(yname)) stop("Error 123")
 
+  ## Eventually we will delete this
   X <- attr(bdObj, "X")$X
-  dfname <- deparse1(bdCall$data)
-  if (is.null(X) & exists(dfname)) {
-    X <- get(dfname)
-  } else if (is.null(X) & !exists(dfname)) {
-    stop("Cannot find dataset used to construct bdObj, please pass as argument")
-  }
+  # dfname <- deparse1(bdCall$data)
+  # if (is.null(X) & exists(dfname)) {
+  #   X <- get(dfname)
+  # } else if (is.null(X) & !exists(dfname)) {
+  #   stop("Cannot find dataset used to construct bdObj, please pass as argument")
+  # }
 
-  ## Assume that subsets have been made
-  oldPar <- par()$mfrow
-  on.exit(par(mfrow = oldPar))
+  ## Eventually we will delete this logic
+  gridSize <- ifelse(is.null(gridSize), 2, gridSize)
 
-  if (is.null(gridSize)) {
-    gridSize <- 2
-    par(mfrow = c(gridSize, gridSize))
-  } else if (gridSize == "refit") {
-    par(mfrow = c(1, 2))
-  } else {
-    par(mfrow = c(gridSize, gridSize))
-  }
+  # if (is.null(gridSize)) {
+  #   gridSize <- 2
+  #   par(mfrow = c(gridSize, gridSize))
+  # } else if (gridSize == "refit") {
+  #   par(mfrow = c(1, 2))
+  # } else {
+  #   par(mfrow = c(gridSize, gridSize))
+  # }
 
   Xs <- split(X, by = splitVars)
   time <- attr(bdObj, "time")
@@ -106,20 +110,25 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
     if (code != 6) {
       fitY <- fitted.values(bdObj[i, ]$fit[[1]])
       df <- as.data.table(cbind(time, fitY, obsY))
-      #df2 <- melt(df, id.vars = "time", measure.vars = c("obsY", "fitY"))
+
     } else {
       df <- as.data.table(cbind(time, obsY))
     }
-    df2 <- melt(df, id.vars = "time")
-    df2$lty <- "dashed"
-    df2[variable != "obsY", ]$lty <- "solid"
+    # df2 <- melt(df, id.vars = "time")
+    # df2$lty <- "dashed"
+    # df2[variable != "obsY", ]$lty <- "solid"
+    #
+    # df2$clr <- "tomato"
+    # df2[variable != "obsY", ]$clr <- "steelblue"
+    #
+    # df2[, `Curves` := variable]
+    # df2$Curves <- "Fit"
+    # df2[variable == "obsY", ]$Curves <- "Observed"
 
-    df2$clr <- "tomato"
-    df2[variable != "obsY", ]$clr <- "steelblue"
-
-    df2[, `Curves` := variable]
-    df2$Curves <- "Fit"
-    df2[variable == "obsY", ]$Curves <- "Observed"
+    df2 <- melt(df, id.vars = "time", variable.name = "Curves")
+    df2[, `:=`(lty = ifelse(Curves == "obsY", "dashed", "solid"),
+               clr = ifelse(Curves == "obsY", "tomato", "steelblue"),
+               Curves = ifelse(Curves == "obsY", "Observed", "Fit"))]
 
     ## Janky fix for update. Should just make a separate for refits
     if (gridSize == "refit") {
@@ -137,16 +146,13 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
     y <- NULL; variable <- NULL; value <- NULL; clr <- NULL; lty <- NULL
     Curves <- NULL;
 
-    colors <- c(
-      "#56B4E9",
-      "#D55E00"
-    )
+    #colors <- c("#56B4E9","#D55E00")
 
     ## This thing is kinda gross
     plotList[[i]] <- ggplot(df2, aes(time, value, color = Curves, linetype = Curves)) +
       geom_line(size = 1) + theme_bw() + ggtitle(title) + xlab(tname) + ylab(yname) +
       theme(legend.position = "bottom") +
-      scale_color_manual(values = colors)
+      scale_color_manual(values = c("#56B4E9","#D55E00"))
   }
 
   ## this is a dumb way to do this
@@ -174,57 +180,15 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
   return(invisible(plotList))
 }
 
-
-## Needs title
-#' @importFrom graphics matplot
-plotDiff <- function(bdBootObj, alpha = 0.05, ...) {
-  diff <- bdBootObj[['curveList']][['diff']]
-  mm <- makePlotCI(diff, alpha)
-  ## add some shaading to this, that would be lit
-  matplot(mm, lty = c(2, 1, 2), type = 'l',
-          col = c('grey', 'black', 'gray'))
-}
-
-#### DELETE after confirming ggplot works
-## @importFrom grDevices rgb
-## @importFrom graphics rect lines
-# bucketPlot <- function(sigTime, ylim = c(0, 0.9), ...) {
-#   ## Add option to change colors later
-#   if(!is.null(sigTime)) {
-#     yellow <- rgb(255, 255, 0, alpha = 70, maxColorValue = 255)
-#     gray <- "gray44"
-#     for(i in 1:nrow(sigTime)) {
-#       rect(sigTime[i,1], ylim[1], sigTime[i,2], ylim[2], col = yellow, border = NA)
-#       lines(c(sigTime[i,1], sigTime[i,1]), ylim, col = gray, lwd = 1)
-#       lines(c(sigTime[i,2], sigTime[i,2]), ylim, col = gray, lwd = 1)
-#     }
-#   }
-# }
-
-#### DELETE after confirming ggplot works
-## this is valid at least for group fits, not 100% sure of diff
-# makePlotCI <- function(cl, alpha = 0.05, ...) {
-#   ## This should take in an object of curveList i.e., 'diff', 'LI.M', etc.
-#   tv <- qt(1 - alpha / 2, cl[['n']] - 1) # this will not be correct for diff, as 'n' will be wrong.
-#   fit <- cl[['fit']]
-#   sd <- cl[['sd']]
-#   mm <- matrix(NA, ncol = 3, nrow = length(fit))
-#   mm[ ,1] <- fit - sd * tv # need to divide by sqrt(n) ?
-#   mm[, 2] <- fit
-#   mm[, 3] <- fit + sd * tv
-#   mm
-# }
-
+## Generate confidence intervals around fit values
+#' @import data.table
 makePlotCI <- function(cl, alpha = 0.05, ...) {
   tv <- stats::qt(1 - alpha / 2, cl[['n']] - 1) # this will not be correct for diff, as 'n' will be wrong.
   fit <- cl[['fit']]
   sd <- cl[['sd']]
-  mm <- matrix(NA, ncol = 3, nrow = length(fit))
-  mm[ ,1] <- fit - sd * tv # need to divide by sqrt(n) ?
-  mm[, 2] <- fit
-  mm[, 3] <- fit + sd * tv
-  colnames(mm) <- c("seL", "y", "seU")
-  data.table::as.data.table(mm)
+  mm <- data.table(seL = fit - sd * tv,
+                   y   = fit,
+                   seU = fit + sd * tv)
 }
 
 
@@ -234,14 +198,12 @@ makePlotCI <- function(cl, alpha = 0.05, ...) {
 #' of class bdotsBoot
 #'
 #' @param x An object of class bdotsBootObj
-#' @param alpha Significance level for plotting confidence intervals. To readjust
-#' areas of significance will value different than alpha used in \code{bdotsBoot} is
-#' computationally expensive and is currently not an option.
+#' @param alpha Significance level for plotting confidence intervals.
 #' @param ciBands Boolean indicating whether or not to include confidence intervals
 #' around fitted curves
 #' @param plotDiffs Boolean to plot difference curve
 #' @param group Specify group to plot if difference of difference was used. The
-#' user can also subset the bdotsBootObj prior to plotting
+#' user can also subset the bdotsBootObj prior to plotting. Currently not used
 #' @param ... ignore for now, but will eventually allow plot parameters
 #'
 #' @returns List of ggplot objects, which may be helpful if the margins are weird
@@ -249,8 +211,12 @@ makePlotCI <- function(cl, alpha = 0.05, ...) {
 #' @details This plot function is also a bit unstable and is expected to change
 #' @export
 plot.bdotsBootObj <- function(x, alpha = NULL, ciBands = TRUE, plotDiffs = TRUE, group = NULL, ...) {
+
   # value used in original call
-  alpha <- x$alpha
+  if (is.null(alpha)) alpha <- x$alpha
+
+  ## Not used for now
+  group <- NULL
 
   if (x$dod & !is.null(group)) {
     x <- subset(x, group, adjustAlpha = alpha) # this is a method
@@ -262,65 +228,8 @@ plot.bdotsBootObj <- function(x, alpha = NULL, ciBands = TRUE, plotDiffs = TRUE,
   }
 }
 
-#' @importFrom graphics par legend
-# plotInnerGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ciBands, ...) {
-#   cList <- bdBootObj[['curveList']]
-#   diffList <- cList[['diff']]
-#   cList <- cList[setdiff(names(cList), "diff")]
-#   cvMat <- lapply(cList, makePlotCI, alpha)
-#   nn <- length(cvMat)
-#   cvMat <- Reduce(cbind, cvMat)
-#
-#   Time <- attr(bdBootObj, "bdObjAttr")[["time"]]
-#
-#   ## Set pars
-#   plotcol <- c("steelblue", "tomato")
-#   bdCall <- attr(bdBootObj, "bdObjAttr")[['call']]
-#   yylab <- bdCall[['y']]
-#   xxlab <- bdCall[['time']]
-#   mmain <- names(bdBootObj$curveGroups)
-#
-#   ## If plotDiff
-#   if (plotDiffs) {
-#     oldMfrow <- par()$mfrow
-#     on.exit(par(mfrow = oldMfrow))
-#     par(mfrow = c(1, 2))
-#     diffMat <- makePlotCI(diffList, alpha)
-#   }
-#
-#   ## With pars, makes more sense to use do.call
-#   matplot(x = Time, cvMat, lty = rep(c(2,1,2), nn),
-#           type = 'l', col = rep(plotcol, each = 3),
-#           xlab = xxlab, ylab = yylab, main = mmain)
-#
-#   # set legend placement (?) ideally xpd out of plot or below
-#   lgn <- switch(as.character(attr(bdBootObj, "bdObjAttr")[['curveType']]),
-#                 "logistic" = "topleft",
-#                 "doubleGauss" = "topleft",
-#                 "topleft")
-#   #lgn <- "topright" # for now
-#
-#   ## This only holds if diff of diff not used. Need to handle other case
-#   if (is.null(NULL) & !is.null(bdBootObj[['sigTime']])) {
-#     sigTime <- bdBootObj[["sigTime"]]
-#     bucketPlot(sigTime, ylim = c(min(cvMat), max(cvMat)))
-#   }
-#
-#   legend(lgn, legend = names(cList), lty = c(1, 1),
-#          lwd = c(2, 2), col = plotcol, xpd = TRUE)
-#
-#   if (plotDiffs) {
-#     matplot(x = Time, diffMat, lty = c(2, 1, 2), type = 'l',
-#             col = c('grey', 'black', 'gray'),
-#             main = "difference of curves", xlab = xxlab,
-#             ylab = bquote(paste(Delta, .(yylab), sep = " ")))
-#     if (!is.null(bdBootObj[['sigTime']]))
-#       bucketPlot(sigTime, ylim = c(min(diffMat), max(diffMat)))
-#   }
-# }
-
 ## For plotting diff of diff case
-plotOuterGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ciBands, ...) {
+plotOuterGroup <- function(bdBootObj, alpha = 0.05, ciBands, plotDiffs, ...) {
   cList <- bdBootObj$curveList
   diffList <- cList[['diff']]
   cList <- cList[setdiff(names(cList), "diff")]
@@ -334,41 +243,36 @@ plotOuterGroup <- function(bdBootObj, alpha = 0.05, plotDiffs = TRUE, ciBands, .
 
 
 ## dod for plot titles
-plotInnerGroup <- function(bdBootObj, alpha = 0.05, ciBands = TRUE, plotDiffs = TRUE, dod = FALSE, ...) {
+plotInnerGroup <- function(bdBootObj, alpha = 0.05, ciBands, plotDiffs, dod = FALSE, ...) {
 
   ## Custodial tasks
-  Groups <- V1 <- V2 <- parameter <- seL <- seU <- value <- y <- NULL
-
   ggplot2::theme_set(theme_bw())
-  cList <- bdBootObj[['curveList']]
-  diffList <- cList[['diff']]
-  cList <- cList[setdiff(names(cList), "diff")]
-
-  cvMat <- lapply(cList, makePlotCI, alpha)
-  cvMat <- data.table::rbindlist(cvMat, idcol = 'Groups')
-
-  ## Likely no chance this will affect a real group name, but need for legend
-  cvMat[, Groups := gsub("\\.diff$", "", Groups)]
-
+  Groups <- V1 <- V2 <- parameter <- seL <- seU <- value <- y <- NULL
   Time <- attr(bdBootObj, "bdObjAttr")[["time"]]
   bdCall <- attr(bdBootObj, "bdObjAttr")[['call']]
   yylab <- bdCall[['y']]
   xxlab <- bdCall[['time']]
-  if (!dod) {
-    mmain <- "Bootstrapped Fits"
-  } else {
-    mmain <- "Bootstrapped Differences"
-  }
+  mmain <- ifelse(!dod, "Bootstrapped Fits", "Bootstrapped Differences")
 
+  ## Build our datasets for plots
+  cList <- bdBootObj[['curveList']]
+  diffList <- cList[['diff']]
+  cList <- cList[setdiff(names(cList), "diff")]
+
+  ## Likely no chance this will affect a real group name, but need for legend
+  cvMat <- lapply(cList, makePlotCI, alpha)
+  cvMat <- data.table::rbindlist(cvMat, idcol = 'Groups')
+  cvMat[, Groups := gsub("\\.diff$", "", Groups)]
   cvMat$Time <- rep(Time, times = length(cList))
 
   ## sigTime
   sigT <- data.table(bdBootObj$sigTime)
 
+  ## Construction of plot
   p <- ggplot(cvMat, aes(Time, y)) +
     geom_line(aes(group = Groups, color = Groups), size = 1) +
     labs(x = xxlab, y = yylab, title = mmain) +
-    theme(legend.margin = margin(l = 0, unit = "cm")) +
+    theme(legend.margin = margin(l = 0, unit = "cm"), legend.position = "bottom") +
     geom_rect(data = sigT, mapping = aes(xmin = V1, xmax = V2, fill = "yellow"),
               ymin = -Inf, ymax = Inf, color = "gray",
               alpha = 0.4, inherit.aes = FALSE, show.legend = FALSE) +
@@ -383,11 +287,7 @@ plotInnerGroup <- function(bdBootObj, alpha = 0.05, ciBands = TRUE, plotDiffs = 
     diffMat <- makePlotCI(diffList, alpha)
     diffMat$Time <- Time
 
-    if (!dod) {
-      dmain <- "Difference of Curves"
-    } else {
-      dmain <- "Difference of Difference Curves"
-    }
+    dmain <- ifelse(!dod, "Difference of Curves", "Difference of Difference Curves")
 
     dp <- ggplot(diffMat, aes(Time, y)) +
       geom_line(size = 1) + ylab(bquote(paste(Delta, .(yylab), sep = " "))) +
@@ -395,19 +295,20 @@ plotInnerGroup <- function(bdBootObj, alpha = 0.05, ciBands = TRUE, plotDiffs = 
       geom_rect(data = sigT, mapping = aes(xmin = V1, xmax = V2, fill = "yellow"),
                 ymin = -Inf, ymax = Inf, color = "gray",
                 alpha = 0.4, inherit.aes = FALSE, show.legend = FALSE) +
-      scale_fill_manual(values = "#FFF33D")
+      scale_fill_manual(values = "#FFF33D") +
+      theme(plot.margin = unit(c(5.5,5.5,34,5.5), "points"))
 
     if (ciBands) {
       dp <- dp + geom_line(aes(y = seL), linetype = 'dashed', color = 'gray') +
         geom_line(aes(y = seU), linetype = 'dashed', color = 'gray')
     }
 
-    grid.arrange(dp, p, ncol = 2, respect = TRUE, clip = "on")
-    grid.arrange(dp, p, ncol = 2, respect = FALSE)
-    return(invisible(list(diffPlot = dp, bootPlot = p)))
+    grid.arrange(p, dp, ncol = 2, respect = FALSE)
+
   } else {
+    dp <- NULL
     print(p)
-    return(invisible(list(diffPlot = NULL, bootPlot = p)))
   }
 
+  return(invisible(list(bootPlot = p, diffPlot = dp)))
 }

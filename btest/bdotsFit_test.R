@@ -1,5 +1,5 @@
 
-## Let's test bdotsFit funcitoin
+## Let's test bdotsFit function
 
 rm(list = ls())
 library(bdots)
@@ -43,15 +43,15 @@ res3 <- bdotsFit(data = cohort_unrelated,
                  verbose = FALSE)
 
 
-res2 <- bdotsRefit(res, fitCode = 2)
+res2 <- bdotsRefit(res, fitCode = 4)
 res <- bdotsRefit(res, quickRefit = TRUE, numRefits = 4, fitCode = 1)
-res2 <- bdotsRefit(res2, quickRefit = TRUE, numRefits = 4, fitCode = 6)
+res2 <- bdotsRefit(res2, quickRefit = TRUE, numRefits = 4, fitCode = 3)
 
 table(res$fitCode)
 table(res2$fitCode)
 
 #res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
-res2 <- bdRemove(res)
+res2 <- bdRemove(res.l)
 debug(bdotsRefit)
 debug(bdUpdate)
 debug(bdUpdate_NULL)
@@ -78,7 +78,7 @@ boot.test2 <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Co
                        bdObj = res2,
                        Niter = 1000,
                        alpha = 0.05,
-                       padj = "fdr",
+                       padj = "oleson",
                        cores = 8)
 #plotCompare(boot.test)
 
@@ -87,7 +87,7 @@ boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unr
                                    Niter = 1000,
                                    alpha = 0.05,
                                    padj = "oleson",
-                                   cores = 4)
+                                   cores = 6)
 ## Keep only valid pairs for now
 #res2 <- res[, 1:7]
 

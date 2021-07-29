@@ -125,7 +125,6 @@ bdotsFit <- function(data, # dataset
   splitVars <- c(subject, group)
   newdat <- split(dat, by = splitVars, drop = TRUE)
 
-
   if (Sys.info()['sysname'] == "Darwin") {
     cl <- makePSOCKcluster(cores, setup_strategy = "sequential")
   } else {
@@ -134,7 +133,8 @@ bdotsFit <- function(data, # dataset
 
   invisible(clusterEvalQ(cl, {library(bdots)}))
 
-  ## Only for error checking
+  ## Only for error checking, as devtools::load_all doesn't help
+  ## with parallel
   # res <- vector("list", length(newdat))
   # for (i in seq_along(newdat)) {
   #   res[[i]] <- bdotsFitter(newdat[[i]], curveType, rho,
@@ -151,6 +151,8 @@ bdotsFit <- function(data, # dataset
   stopCluster(cl)
 
   ## Remove entries that had zero outcome variance
+  ## NOTE:: need to make option to remove all entries from subject
+  # to retain paired t-test
   nullEntries <- vapply(res, is.null, logical(1))
   if (sum(nullEntries) != 0) {
     nn <- names(newdat)[which(nullEntries)]
@@ -161,9 +163,6 @@ bdotsFit <- function(data, # dataset
     res <- compact(res)
   }
 
-  ## Be sure that we have a formula available
-  # valid <- vapply(res, function(x) x[['fitCode']] < 6, logical(1))
-  # idx <- which(valid, arr.ind = TRUE)[1]
   ff <- attr(res[[1]], "formula")
   fitList <- rbindlist(res, fill = TRUE)
 
@@ -175,7 +174,7 @@ bdotsFit <- function(data, # dataset
   } else if (returnX) {
     X <- dat
   } else {
-    X <- NULL # for now
+    X <- dat # for now
   }
 
   ## Accomodate changed X (need to revisit code above)
@@ -187,8 +186,6 @@ bdotsFit <- function(data, # dataset
   X_env$X <- X
 
   ## Janky for now, but we want a groupName List
-  # tmp <- unique(fitList[, group, with = FALSE])
-  # tmp <- names(split(tmp, by = group))
   vals <- do.call(function(...) paste(..., sep = "."),
                   unique(fitList[, group, with = FALSE]))
   groups <- list(groups = group,
