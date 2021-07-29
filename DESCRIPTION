@@ -1,14 +1,15 @@
 Package: bdots
 Type: Package
 Title: Bootstrapped Differences of Time Series
-Version: 1.0.1.3
-Date: 2021-03-12
+Version: 1.0.1.4
+Date: 2021-07-29
 Author: Collin Nolte, Michael Seedorff, Jacob Oleson, Grant Brown,
         Joseph Cavanaugh, and Bob McMurray
 Maintainer: Collin Nolte <collin-nolte@uiowa.edu>
 BugReports: https://github.com/collinn/bdots/issues
 Depends: R (>= 4.0.0), data.table
-Imports: nlme, mvtnorm, parallel, stats, graphics, utils, ggplot2, gridExtra
+Imports: nlme, mvtnorm, parallel, stats, graphics, utils, ggplot2,
+        gridExtra
 LazyData: TRUE
 Description: Analyze differences among time series curves with p-value
         adjustment for multiple comparisons introduced in Oleson et al
