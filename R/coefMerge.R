@@ -25,6 +25,10 @@ mergecoef <- function(bdObj, infile) {
   bdObj2 <- split(bdObj[idx, ], by = idcols)
   newpars <- split(infile, by = idcols)
 
+  ## Ok, because sorting things is hard
+  sort_idx <- match(names(bdObj2), names(newpars))
+  newpars <- newpars[sort_idx]
+
   if (!identical(order(names(bdObj2)), order(names(newpars)))) {
     stop("bad news bears in mergecoef")
   } else {
