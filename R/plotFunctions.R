@@ -86,6 +86,8 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
   ## Eventually we will delete this logic
   gridSize <- ifelse(is.null(gridSize), 2, gridSize)
 
+  if (nrow(bdObj) < 4 & gridSize != "refit") gridSize <- 1
+
   # if (is.null(gridSize)) {
   #   gridSize <- 2
   #   par(mfrow = c(gridSize, gridSize))
@@ -133,9 +135,9 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
     ## Janky fix for update. Should just make a separate for refits
     if (gridSize == "refit") {
       if (i == 1) {
-        title <- paste("Original Fit", "\n fitCode = ", code, ", R2 = ", r2)
+        title <- paste0("Original Fit", "\nfitCode = ", code, ", R2 = ", r2)
       } else {
-        title <- paste("Updated Fit", "\n fitCode = ", code, ", R2 = ", r2)
+        title <- paste0("Updated Fit", "\nfitCode = ", code, ", R2 = ", r2)
       }
     } else {
       title <- paste0(paste0(obs, collapse = " "),
