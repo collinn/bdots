@@ -269,6 +269,11 @@ plotInnerGroup <- function(bdBootObj, alpha = 0.05, ciBands, plotDiffs, dod = FA
 
   ## sigTime
   sigT <- data.table(bdBootObj$sigTime)
+  if (nrow(sigT) == 0L) {
+    sigT <- data.table(V1 = 0, V2 = 0)
+  }
+
+
 
   ## Construction of plot
   p <- ggplot(cvMat, aes(Time, y)) +
