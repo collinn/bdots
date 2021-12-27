@@ -14,7 +14,6 @@
 #' @param numRefits Integer indicating number of attempts to fit an observation
 #' if the first attempt fails
 #' @param verbose currently not used
-#' @param returnX Boolean. Return data with bdObj? Currently not implemented
 #' @param ... Secret
 #'
 #' @return Object of class 'bdotsObj', inherits from data.table
@@ -52,7 +51,6 @@ bdotsFit <- function(data, # dataset
                      numRefits = 0,
                      cores = 0, # cores to use, 0 == 50% of available
                      verbose = FALSE,
-                     returnX = NULL,
                      ...) {
 
   if (cores < 1) cores <- detectCores()/2
@@ -62,8 +60,10 @@ bdotsFit <- function(data, # dataset
 
   ## Variable names on the dataset
   datVarNames <- c(y = y, subject = subject, time = time, group = group)
+  haveVars <- datVarNames %in% names(data)
   if (!all(datVarNames %in% names(data))) {
-    stop("need more specific error. Either subject, time, y, or group is not in dataset")
+    stopMsg <- paste0('"', datVarNames[!haveVars],'" is not a column of the dataset')
+    stop(stopMsg)
   }
 
   # for removing rho (need to adjust in case it's in (...))
@@ -77,7 +77,7 @@ bdotsFit <- function(data, # dataset
     }
   }
 
-  ## Factors eff things up
+  ## Factors are bad, m'kay?
   dat <- setDT(data)
   dat[, (group) := lapply(.SD, as.character), .SDcols = group]
   dat[, (subject) := lapply(.SD, as.character), .SDcols = subject]
@@ -90,7 +90,7 @@ bdotsFit <- function(data, # dataset
   timetest <- lapply(timetest, function(x) unique(x[[time]]))
   timeSame <- identical(Reduce(intersect, timetest, init = timetest[[1]]),
                         Reduce(union, timetest, init = timetest[[1]]))
-  if (!timeSame) stop("Yo, these times are different between groups, and until collin fixes it, that's going to make bdotsBoot wrong-ish")
+  if (!timeSame) stop("Observed times are different between groups")
 
   ## This should work inside function. Let's check
   # if this happens, need to modify X for plots to work
@@ -100,27 +100,6 @@ bdotsFit <- function(data, # dataset
     dat[, substitute(y) := mean(get(y)), by = c(subject, time, group)]
     dat <- unique(dat, by = c(subject, time, group))
   }
-
-  ## Currently undocumented feature
-  # jackknife <- TRUE
-  # if (jackknife) {
-  #   ## First extend out data.table for curve fitting
-  #   dat_groups <- split(dat, by = group)
-  #   dat_groups <- lapply(dat_groups, function(x) {
-  #     nsub <- unique(x[[subject]])
-  #     df_list <- vector("list", length = length(nsub))
-  #     for (i in seq_along(nsub)) {
-  #       df_list[[i]] <- x[x[[subject]] != nsub[i], ]
-  #       df_list[[i]][[subject]] <- nsub[i]
-  #     }
-  #     data.table::rbindlist(df_list)
-  #   })
-  #   dat <- data.table::rbindlist(dat_groups)
-  #
-  #   ## Now pretty easy to create jackknifed df
-  #   newX <- dat[, substitute(y) := mean(get(y)), by = c(subject, time, group)]
-  #   newX <- unique(newX, by = c(subject, time, group))
-  # }
 
   splitVars <- c(subject, group)
   newdat <- split(dat, by = splitVars, drop = TRUE)
@@ -167,23 +146,18 @@ bdotsFit <- function(data, # dataset
   fitList <- rbindlist(res, fill = TRUE)
 
   ## If too large, should get "name" of data
-  # and option to call it from global env
-  if (is.null(returnX)) {
-    sz <- object.size(dat)
-    if (sz < 1e8L) X <- dat
-  } else if (returnX) {
-    X <- dat
-  } else {
-    X <- dat # for now
-  }
-
-  ## Accomodate changed X (need to revisit code above)
-  # if (jackknife) {
-  #   X <- newX
+  ## and option to call it from global env
+  # if (is.null(returnX)) {
+  #   sz <- object.size(dat)
+  #   if (sz < 1e8L) X <- dat
+  # } else if (returnX) {
+  #   X <- dat
+  # } else {
+  #   X <- dat # for now
   # }
 
   X_env <- new.env(parent = emptyenv())
-  X_env$X <- X
+  X_env$X <- dat
 
   ## Janky for now, but we want a groupName List
   vals <- do.call(function(...) paste(..., sep = "."),

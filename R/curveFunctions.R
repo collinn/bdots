@@ -138,7 +138,7 @@ dgaussPars <- function(dat, y, time, conc) {
 
 #' Polynomial curve function for nlme
 #'
-#' Logistic function used in fitting nlme curve for observations
+#' Polynomial function used in fitting nlme curve for observations
 #'
 #' @param dat subject data to be used
 #' @param y outcome variable
@@ -184,6 +184,55 @@ polynomial <- function(dat, y, time, degree, raw = TRUE, params = NULL, ...) {
   ff <- str2lang(ff)
   y <- str2lang(y)
   ff <- bquote(.(y) ~ .(ff))
+  attr(ff, "parnames") <- names(params)
+  return(list(formula = ff, params = params))
+}
+
+
+#' Linear curve function
+#'
+#' Linear function used in fitting nlme curve for observations
+#'
+#' @param dat subject data to be used
+#' @param y outcome variable
+#' @param time time variable
+#' @param params \code{NULL} unless user wants to specify starting parameters for gnls
+#' @param ... just in case
+#'
+#' @details Don't use this function please
+#'
+#' @details \code{y ~ slope*time + intercept}
+#' @export
+linear <- function(dat, y, time, params = NULL, ...) {
+  linearPars <- function(dat, y, time, ...) {
+    time <- dat[[time]]
+    y <- dat[[y]]
+
+    ## Remove cases with zero variance
+    if (var(y) == 0) {
+      return(NULL)
+    }
+    bb <- min(y)
+    mm <- (max(y) - bb) / max(time)
+
+    return(c(intercept = bb, slope = mm))
+  }
+
+  if (is.null(params)) {
+    params <- linearPars(dat, y, time)
+  } else {
+    if (length(params) != 2) stop("linear requires 2 parameters be specified for refitting")
+    if (!all(names(params) %in% c("intercept", "slope"))) {
+      stop("linear parameters for refitting must be correctly labeled")
+    }
+  }
+  ## Return NA list if var(y) is 0
+  if (is.null(params)) {
+    return(NULL)
+  }
+  y <- str2lang(y)
+  time <- str2lang(time)
+  ff <- bquote(.(y) ~ slope * .(time) + intercept)
   attr(ff, "parnames") <- names(params)
   return(list(formula = ff, params = params))
 }

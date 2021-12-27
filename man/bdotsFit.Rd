@@ -15,7 +15,6 @@ bdotsFit(
   numRefits = 0,
   cores = 0,
   verbose = FALSE,
-  returnX = NULL,
   ...
 )
 }
@@ -41,8 +40,6 @@ if the first attempt fails}
 \item{cores}{number of cores. Default is \code{0}, indicating half cores available}
 
 \item{verbose}{currently not used}
-
-\item{returnX}{Boolean. Return data with bdObj? Currently not implemented}
 
 \item{...}{Secret}
 }

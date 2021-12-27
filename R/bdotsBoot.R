@@ -14,8 +14,9 @@
 #' @param ... not used
 #'
 #' @details The formula is the only tricky part of this. There will be a minor
-#' update to how it works in the future.  The three parts we will examine here
-#' are Groups, the LHS, and the RHS.
+#' update to how it works in the future. The three parts we will examine here
+#' are Groups, the LHS, and the RHS. For all variable names, special characters
+#' should be included with backticks, i.e., \code{`my-var`}
 #'
 #' ## Groups
 #'
@@ -128,15 +129,6 @@ bdotsBoot <- function(formula,
   outerDiff <- prs[["outerDiff"]] # unnamed char vec
 
   curveGrps <- setNames(prs[['subargs']], prs[['subnames']])
-
-  ## Moved to helper.R, make sure it still works here
-  # makeCurveFun <- function(bdObj) {
-  #   time <- attr(bdObj, "call")[['time']]
-  #   f_bod <- attr(bdObj, "formula")[[3]]
-  #   f_args <- c(colnames(coef(bdObj)), time)
-  #   f_args <- setNames(as.pairlist(rep("", length(f_args))), f_args)
-  #   eval(call("function", f_args, f_bod), parent.frame())
-  # }
 
   curveFun <- makeCurveFun(bdObj)
 

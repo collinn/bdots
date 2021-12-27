@@ -62,17 +62,3 @@ writeCSV <- function(bootObj, file, alpha = 0.05, ...) {
   out <- data.table::data.table(out)
   data.table::fwrite(out, file, ...)
 }
-
-
-# dat <- fread("~/tmp/bdots_tmp/targ.noneVnormal.txt")
-# # bootObj - object returned from bdotsBoot
-# # file - file name
-# # alpha - alpha for CI. If null, will use adjusted alpha
-# # ... - other arguments that might be passed to data.table::fwrite
-#
-# bootObj <- boot.test # not diff of diff
-# bootObj <- boot.test2 # diff of diff
-#
-# file <- "~/packages/bdots/btest/tmp/test.csv"
-# file2 <- "~/packages/bdots/btest/tmp/test2.csv"
-# alpha <- 0.05

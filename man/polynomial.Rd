@@ -22,7 +22,7 @@ polynomial(dat, y, time, degree, raw = TRUE, params = NULL, ...)
 \item{...}{just in case}
 }
 \description{
-Logistic function used in fitting nlme curve for observations
+Polynomial function used in fitting nlme curve for observations
 }
 \details{
 It's recommended that one uses raw polynomials for this function for

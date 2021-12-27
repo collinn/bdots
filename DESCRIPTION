@@ -18,6 +18,6 @@ License: GPL-3 | file LICENSE
 URL: https://github.com/collinn/bdots
 NeedsCompilation: no
 Encoding: UTF-8
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Suggests: knitr, rmarkdown, tinytest
 VignetteBuilder: knitr, rmarkdown

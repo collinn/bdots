@@ -15,14 +15,13 @@
 #' @param params starting parameters, if wanting to add manually
 #' @param splitVars variables used to identify group. Might combine with datVarNames
 #' @param datVarNames character vector indicating reponse and time values from parent call
-#' @param jackknife boolean indicating if dataset is jackknifed
 #' @param ... not used
 #'
 #' @import data.table
 bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
                         verbose, getCovOnly = NULL,
                         params = NULL, splitVars = NULL,
-                        datVarNames = NULL, jackknife = FALSE, ...) {
+                        datVarNames = NULL, ...) {
 
   ## variables used for subsetting dat
   y <- datVarNames[['y']]
@@ -65,21 +64,9 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
     return(dt)
   }
 
-  if (jackknife) {
-    n <- length(unique(dat[[time]]))
-    yv <- matrix(dat[[y]], ncol = n, byrow = TRUE)
-    rv <- matrix(resid(fit), ncol = n, byrow = TRUE)
-    yv <- colMeans(yv)
-    rv <- colMeans(rv)
-    ssy <- (n-1)*var(yv)
-    sse <- (n-1)*var(rv)
-    R2 <- 1 - sse/ssy
-  } else {
-    SSE <- sum(resid(fit)^2)
-    SSY <- sum((dat[[y]] - mean(dat[[y]]))^2)
-    R2 <- 1 - SSE/SSY
-  }
-
+  SSE <- sum(resid(fit)^2)
+  SSY <- sum((dat[[y]] - mean(dat[[y]]))^2)
+  R2 <- 1 - SSE/SSY
 
 
   hasCor <- !is.null(fit$modelStruct$corStruct)
@@ -135,7 +122,6 @@ curveFitter <- function(dat, ff, params, rho, numRefits = 0, getCovOnly = NULL, 
         attempts <- numRefits
         while (attempts > 0 & is.null(fit)) {
           attempts <- attempts - 1
-          #params <- jitter(params)
           nudgeVal <- runif(length(params), -0.05, 0.05) * (numRefits - attempts)
           n_params <- params * (1 + nudgeVal)
           fit <- tryCatch(gnls(eval(ff), data = dat, start = n_params, correlation = corAR1(rho)),

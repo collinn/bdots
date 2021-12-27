@@ -28,12 +28,10 @@
 #' user will be prompted through a menu to individually refit observations
 #' @import data.table
 #' @export
-bdotsRefit <- function(bdObj, fitCode = 1L,
-                       quickRefit = FALSE, numRefits = 2L,
-                       paramDT = NULL, ...) {
+bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = FALSE,
+                       numRefits = 2L, paramDT = NULL, ...) {
 
   if (is.null(fitCode)) fitCode <- 1L
-
 
   if (is.null(attr(bdObj, "X")$X)) {
     stop("Dataset must be provided")
@@ -121,7 +119,7 @@ bdotsRefit <- function(bdObj, fitCode = 1L,
   bdObj
 }
 
-
+## Performs number of refits until improve fitCode/R2
 bdQuickRefit <- function(bdo, numRefits) {
 
   if (bdo$fitCode != 6L) {

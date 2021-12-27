@@ -45,13 +45,13 @@ res3 <- bdotsFit(data = cohort_unrelated,
 
 res2 <- bdotsRefit(res, fitCode = 4)
 res <- bdotsRefit(res, quickRefit = TRUE, numRefits = 4, fitCode = 1)
-res2 <- bdotsRefit(res2, quickRefit = TRUE, numRefits = 4, fitCode = 3)
-
+res2 <- bdotsRefit(res.l, quickRefit = TRUE, numRefits = 4, fitCode = 3)
+res2 <- bdotsRefit(res2, fitCode = 4)
 table(res$fitCode)
 table(res2$fitCode)
 
 #res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
-res2 <- bdRemove(res.l)
+res2 <- bdRemove(res.l, fitCode = 4L)
 debug(bdotsRefit)
 debug(bdUpdate)
 debug(bdUpdate_NULL)
