@@ -39,26 +39,54 @@ bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = FALSE,
 
   ## These uniquely identify each fit
   bdCall <- attr(bdObj, "call")
-  nn <- getIdentifierCols(bdObj) #c(eval(bdCall[['subject']]), eval(bdCall[['group']]))
+  nn <- getIdentifierCols(bdObj)
 
   if (!is.null(paramDT) & inherits(paramDT, what = "data.frame")) {
     res <- mergecoef(bdObj, paramDT)
     idx <- res[['idx']]
     new_bd <- res[['new_bd']]
   } else {
+
     fitcode <- fitCode
-    idx <- which(bdObj$fitCode >= fitcode)
+
+    ## Check if any refit has already occurred, make subset index
+    HAS_PRIOR_REFIT <- attr(bdObj, "refit_idx") # old refit
+    if (!is.null(HAS_PRIOR_REFIT)) {
+      bd_identifiers <- do.call(paste, bdObj[, ..nn]) # all subjects
+      NEEDS_REFIT_IDX <- !(bd_identifiers %in% HAS_PRIOR_REFIT)
+      idx <- which(bdObj$fitCode >= fitcode & NEEDS_REFIT_IDX)
+    } else {
+      idx <- which(bdObj$fitCode >= fitCode)
+    }
+
+    ## Handle case where no refits
     if (length(idx) == 0L) {
       message(paste0("All observations fitCode greater than ",
                      fitcode, ". Nothing to refit :)"))
       return(bdObj)
     }
+
+    ## Split by refit index above
     bdObj2 <- split(bdObj[idx, ], by = nn)
+
     if (quickRefit) {
       ## Oddly, I get errors running parLapply not lapply. Will investigate
       new_bd <- lapply(bdObj2, bdQuickRefit, numRefits)
     } else {
-      new_bd <- lapply(bdObj2, bdUpdate, numRefits)
+      new_bd <- vector("list", length = length(bdObj2))
+      BREAK <- FALSE # for ending sequence mid fits
+      for (i in seq_along(new_bd)) {
+        new_bd[[i]] <- bdUpdate(bdObj2[[i]], numRefits)
+        if (BREAK) break # break loop if done fitting
+      }
+      if (BREAK) {
+        REFIT_IDX <- idx[seq_len(i-1)]
+        new_bd <- new_bd[seq_len(i-1)] # otherwise, new_bd will have null entries which are considered deleted
+      } else {
+        REFIT_IDX <- idx
+      }
+      HAS_REFIT <- do.call(paste, bdObj[REFIT_IDX, ..nn])
+      HAS_REFIT <- c(HAS_REFIT, HAS_PRIOR_REFIT)
     }
   }
 
@@ -116,6 +144,7 @@ bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = FALSE,
         bdObj <- bdObj[-rmv_pairs, ]
     }
   }
+  if (exists("HAS_REFIT")) attr(bdObj, "refit_idx") <- HAS_REFIT
   bdObj
 }
 
@@ -202,12 +231,20 @@ bdUpdate <- function(bdo, numRefits) {
                      "3) Adjust starting parameters manually\n",
                      "4) Remove AR1 assumption\n",
                      "5) See original fit metrics\n",
-                     "6) Delete subject")
+                     "6) Delete subject\n",
+                     "99) Save and exit refitter")
     cat(rf_msg)
     resp <- NA
-    while (!(resp %in% 1:6)) {
+    while (!(resp %in% c(1:6, 99))) {
       resp <- readline("Choose (1-6): ")
     }
+
+    if (resp == 99) {
+      assign("BREAK", TRUE, pos = parent.frame())
+      accept <- TRUE
+      break
+    }
+
     if (resp == 1) {
       accept <- TRUE
       break
@@ -361,12 +398,21 @@ bdUpdate_NULL <- function(bdo, numRefits) {
     if (rounds == 1L) {
       rf_msg <- paste0("\nActions:\n",
                        "1) Adjust starting parameters manually\n",
-                       "2) Delete subject")
+                       "2) Delete subject\n",
+                       "99) Save and exit refitter")
       cat(rf_msg)
       resp <- NA
-      while (!(resp %in% 1:2)) {
+      while (!(resp %in% c(1:2, 99))) {
         resp <- readline("Choose (1-2): ")
       }
+
+      if (resp == 99) {
+        assign("BREAK", TRUE, pos = parent.frame())
+        accept <- TRUE
+        break
+      }
+
+
       ## resp = 1:4 changes, so need to map 2 here to delete subject (4)
       # in case they change their mind (selecting 'n' for delete), it needs to come
       # back to this original menu prompt. Consequently, update 'rounds' only if reps == 1
@@ -382,12 +428,19 @@ bdUpdate_NULL <- function(bdo, numRefits) {
                        "1) Adjust starting parameters manually\n",
                        "2) Print previous parameter attempt\n",
                        "3) Update previous parameter attempt\n",
-                       "4) Delete subject")
+                       "4) Delete subject\n",
+                       "99) Save and exit refitter")
       cat(rf_msg)
       resp <- NA
-      while (!(resp %in% 1:4)) {
+      while (!(resp %in% c(1:4, 99))) {
         resp <- readline("Choose (1-4): ")
       }
+    }
+
+    if (resp == 99) {
+      assign("BREAK", TRUE, pos = parent.frame())
+      accept <- TRUE
+      break
     }
 
     if (resp == 1) {

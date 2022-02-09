@@ -94,12 +94,12 @@ bdotsFit <- function(data, # dataset
 
   ## This should work inside function. Let's check
   # if this happens, need to modify X for plots to work
-  if (any(dat[, .N, by = c(subject, time, group)]$N > 1)) {
-    warning("Some subjects have multiple observations for unique time. These will be averaged")
-    yval <- deparse(substitute(y))
-    dat[, substitute(y) := mean(get(y)), by = c(subject, time, group)]
-    dat <- unique(dat, by = c(subject, time, group))
-  }
+  # if (any(dat[, .N, by = c(subject, time, group)]$N > 1)) {
+  #   warning("Some subjects have multiple observations for unique time. These will be averaged")
+  #   yval <- deparse(substitute(y))
+  #   dat[, substitute(y) := mean(get(y)), by = c(subject, time, group)]
+  #   dat <- unique(dat, by = c(subject, time, group))
+  # }
 
   splitVars <- c(subject, group)
   newdat <- split(dat, by = splitVars, drop = TRUE)
