@@ -86,7 +86,7 @@ makeCurveList <- function(meanMat, curveFun, oP) {
 ## Make diffList from curveList
 makeInnerDiffList <- function(curveList, oP) {
   diffList <- Map(function(x, y) {
-    x - y
+    y - x
   }, curveList[[1]], curveList[[2]])
 
   if (ip <- isPaired(oP)) {

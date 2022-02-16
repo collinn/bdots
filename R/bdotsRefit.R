@@ -182,7 +182,8 @@ bdQuickRefit <- function(bdo, numRefits) {
 
 
 ## Given a single bdotsFit observation, computes a refit
-bdRefitter <- function(bdo, numRefits = 0L, rho = NULL, params = NULL, ...) {
+bdRefitter <- function(bdo, numRefits = 0L, rho = NULL,
+                       params = NULL, getCovOnly = NULL, ...) {
   if (nrow(bdo) != 1L) stop("bdRefitter can only take a single observation")
   bdCall <- attr(bdo, "call")
   nn <- getIdentifierCols(bdo) #c(eval(bdCall[['subject']]), eval(bdCall[['group']])) # this is split vars!
@@ -195,7 +196,7 @@ bdRefitter <- function(bdo, numRefits = 0L, rho = NULL, params = NULL, ...) {
 
   new_bdo <- bdotsFitter(dat = x, curveType = crvFun, rho = rho,
                          params = params, splitVars = nn, datVarNames = bdCall,
-                         numRefits = numRefits)
+                         numRefits = numRefits, getCovOnly = getCovOnly)
   prob <- tryCatch(attributes(new_bdo) <- attributes(bdo), error = function(e) 2)
   if (is.numeric(prob)) stop("issue in bdrefitter, likely with ncols")
   new_bdo
