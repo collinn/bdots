@@ -83,7 +83,8 @@ bdotsFit <- function(data, # dataset
   dat[, (subject) := lapply(.SD, as.character), .SDcols = subject]
 
   ## Let's only keep the columns we need (have not tested this yet)
-  dat <- dat[, c(y, time, subject, group), with = FALSE]
+  ## Ok, let's try keeping everything in case we need correlation with fixed val
+  #dat <- dat[, c(y, time, subject, group), with = FALSE]
 
 
   timetest <- split(dat, by = group, drop = TRUE)

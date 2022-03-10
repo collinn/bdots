@@ -1,0 +1,79 @@
+---
+date: "3/10/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Correlations in `bdots`
+
+This vignette is created to illustrate the use of the `bdotsCorr` function, which finds
+the correlation between a fixed value in our dataset and the collection of fitted curves
+at each time points for each of the groups fit in `bdotsFit`.
+
+First, let's take an existing dataset and add a fixed value for each of the subjects
+
+```{r}
+library(bdots)
+library(data.table)
+
+## Let's work with cohort_unrelated dataset, as it has multiple groups
+dat <- as.data.table(cohort_unrelated)
+
+## And add a fixed value for which we want to find a correlation
+dat[, val := rnorm(1), by = Subject]
+
+head(dat)
+```
+Now, we go about creating our fitted object as usual
+
+```{r}
+## Create regular fit in bdots
+fit <- bdotsFit(data = dat,
+                subject = "Subject",
+                time = "Time",
+                group = c("LookType", "Group"),
+                y = "Fixations", curveType = doubleGauss2(),
+                cores = 2)
+```
+Using this fit object, we now introduce the `bdotsCorr` function, taking four arguments:
+
+1. `bdObj`, any object returned from a `bdotsFit` call
+2. `val`, a length one character vector of the value with which we want to correlate. `val` 
+should be a column in our original dataset, and it should be numeric
+3. `ciBands`, a boolean indicating whether or not we want to return 95% confidence intervals. Default is `FALSE`
+4. `method`, paralleling the `method` argument in `cor` and `cor.test`. The default is `pearson`.
+
+```{r}
+## Returns a data.table of class bdotsCorrObj
+corr_ci <- bdotsCorr(fit, val = "val", ciBands = TRUE)
+head(corr_ci)
+
+## Same, without confidence intervals
+corr_noci <- bdotsCorr(fit, val = "val")
+head(corr_noci)
+```
+
+From here, we are able to use the `data.tables` themselves for whatever we may be 
+interested in. We also have a plotting method associated with this object
+
+```{r, fig.align='center', fig.width = 6, fig.height=6}
+## Default is no bands
+plot(corr_ci)
+
+## Try again with bands
+plot(corr_ci, ciBands = TRUE)
+
+## Narrow in on a particular window
+plot(corr_ci, window = c(750, 1500))
+```
+
+
+Because this object is a `data.table`, we have full use of subsetting capabilities 
+for our plots
+
+```{r, fig.align='center', fig.width = 6, fig.height=4}
+plot(corr_ci[Group2 == "50", ])
+```

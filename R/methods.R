@@ -119,7 +119,6 @@ rbindlist.list <- function(x, ...) {
 #' @param ... for compatability with data.table
 #'
 #'
-#' @export
 rbindlist.bdObjList <- function(x, ...) {
   oldAttr <- attributes(x[[1]])
   class(x) <- "list"
