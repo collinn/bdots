@@ -91,7 +91,7 @@ bdotsFit <- function(data, # dataset
   timetest <- lapply(timetest, function(x) unique(x[[time]]))
   timeSame <- identical(Reduce(intersect, timetest, init = timetest[[1]]),
                         Reduce(union, timetest, init = timetest[[1]]))
-  if (!timeSame) stop("Observed times are different between groups")
+  #if (!timeSame) stop("Observed times are different between groups")
 
   ## This should work inside function. Let's check
   # if this happens, need to modify X for plots to work
