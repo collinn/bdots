@@ -238,11 +238,9 @@ linear <- function(dat, y, time, params = NULL, ...) {
 }
 
 
-## -----------
-
-#' Logistic curve function for nlme
+#' Exponential curve function
 #'
-#' DELETE THIS FUNCTION BEFORE GIT PUSH
+#' Exponential function used in fitting nlme curve for observations
 #'
 #' @param dat subject data to be used
 #' @param y outcome variable
@@ -250,51 +248,94 @@ linear <- function(dat, y, time, params = NULL, ...) {
 #' @param params \code{NULL} unless user wants to specify starting parameters for gnls
 #' @param ... just in case
 #'
-#' @details \code{y ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (time)) / (peak - mini)))}
+#' @details Don't use this function please
+#'
+#' @details \code{y ~ x_0 exp(k beta)}
 #' @export
-logistic2 <- function(dat, y, time, params = NULL, ...) {
-
-  logisticPars <- function(dat, y, time, ...) {
-    dat[, looks := mean(looks), by = starttime]
-    dat <- unique(dat)
-    time <- dat[[time]]
-    y <- dat[[y]]
-
-    ## Remove cases with zero variance
-    if (var(y) == 0) {
-      return(NULL)
-    }
-
-    mini <- min(y)
-    peak <- max(y)
-    r <- (peak - mini)
-    cross <- time[which.min(abs(0.5*r - y))]
-
-    # slope
-    q75 <- .75 * r + mini
-    q25 <- .25 * r + mini
-    time75 <- time[which.min(abs(q75 - y))]
-    time25 <- time[which.min(abs(q25 - y))]
-    slope <- (q75 - q25) / (time75 - time25)
-
-    return(c(mini = mini, peak = peak, slope = slope, cross = cross))
+expCurve <- function(dat, y, time, params = NULL, ...) {
+  estExpPars <- function(dat, y, time) {
+    tt <- lm(log(dat[[y]]) ~ dat[[time]])
+    x0 <- exp(coef(tt)[1])
+    k <- coef(tt)[2]
+    names(x0) <- names(k) <- NULL
+    return(c(x0 = x0, k = k))
   }
 
-  if (is.null(params)) {
-    params <- logisticPars(dat, y, time)
-  } else {
-    if (length(params) != 4) stop("logistic requires 4 parameters be specified for refitting")
-    if (!all(names(params) %in% c("mini", "peak", "slope", "cross"))) {
-      stop("logistic parameters for refitting must be correctly labeled")
-    }
-  }
-  ## Return NA list if var(y) is 0
-  if (is.null(params)) {
+  if (any(dat[[y]] <= 0)) {
+    message("Subjects with values <= 0 will not be fit")
     return(NULL)
+  }
+
+  if (is.null(params)) {
+    params <- estExpPars(dat, y, time)
+  } else {
+    # put checks here
   }
   y <- str2lang(y)
   time <- str2lang(time)
-  ff <- bquote(.(y) ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (.(time))) / (peak - mini))))
+  ff <- bquote(.(y) ~ x0 * exp(.(time) * k))
   attr(ff, "parnames") <- names(params)
   return(list(formula = ff, params = params))
 }
+
+
+#' ## -----------
+#'
+#' #' Logistic curve function for nlme
+#' #'
+#' #' DELETE THIS FUNCTION BEFORE GIT PUSH
+#' #'
+#' #' @param dat subject data to be used
+#' #' @param y outcome variable
+#' #' @param time time variable
+#' #' @param params \code{NULL} unless user wants to specify starting parameters for gnls
+#' #' @param ... just in case
+#' #'
+#' #' @details \code{y ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (time)) / (peak - mini)))}
+#' #' @export
+#' logistic2 <- function(dat, y, time, params = NULL, ...) {
+#'
+#'   logisticPars <- function(dat, y, time, ...) {
+#'     dat[, looks := mean(looks), by = starttime]
+#'     dat <- unique(dat)
+#'     time <- dat[[time]]
+#'     y <- dat[[y]]
+#'
+#'     ## Remove cases with zero variance
+#'     if (var(y) == 0) {
+#'       return(NULL)
+#'     }
+#'
+#'     mini <- min(y)
+#'     peak <- max(y)
+#'     r <- (peak - mini)
+#'     cross <- time[which.min(abs(0.5*r - y))]
+#'
+#'     # slope
+#'     q75 <- .75 * r + mini
+#'     q25 <- .25 * r + mini
+#'     time75 <- time[which.min(abs(q75 - y))]
+#'     time25 <- time[which.min(abs(q25 - y))]
+#'     slope <- (q75 - q25) / (time75 - time25)
+#'
+#'     return(c(mini = mini, peak = peak, slope = slope, cross = cross))
+#'   }
+#'
+#'   if (is.null(params)) {
+#'     params <- logisticPars(dat, y, time)
+#'   } else {
+#'     if (length(params) != 4) stop("logistic requires 4 parameters be specified for refitting")
+#'     if (!all(names(params) %in% c("mini", "peak", "slope", "cross"))) {
+#'       stop("logistic parameters for refitting must be correctly labeled")
+#'     }
+#'   }
+#'   ## Return NA list if var(y) is 0
+#'   if (is.null(params)) {
+#'     return(NULL)
+#'   }
+#'   y <- str2lang(y)
+#'   time <- str2lang(time)
+#'   ff <- bquote(.(y) ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (.(time))) / (peak - mini))))
+#'   attr(ff, "parnames") <- names(params)
+#'   return(list(formula = ff, params = params))
+#' }

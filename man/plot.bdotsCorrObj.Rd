@@ -4,7 +4,7 @@
 \alias{plot.bdotsCorrObj}
 \title{Plots for bdotsCorr}
 \usage{
-\method{plot}{bdotsCorrObj}(x, ciBands = FALSE, window = NULL)
+\method{plot}{bdotsCorrObj}(x, ciBands = FALSE, window = NULL, ...)
 }
 \arguments{
 \item{x}{object of class `bdotsCorrObj`}
@@ -14,6 +14,8 @@ Must have been selected in `bdotsCorr`}
 
 \item{window}{A length 2 numeric vector with start and end points
 for the  plotting window}
+
+\item{...}{super secret, don't use}
 }
 \description{
 Plots correlation of fixed value wtih fitted curves over time

@@ -52,6 +52,7 @@ bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = FALSE,
     ## Check if any refit has already occurred, make subset index
     HAS_PRIOR_REFIT <- attr(bdObj, "refit_idx") # old refit
     if (!is.null(HAS_PRIOR_REFIT)) {
+      ..nn <- NULL
       bd_identifiers <- do.call(paste, bdObj[, ..nn]) # all subjects
       NEEDS_REFIT_IDX <- !(bd_identifiers %in% HAS_PRIOR_REFIT)
       idx <- which(bdObj$fitCode >= fitcode & NEEDS_REFIT_IDX)

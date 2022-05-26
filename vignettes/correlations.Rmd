@@ -1,6 +1,10 @@
 ---
-date: "3/10/2022"
-output: html_document
+title: "correlations"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{bdots}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}

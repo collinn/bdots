@@ -17,3 +17,8 @@
 - Relaxed fit criteria in refitting step
 - Fixed bugs in `bdotsRefit` walkthrough
 
+# bdots 05-26-2022
+- Major updates to plotting functions
+- Added correlation function, `bdotsCorr`
+- Fixed bugs in `bdotsRefit`, added option to save/restore refit 
+- Added new curve functions
