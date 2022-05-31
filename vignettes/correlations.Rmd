@@ -2,7 +2,7 @@
 title: "correlations"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{bdots}
+  %\VignetteIndexEntry{correlations}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
