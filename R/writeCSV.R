@@ -29,11 +29,13 @@ writeCSV <- function(bootObj, file, alpha = 0.05, ...) {
   sigMat <- 0 * time
   colnames(sigMat) <- "Significant"
   st <- bootObj$sigTime
-  for (i in seq_len(nrow(st))) {
-    s1 <- which(time == st[i, 1])
-    s2 <- which(time == st[i, 2])
-    idx <- `:`(s1, s2)
-    sigMat[idx, 1] <- 1
+  if (!is.null(st)) {
+    for (i in seq_len(nrow(st))) {
+      s1 <- which(time == st[i, 1])
+      s2 <- which(time == st[i, 2])
+      idx <- `:`(s1, s2)
+      sigMat[idx, 1] <- 1
+    }
   }
   startMat <- cbind(time, sigMat)
 
