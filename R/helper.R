@@ -162,6 +162,52 @@ getSubX <- function(bdo) {
   }
 }
 
+
+## This will be the new function
+# Returns data.table with time and y value
+
+#' Return fitted values
+#'
+#' Returns fitted values at observed times
+#'
+#' @param bd Single row of bdObj
+#' @param origNames use original names for y and time, or use "y" and "time"
+#' @param origTime Boolean. Do I actually want fitted values at observed times for that
+#' subject, or data.table with fitted values at the union of times
+#'
+#' @details Given a single row of bdObj, this returns fitted values at the observed
+#' times to use in conjunction with whatever else
+getSubCurveValues <- function(bd, origNames = TRUE, origTime = TRUE) {
+  if (nrow(bd) != 1) stop("Only for single row of bdObj")
+  ttname <- attr(bd, "call")$time
+  yname <- attr(bd, "call")$y
+
+  ## Actually, try this for time
+  X <- getSubX(bd)
+  if (origTime) {
+    tt <- X[[ttname]]
+  } else {
+    tt <- attr(bd, "time")
+  }
+
+  # parameters
+  pps <- as.list(coef(bd))
+  names(pps) <- colnames(coef(bd))
+  pps[[ttname]] <- tt
+  curveFun <- makeCurveFun(bd)
+  cv <- do.call(curveFun, pps)
+  dt <- data.table(time = tt,
+                   y = cv)
+
+  if (origNames) {
+    setNames(dt, c(ttname, yname))
+  } else {
+    dt
+  }
+}
+
+
+
 ## Create curve function from formula
 # used in bdotsBoot and bdUpdate_NULL
 makeCurveFun <- function(bdObj) {

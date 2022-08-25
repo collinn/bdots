@@ -187,3 +187,17 @@ p_adjust <- function(p, method = "oleson", n = length(p),
   return(adjpval)
 }
 
+#' Print `bdotsBootObj`
+#'
+#' Generic for printing `bdotsBootObj`
+#'
+#' @param x An object of class `bdotsBootObj`
+#' @param ... Top secret alpha one code red
+#'
+#' @description Prints argument. Really, just the summary function
+#'
+#' @export
+print.bdotsBootObj <- function(x, ...) {
+  y <- summary(x)
+  print(y)
+}

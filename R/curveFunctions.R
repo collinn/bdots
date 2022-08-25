@@ -248,7 +248,7 @@ linear <- function(dat, y, time, params = NULL, ...) {
 #' @param params \code{NULL} unless user wants to specify starting parameters for gnls
 #' @param ... just in case
 #'
-#' @details Don't use this function please
+#' @details Remove any values of zero, or jitter, before using with bdotsFit
 #'
 #' @details \code{y ~ x_0 exp(k beta)}
 #' @export

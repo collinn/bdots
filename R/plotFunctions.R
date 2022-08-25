@@ -26,7 +26,7 @@ plot.bdotsObj <- function(x, fitCode = NULL, gridSize = NULL, plotfun = "fits", 
 
   # option to print to file?
   if (plotfun == 'fits') {
-    plotFits(x, gridSize, ...)
+    plotFits2(x, gridSize, ...)
   } else if (plotfun == 'pars') {
     plotPars(x, gridSize, ...)
   } else {
@@ -181,6 +181,103 @@ plotFits <- function(bdObj, gridSize = NULL, ...) {
   }
   return(invisible(plotList))
 }
+
+
+## Need to delete either above or below, using plotFits2 in the
+# interum before committing these changes to finality
+
+## Attempting to rewrite (finally) fits plotting function
+## NOTES:
+# previously, gridSize = "refit" would plot size of 1
+plotFits2 <- function(bdObj, gridSize = NULL, ...) {
+
+  bdCall <- attr(bdObj, "call")
+  splitVars <- c(bdCall$subject, eval(bdCall$group))
+  yname <- bdCall$y
+  tname <- bdCall$time
+
+  if (!is.character(yname)) stop("Error 123")
+
+  ## Eh, on this
+  gridSize <- ifelse(is.null(gridSize), 2, gridSize)
+  if (nrow(bdObj) < 4 & gridSize != "refit") gridSize <- 1
+
+  ## Eventually we will delete this
+  X <- attr(bdObj, "X")$X
+  Xs <- split(X, by = splitVars)
+  bds <- split(bdObj, by = splitVars)
+
+  ## Vector with each subject's own time
+  time_s <- lapply(Xs, `[[`, tname)
+
+  plotList <- Map(function(bd, xs) {
+    timevec <- xs[[tname]]
+
+    code <- bd$fitCode
+    r2 <- round(as.numeric(bd$R2), 3)
+    obs <- unlist(bd[, splitVars, with = FALSE])
+    obs2 <- paste(obs, collapse = ".")
+    #obsY <- Xs[[obs2]][[yname]]
+
+
+    obsY <- xs[[yname]]
+    if (code != 6) {
+      dfobs <- data.table(time = timevec, y = obsY, Curves = "Observed")
+      dffit <- getSubCurveValues(bd)
+      dffit[["Curves"]] <- "Fit"
+      names(dffit) <- names(dfobs)
+      df <- data.table::rbindlist(list(dfobs, dffit))
+
+    } else {
+      df <- as.data.table(cbind(timevec, obsY))
+    }
+
+    ## This stolen from old code, kinda gross (actually, omitting refit here)
+    title <- paste0(paste0(obs, collapse = " "),
+                    "\nfitCode = ", code, ", R2 = ", r2, collapse = "")
+    ## For data.table, ugh
+    y <- NULL; variable <- NULL; value <- NULL; Curves <- NULL; time <- NULL
+
+    pp <-   ggplot(df, aes(time, y, color = Curves, linetype = Curves)) +
+      geom_line(size = 1) + theme_bw() + ggtitle(title) + xlab(tname) + ylab(yname) +
+      theme(legend.position = "bottom") +
+      scale_color_manual(values = c("#56B4E9","#D55E00"))
+
+  }, bd = bds, xs = Xs)
+
+  ## (all this below stolen from original)
+  ## this is a dumb way to do this
+  n <- nrow(bdObj)
+  gz <- ifelse(gridSize == "refit", 2, 4)
+  idxList <- vector("list", length = ceiling(n/gz))
+  rr <- seq(1, n, by = gz)
+  for (i in seq_along(rr)) {
+    if (rr[i] + gz - 1 > n) {
+      idxList[[i]] <- rr[i]:n
+    } else {
+      idxList[[i]] <- rr[i]:(rr[i]+gz-1)
+    }
+  }
+
+  ## Preliminary refit plot
+  if (gridSize == 1) {
+    print(plotList[[1]])
+  } else {
+    nnrow <- ifelse(gz == 2, 1, 2)
+    for (i in seq_along(idxList)) {
+      do.call(grid.arrange, c(plotList[idxList[[i]]], nrow = nnrow, ncol = 2))
+    }
+  }
+  return(invisible(plotList))
+}
+
+
+
+
+
+##################################
+
+
 
 ## Generate confidence intervals around fit values
 #' @import data.table

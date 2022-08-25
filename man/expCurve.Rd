@@ -21,7 +21,7 @@ expCurve(dat, y, time, params = NULL, ...)
 Exponential function used in fitting nlme curve for observations
 }
 \details{
-Don't use this function please
+Remove any values of zero, or jitter, before using with bdotsFit
 
 \code{y ~ x_0 exp(k beta)}
 }

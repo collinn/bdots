@@ -71,7 +71,10 @@ getFitCorforGroups <- function(x, val, ciBands = FALSE, method = "pearson") {
   m <- matrix(NA, nrow = n, ncol = l)
   ## each row is subject, column is time point
   for (i in seq_len(n)) {
-    m[i, ] <- fitted.values(x[i, ]$fit[[1]])
+    #m[i, ] <- fitted.values(x[i, ]$fit[[1]])
+    ## And we want this at the union of times
+    fv <- getSubCurveValues(x[i, ], origNames = FALSE, origTime = FALSE)
+    m[i, ] <- fv[["y"]] # I know its called 'y' bc origNames == FALSE
   }
   dt <- getSubX(x)
   id_cols <- getIdentifierCols(x)

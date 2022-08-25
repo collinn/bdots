@@ -89,12 +89,17 @@ bdotsFit <- function(data, # dataset
 
   timetest <- split(dat, by = group, drop = TRUE)
   timetest <- lapply(timetest, function(x) unique(x[[time]]))
+
+  ## Time for all!
+  time_vec <- Reduce(union, timetest)
+  time_vec <- sort(time_vec)
+
   timeSame <- identical(Reduce(intersect, timetest, init = timetest[[1]]),
                         Reduce(union, timetest, init = timetest[[1]]))
   #if (!timeSame) stop("Observed times are different between groups")
-  if (!timeSame) {
-    warning("Observed times are not identical between groups. This will result in weird plotting behavior")
-  }
+  # if (!timeSame) {
+  #   warning("Observed times are not identical between groups. This will result in weird plotting behavior")
+  # }
 
   ## This should work inside function. Let's check
   # if this happens, need to modify X for plots to work
@@ -147,7 +152,7 @@ bdotsFit <- function(data, # dataset
   }
 
   ff <- attr(res[[1]], "formula")
-  fitList <- rbindlist(res, fill = TRUE)
+  fitList <- data.table::rbindlist(res, fill = TRUE)
 
   ## If too large, should get "name" of data
   ## and option to call it from global env
@@ -174,7 +179,7 @@ bdotsFit <- function(data, # dataset
                    formula = ff,
                    curveType = curveName,
                    call = match.call(),
-                   time = timetest[[1]],
+                   time = time_vec, # Now the union of all the times
                    rho = rho,
                    groups = groups,
                    X = X_env)

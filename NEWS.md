@@ -22,3 +22,7 @@
 - Added correlation function, `bdotsCorr`
 - Fixed bugs in `bdotsRefit`, added option to save/restore refit 
 - Added new curve functions
+
+# bdots 07-25-2022
+- Time values no longer need to be identical between subjects for correct plotting
+- Corrected error writing out bootstrapped values when there are no significant times
