@@ -5,6 +5,7 @@
 
 curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
 
+  ## This only happens IF there is both inner/outer diff
   if (!is.null(innerDiff)) {
     obj <- split.bdotsObj(Obj, by = outerDiff, drop = TRUE)
     res <- lapply(obj, curveBooter, outerDiff = innerDiff,
@@ -14,7 +15,7 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
 
     return(structure(.Data = setNames(c(res, list(diffList)),
                                c(names(res), "diff")),
-                     class = c("outerGroupCurveList","groupCuveList")))
+                     class = c("outerGroupCurveList","groupCurveList")))
   }
 
   ## Determine correlation matrix, if paired
@@ -47,7 +48,7 @@ curveBooter <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
 
   structure(.Data = setNames(c(curveList, list(diffList)),
                              c(unique(Obj[[outerDiff]]), "diff")),
-            class = c("innerGroupCurveList", "groupCuveList"))
+            class = c("innerGroupCurveList", "groupCurveList"))
 }
 
 ###------------------------------------------------
