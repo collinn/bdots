@@ -26,3 +26,6 @@
 # bdots 07-25-2022
 - Time values no longer need to be identical between subjects for correct plotting
 - Corrected error writing out bootstrapped values when there are no significant times
+
+# bdots 09-29-2022
+- Significant changes to bootstrap algorithm giving better coverage of true distribution

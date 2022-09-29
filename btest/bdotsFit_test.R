@@ -43,29 +43,9 @@ res3 <- bdotsFit(data = cohort_unrelated,
                  verbose = FALSE)
 
 
-res2 <- bdotsRefit(res, fitCode = 4)
-res <- bdotsRefit(res, quickRefit = TRUE, numRefits = 4, fitCode = 1)
-res2 <- bdotsRefit(res.l, quickRefit = TRUE, numRefits = 4, fitCode = 3)
-res2 <- bdotsRefit(res2, fitCode = 4)
-table(res$fitCode)
-table(res2$fitCode)
-
 #res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
 res2 <- bdRemove(res.l, fitCode = 4L)
-debug(bdotsRefit)
-debug(bdUpdate)
-debug(bdUpdate_NULL)
-res <- res[fitCode == 6, ]
-res <- res[2:4, ]
-test <- bdotsRefit(res2, fitCode = 3, quickRefit = FALSE)
 
-## Not really much luck for doublegauss
-test <- bdotsRefit(res, numRefits = 2L)
-table(res$fitCode)
-table(test$fitCode)
-
-# debugonce(bdotsBoot)
-#debugonce(curveBooter)
 
 boot.test <- bdotsBoot(formula = Fixations ~ Group(50, 65) + LookType(Cohort),
                        bdObj = res2,
@@ -74,12 +54,25 @@ boot.test <- bdotsBoot(formula = Fixations ~ Group(50, 65) + LookType(Cohort),
                        padj = "oleson",
                        cores = 8)
 
-boot.test2 <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
+system.time({
+bootTest <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
                        bdObj = res2,
-                       Niter = 1000,
+                       Niter = 200,
                        alpha = 0.05,
                        padj = "oleson",
                        cores = 8)
+})
+system.time({
+bootTest2 <- bdotsBoot2(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
+                       bdObj = res2,
+                       Niter = 200,
+                       alpha = 0.05,
+                       padj = "oleson",
+                       cores = 8)
+})
+
+plot(bootTest)
+plot(bootTest2)
 #plotCompare(boot.test)
 
 boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unrelated_Cohort),
@@ -113,12 +106,22 @@ res.l <- bdotsFit(data = ci,
 
 tt <- bdotsRefit(res.l)
 
-boot.l <- bdotsBoot(formula = y ~ protocol(CI, NH),
+boot <- bdotsBoot(formula = y ~ protocol(CI, NH),
                                   bdObj = res.l,
-                                  Niter = 1000,
+                                  Niter = 250,
                                   alpha = 0.05,
                                   padj = "oleson",
-                                  cores = 4)
+                                  cores = 7)
+boot2 <- bdotsBoot2(formula = y ~ protocol(CI, NH),
+                                  bdObj = res.l,
+                                  Niter = 250,
+                                  alpha = 0.05,
+                                  padj = "oleson",
+                                  cores = 7)
+
+plot(boot)
+plot(boot2)
+
 #plotCompare(boot)
 
 #   ## For logistic

@@ -66,7 +66,6 @@ bdotsFit <- function(data, # dataset
     stop(stopMsg)
   }
 
-  # for removing rho (need to adjust in case it's in (...))
   # Should verify that we don't have rho set and cor = FALSE
   if (!exists("rho")) {
     rho <- ifelse(cor, 0.9, 0)
@@ -81,6 +80,16 @@ bdotsFit <- function(data, # dataset
   dat <- setDT(data)
   dat[, (group) := lapply(.SD, as.character), .SDcols = group]
   dat[, (subject) := lapply(.SD, as.character), .SDcols = subject]
+  
+  ## Look for "." here to avoid issues later
+  hasperiod <- vapply(subset(dat, select = group), function(x) {
+    sum(grepl("\\.", x))}, numeric(1)) #|> sum()
+  hasperiod <- suppressWarnings(as.logical(hasperiod))
+  if (any(hasperiod)) {
+    badgrp <- group[hasperiod]
+    if (length(badgrp) > 1) badgrp <- paste(badgrp, collapse = ", ")
+    stop(paste("Cannot have '.' in group values. Consider replacing with '_'\n Replace values in columns:", badgrp))
+  }
 
   ## Let's only keep the columns we need (have not tested this yet)
   ## Ok, let's try keeping everything in case we need correlation with fixed val
@@ -121,15 +130,6 @@ bdotsFit <- function(data, # dataset
 
   invisible(clusterEvalQ(cl, {library(bdots)}))
 
-  ## Only for error checking, as devtools::load_all doesn't help
-  ## with parallel
-  # res <- vector("list", length(newdat))
-  # for (i in seq_along(newdat)) {
-  #   res[[i]] <- bdotsFitter(newdat[[i]], curveType, rho,
-  #                           numRefits, verbose = FALSE,
-  #                           splitVars = splitVars, datVarNames = datVarNames)
-  # }
-
   res <- parLapply(cl, newdat, bdotsFitter,
                    curveType = curveType,
                    rho = rho, numRefits = numRefits,
@@ -153,17 +153,6 @@ bdotsFit <- function(data, # dataset
 
   ff <- attr(res[[1]], "formula")
   fitList <- data.table::rbindlist(res, fill = TRUE)
-
-  ## If too large, should get "name" of data
-  ## and option to call it from global env
-  # if (is.null(returnX)) {
-  #   sz <- object.size(dat)
-  #   if (sz < 1e8L) X <- dat
-  # } else if (returnX) {
-  #   X <- dat
-  # } else {
-  #   X <- dat # for now
-  # }
 
   X_env <- new.env(parent = emptyenv())
   X_env$X <- dat

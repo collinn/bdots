@@ -53,7 +53,7 @@ G_i(v_1, v_2) will designate unique two unique values within G_i. The possible
 values of v_i will be implied by the group with which they are associated.
 
 For example, if we have groups \code{vehicle} and \code{color}, we could specify
-that we are interested in all blue cars and trucks with the expression
+that we are interested in all red cars and trucks with the expression
 \code{vehicle(car, truck) + color(red)}.
 
 ## Formula
@@ -98,7 +98,7 @@ vehicle example, we can describe this in two ways:
 As our primary object of interest here is not the difference in outcome itself, but the difference
 of the outcome within two groups, the LHS of the formula is written
 \code{diffs(y, Group1(val1, val2))}, where Group1 is the innerGroup. The RHS
-is then used to specify the groups of which we want to take the inner difference of. The
+is then used to specify the groups of which we want to take the outer difference of. The
 syntax here is the same as above. Together, then, the formula looks like
 
 \code{diffs(y, Group1(val1, val2)) ~ Group2(val1, val2)}
