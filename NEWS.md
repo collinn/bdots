@@ -1,5 +1,24 @@
-# bdots 03-02-2021
-- Ready for launch!
+# bdots 09-29-2022
+- Significant changes to bootstrap algorithm giving better coverage of true distribution
+
+# bdots 07-25-2022
+- Time values no longer need to be identical between subjects for correct plotting
+- Corrected error writing out bootstrapped values when there are no significant times
+
+# bdots 05-26-2022
+- Major updates to plotting functions
+- Added correlation function, `bdotsCorr`
+- Fixed bugs in `bdotsRefit`, added option to save/restore refit 
+- Added new curve functions
+
+# bdots 07-29-2021
+- Major updates to fit, parameter, and bootstrap plots with ggplot2
+- Handle case in which observation has zero variance in outcome
+- Relaxed fit criteria in refitting step
+- Fixed bugs in `bdotsRefit` walkthrough
+
+# bdots 05-03-2021
+- Fixes to choosing AR1 status during refit steps
 
 # bdots 03-24-2021
 - Temporary inclusion of `doubleGauss2` fitting function. A bit slower than `doubleGauss`, though with generally better fits
@@ -8,24 +27,7 @@
 - updated vignettes
 - added temporary `writeCSV` function to write out `bdotsBoot` curve information for plotting
 
-# bdots 05-03-2021
-- Fixes to choosing AR1 status during refit steps
+# bdots 03-02-2021
+- Ready for launch!
 
-# bdots 07-29-2021
-- Major updates to fit, parameter, and bootstrap plots with ggplot2
-- Handle case in which observation has zero variance in outcome
-- Relaxed fit criteria in refitting step
-- Fixed bugs in `bdotsRefit` walkthrough
 
-# bdots 05-26-2022
-- Major updates to plotting functions
-- Added correlation function, `bdotsCorr`
-- Fixed bugs in `bdotsRefit`, added option to save/restore refit 
-- Added new curve functions
-
-# bdots 07-25-2022
-- Time values no longer need to be identical between subjects for correct plotting
-- Corrected error writing out bootstrapped values when there are no significant times
-
-# bdots 09-29-2022
-- Significant changes to bootstrap algorithm giving better coverage of true distribution

@@ -99,7 +99,8 @@ getBootDist <- function(x, b = 1000) {
     }, numeric(pp))
     rowMeans(xpar)
   }
-  mm <- replicate(b, bsPars(x), simplify = TRUE) |> t()
+  mm <- replicate(b, bsPars(x), simplify = TRUE)
+  mm <- t(mm)
   parList <- lapply(split(mm, row(mm)), function(y) {
     y <- as.list(y)
     y[[timeName]] <- time
