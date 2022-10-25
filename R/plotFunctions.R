@@ -204,7 +204,8 @@ plotFits2 <- function(bdObj, gridSize = NULL, ...) {
 
   ## Eventually we will delete this
   ## And actually, this doesn't even work for the refit
-  X <- attr(bdObj, "X")$X
+  #X <- attr(bdObj, "X")$X
+  X <- getSubX(bdObj)
   Xs <- split(X, by = splitVars)
   bds <- split(bdObj, by = splitVars)
 
