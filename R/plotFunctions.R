@@ -213,7 +213,7 @@ plotFits2 <- function(bdObj, gridSize = NULL, ...) {
   if (gridSize == "refit") {
     ## Because everything else will be identical
     bds <- split(bdObj, by = "R2")
-    x2 <- getSubX(bdo)
+    x2 <- getSubX(bdObj)
     Xs <- split(x2, by = splitVars)
   }
 
