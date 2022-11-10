@@ -17,11 +17,17 @@ knitr::opts_chunk$set(
 
 ```{r setup, include = FALSE}
 library(bdots)
+# Make smaller for cran
+cohort_unrelated$Subject <- as.numeric(cohort_unrelated$Subject)
+cohort_unrelated <- as.data.table(cohort_unrelated)
+cohort_unrelated <- cohort_unrelated[Subject < 10, ]
 ```
 
 We saw in the [general overview](bdots.html) when first generating our model fits with `bdotsFit` that we we could specify the curve with the argument `curveType`. Presently, the `bdots` package contains three options for this: `doubleGauss`, `logistic`, and `polynomial`. Documentation is included for each of these curves. 
 
 ```{r}
+library(bdots)
+
 fit <- bdotsFit(data = cohort_unrelated,
                 subject = "Subject",
                 time = "Time",

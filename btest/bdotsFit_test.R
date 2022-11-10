@@ -56,7 +56,7 @@ boot.test <- bdotsBoot(formula = Fixations ~ Group(50, 65) + LookType(Cohort),
 
 system.time({
 bootTest <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
-                       bdObj = res2,
+                 |>       bdObj = res2,
                        Niter = 200,
                        alpha = 0.05,
                        padj = "oleson",

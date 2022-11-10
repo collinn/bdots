@@ -37,6 +37,13 @@ This package is under active development. The most recent version can be install
 
 For our example, we are going to be using eye tracking data from normal hearing individuals and those with cochlear implants using data from the Visual Word Paradigm (VWP). 
 
+```{r, include=FALSE}
+# Make smaller for cran
+cohort_unrelated$Subject <- as.numeric(cohort_unrelated$Subject)
+cohort_unrelated <- as.data.table(cohort_unrelated)
+cohort_unrelated <- cohort_unrelated[Subject < 10, ]
+```
+
 ```{r}
 head(cohort_unrelated)
 ```

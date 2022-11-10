@@ -2,13 +2,21 @@
 title: "correlations"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{correlations}
+  %\VignetteIndexEntry{Correlations}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+library(bdots)
+# Make smaller for cran
+cohort_unrelated$Subject <- as.numeric(cohort_unrelated$Subject)
+cohort_unrelated <- as.data.table(cohort_unrelated)
+cohort_unrelated <- cohort_unrelated[Subject < 10, ]
 ```
 
 ## Correlations in `bdots`
