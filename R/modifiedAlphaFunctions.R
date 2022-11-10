@@ -178,7 +178,6 @@ findModifiedAlpha <- function(rho, n, df, alpha = 0.05, errorAcc = 0.001,
   ## Critical value for desired alpha
   k <- uniroot(function(k) fwerAlpha(rho, k, n) - alpha, interval = c(minVal, maxVal))$root
 
-
   # alphaStar_vec <- mclapply(c(k, k - gradDiff, k + gradDiff), effectiveAlpha)
 
   alphaStar_vec <- parLapply(cl, c(k, k + gradDiff), effectiveAlpha)

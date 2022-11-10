@@ -1,3 +1,6 @@
+# bdots 11-10-2022
+- Subset data in vignettes for computational time constraints in cran submission
+
 # bdots 09-29-2022
 - Significant changes to bootstrap algorithm giving better coverage of true distribution
 

@@ -142,6 +142,8 @@ bdotsBoot <- function(formula,
   invisible(clusterEvalQ(cl, {library(bdots)}))
   groupDists <- parLapply(cl, splitGroups, getBootDist, b = Niter)
   
+  stopCluster(cl)
+  
   ## Next, we need to make inner/outer diff list
   # (ideally matching old bdots, at least for now)
   curveList <- createCurveList(groupDists, prs, splitGroups)

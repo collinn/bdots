@@ -2,7 +2,7 @@ Package: bdots
 Type: Package
 Title: Bootstrapped Differences of Time Series
 Version: 1.2.0
-Date: 2022-09-29
+Date: 2022-11-10
 Author: Collin Nolte, Michael Seedorff, Jacob Oleson, Grant Brown,
         Joseph Cavanaugh, and Bob McMurray
 Maintainer: Collin Nolte <collin-nolte@uiowa.edu>
