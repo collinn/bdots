@@ -42,7 +42,7 @@ res3 <- bdotsFit(data = cohort_unrelated,
                  cores = 8,
                  verbose = FALSE)
 
-
+bdotsRefit(res.l, fitCode = 5)
 #res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
 res2 <- bdRemove(res.l, fitCode = 4L)
 
@@ -56,7 +56,7 @@ boot.test <- bdotsBoot(formula = Fixations ~ Group(50, 65) + LookType(Cohort),
 
 system.time({
 bootTest <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
-                 |>       bdObj = res2,
+                        bdObj = res2,
                        Niter = 200,
                        alpha = 0.05,
                        padj = "oleson",

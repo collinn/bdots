@@ -213,7 +213,13 @@ plotFits2 <- function(bdObj, gridSize = NULL, ...) {
   ## Crappy workaround for an already crappy workaround
   if (gridSize == "refit") {
     ## Because everything else will be identical
-    bds <- split(bdObj, by = "R2")
+    #bds <- split(bdObj, by = "R2") # But this could be identical
+    ## Dumb solution here, but fits may be identical
+    nr <- nrow(bdObj)
+    bds <- vector("list", length = nr)
+    for (j in seq_len(nr)) {
+      bds[[j]] <- bdObj[j, ]
+    }
     x2 <- getSubX(bdObj)
     Xs <- split(x2, by = splitVars)
   }

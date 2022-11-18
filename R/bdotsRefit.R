@@ -322,7 +322,7 @@ bdUpdate <- function(bdo, numRefits) {
     both_bdo <- structure(.Data = list(bdo, new_bdo),
                           class = "bdObjList")
 
-    both_bdo <- rbindlist(both_bdo)
+    both_bdo <- rbindlist.bdObjList(both_bdo)
     plot(both_bdo, gridSize = "refit")
 
     cat("Refit Info:\n")
