@@ -192,12 +192,14 @@ bdRefitter <- function(bdo, numRefits = 0L, rho = NULL,
   crvFun <- curve2Fun(bdCall[['curveType']])
 
   x <- getSubX(bdo)
+
   set(x, j = c("y", "time"),
       value = x[,c(bdCall[['y']], bdCall[['time']]), with = FALSE])
 
   new_bdo <- bdotsFitter(dat = x, curveType = crvFun, rho = rho,
                          params = params, splitVars = nn, datVarNames = bdCall,
                          numRefits = numRefits, getCovOnly = getCovOnly)
+
   prob <- tryCatch(attributes(new_bdo) <- attributes(bdo), error = function(e) 2)
   if (is.numeric(prob)) stop("issue in bdrefitter, likely with ncols")
   new_bdo

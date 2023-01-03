@@ -50,7 +50,9 @@ mergecoef <- function(bdObj, infile) {
   }
   invisible(clusterEvalQ(cl, {library(bdots)}))
 
-  new_bd <- clusterMap(cl, bdRefitter, bdo = bdObj2, params = newpars, getCovOnly = TRUE)
+  ## USE.NAMES = FALSE, no idea why this throwing error haphazardly but w/e
+  new_bd <- clusterMap(cl, bdRefitter, bdo = bdObj2, params = newpars, getCovOnly = TRUE,
+                       USE.NAMES = FALSE)
   stopCluster(cl)
 
   return(list(new_bd = new_bd, idx = idx))
