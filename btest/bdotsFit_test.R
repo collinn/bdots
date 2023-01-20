@@ -104,7 +104,8 @@ res.l <- bdotsFit(data = ci,
                               cor = TRUE,
                               numRefits = 2)
 
-tt <- bdotsRefit(res.l)
+tt <- bdotsRefit(res.l, fitCode = 0)
+tt2 <- bdotsRefit(tt, fitCode = 0)
 
 boot <- bdotsBoot(formula = y ~ protocol(CI, NH),
                                   bdObj = res.l,

@@ -37,6 +37,7 @@ bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = FALSE,
     stop("Dataset must be provided")
   }
 
+
   ## These uniquely identify each fit
   bdCall <- attr(bdObj, "call")
   nn <- getIdentifierCols(bdObj)
@@ -52,8 +53,10 @@ bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = FALSE,
     ## Check if any refit has already occurred, make subset index
     HAS_PRIOR_REFIT <- attr(bdObj, "refit_idx") # old refit
     if (!is.null(HAS_PRIOR_REFIT)) {
-      ..nn <- NULL
+      ..nn <- NULL # need to do this so that package will compile
+      rm(..nn) # and need to do this for DT scoping next line
       bd_identifiers <- do.call(paste, bdObj[, ..nn]) # all subjects
+      
       NEEDS_REFIT_IDX <- !(bd_identifiers %in% HAS_PRIOR_REFIT)
       idx <- which(bdObj$fitCode >= fitcode & NEEDS_REFIT_IDX)
     } else {
