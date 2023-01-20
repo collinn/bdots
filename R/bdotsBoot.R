@@ -9,6 +9,9 @@
 #' @param alpha Significance level
 #' @param padj Adjustment to make to pvalues for significance. Will be able to
 #' use anything from \code{p.adjust} function, but for now, just "oleson"
+#' @param permutation Boolean indicating whether to use permutation testing rather 
+#' thank adjusting alpha to control FWER. WARNING: This option is very much in beta testing 
+#' and not recommended for general use. Also not available for paired tests or difference of difference
 #' @param cores Number of cores to use in parallel. Default is zero, which
 #' uses half of what is available.
 #' @param ... not used
@@ -113,6 +116,7 @@ bdotsBoot <- function(formula,
                       Niter = 1000,
                       alpha = 0.05,
                       padj = "oleson",
+                      permutation = FALSE,
                       cores = 0, ...) {
   
   if (cores < 1) cores <- detectCores()/2
@@ -140,23 +144,60 @@ bdotsBoot <- function(formula,
     cl <- makePSOCKcluster(cores)
   }
   invisible(clusterEvalQ(cl, {library(bdots)}))
+  # this needs to happen anyways, this is bootstrapped distributions
+  ## WE NEED TO INDICATE IF PAIRED HERE
   groupDists <- parLapply(cl, splitGroups, getBootDist, b = Niter)
   
   stopCluster(cl)
   
-  ## Next, we need to make inner/outer diff list
+  ## This is where we construct inner/outer groups
   # (ideally matching old bdots, at least for now)
-  curveList <- createCurveList(groupDists, prs, splitGroups)
+  curveList <- createCurveList(groupDists, prs, splitGroups) # this is whats creates diff
   ip <- curveList[['diff']][['paired']]
   
-  res <- alphaAdjust(curveList, padj, alpha, cores)
-  pval <- res[['pval']]
-  rho <- res[['rho']]
-  alphastar <- res[['alphastar']]
-  adjpval <- res[['adjpval']]
-  time <- attr(bdObj, "time")
-  sigTime <- bucket(adjpval <= alpha, time)
+  # Determine first if we are doing difference of differences
   dod <- ifelse(is.null(innerDiff), FALSE, TRUE)
+  
+  ## Currently permutation doesnt exist for dod
+  if (dod & permutation) {
+    warning("Permutation testing does not yet work for difference of difference analysis. Switching to padj='oleson' instead")
+    permutation <- FALSE
+  }
+  
+  ## And here we determine significant regions
+  if (permutation) {
+    message("WARNING: permutation testing is work in progress and limited in scope")
+    # do permutation
+    res <- permTest(splitGroups, prs, alpha = alpha, P = Niter) # in permutation.R
+    obsT <- res[['obst']]
+    nullT <- res[['nullt']]
+    
+    # Do I want to return null distribution and vectors?
+    # Do I compute any pvalues here? For now, just significant time
+    time <- attr(bdObj, "time")
+    sigTime <- bucket(res[["sigIdx"]], time)
+    
+    # Remove things we don't need (temporary)
+    pval <- NULL
+    rho <- NULL
+    alphastar <- NULL
+    adjpval <- NULL
+  } else {
+    res <- alphaAdjust(curveList, padj, alpha, cores)
+    pval <- res[['pval']]
+    rho <- res[['rho']]
+    alphastar <- res[['alphastar']]
+    adjpval <- res[['adjpval']]
+    time <- attr(bdObj, "time")
+    sigTime <- bucket(adjpval <= alpha, time)
+    
+    # Remove things from perm (this is temporary fix)
+    obsT <- NULL
+    nullT <- NULL
+  }
+  
+
+  
   
   ## maybe consider keeping ancillary data in list, i.e., res.
   structure(class = "bdotsBootObj",

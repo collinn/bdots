@@ -54,14 +54,14 @@ boot.test <- bdotsBoot(formula = Fixations ~ Group(50, 65) + LookType(Cohort),
                        padj = "oleson",
                        cores = 8)
 
-system.time({
+
 bootTest <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
                         bdObj = res2,
                        Niter = 200,
                        alpha = 0.05,
                        padj = "oleson",
                        cores = 8)
-})
+
 system.time({
 bootTest2 <- bdotsBoot2(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
                        bdObj = res2,
@@ -104,21 +104,23 @@ res.l <- bdotsFit(data = ci,
                               cor = TRUE,
                               numRefits = 2)
 
-tt <- bdotsRefit(res.l, fitCode = 0)
-tt2 <- bdotsRefit(tt, fitCode = 0)
+# tt <- bdotsRefit(res.l, fitCode = 0)
+# tt2 <- bdotsRefit(tt, fitCode = 0)
 
 boot <- bdotsBoot(formula = y ~ protocol(CI, NH),
-                                  bdObj = res.l,
-                                  Niter = 250,
-                                  alpha = 0.05,
-                                  padj = "oleson",
-                                  cores = 7)
-boot2 <- bdotsBoot2(formula = y ~ protocol(CI, NH),
-                                  bdObj = res.l,
-                                  Niter = 250,
-                                  alpha = 0.05,
-                                  padj = "oleson",
-                                  cores = 7)
+                  bdObj = res.l,
+                  Niter = 250,
+                  alpha = 0.05,
+                  padj = "oleson",
+                  cores = 7)
+boot2 <- bdotsBoot(formula = y ~ protocol(CI, NH),
+                   bdObj = res.l,
+                   Niter = 250,
+                   alpha = 0.05,
+                   padj = "oleson",
+                   permutation = TRUE,
+                   cores = 7)
+
 
 plot(boot)
 plot(boot2)
