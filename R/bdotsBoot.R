@@ -137,23 +137,34 @@ bdotsBoot <- function(formula,
   ## Next, we want to get a bootstrapped distribution for each of the groups
   splitGroups <- split(bdObj, by = c(innerDiff, outerDiff)) # ok even if null
   
-  ## Make this parallel (maybe later)
-  if (Sys.info()['sysname'] == "Darwin") {
-    cl <- makePSOCKcluster(cores, setup_strategy = "sequential")
+  
+  ## This cannot stay here forever, its a super secret shortcut for just right now
+  if (exists("collinshortcut") & collinshortcut == TRUE) {
+    # just skip doing this
+    curveList <- NULL
+    ip <- NULL
   } else {
-    cl <- makePSOCKcluster(cores)
+    # do the normal thing
+    ## Make this parallel (maybe later)
+    if (Sys.info()['sysname'] == "Darwin") {
+      cl <- makePSOCKcluster(cores, setup_strategy = "sequential")
+    } else {
+      cl <- makePSOCKcluster(cores)
+    }
+    invisible(clusterEvalQ(cl, {library(bdots)}))
+    # this needs to happen anyways, this is bootstrapped distributions
+    ## WE NEED TO INDICATE IF PAIRED HERE
+    groupDists <- parLapply(cl, splitGroups, getBootDist, b = Niter)
+    
+    stopCluster(cl)
+    
+    ## This is where we construct inner/outer groups
+    # (ideally matching old bdots, at least for now)
+    curveList <- createCurveList(groupDists, prs, splitGroups) # this is whats creates diff
+    ip <- curveList[['diff']][['paired']]
   }
-  invisible(clusterEvalQ(cl, {library(bdots)}))
-  # this needs to happen anyways, this is bootstrapped distributions
-  ## WE NEED TO INDICATE IF PAIRED HERE
-  groupDists <- parLapply(cl, splitGroups, getBootDist, b = Niter)
   
-  stopCluster(cl)
   
-  ## This is where we construct inner/outer groups
-  # (ideally matching old bdots, at least for now)
-  curveList <- createCurveList(groupDists, prs, splitGroups) # this is whats creates diff
-  ip <- curveList[['diff']][['paired']]
   
   # Determine first if we are doing difference of differences
   dod <- ifelse(is.null(innerDiff), FALSE, TRUE)
@@ -195,9 +206,6 @@ bdotsBoot <- function(formula,
     obsT <- NULL
     nullT <- NULL
   }
-  
-
-  
   
   ## maybe consider keeping ancillary data in list, i.e., res.
   structure(class = "bdotsBootObj",
