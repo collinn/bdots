@@ -15,6 +15,10 @@ logistic <- function(dat, y, time, params = NULL, ...) {
   logisticPars <- function(dat, y, time, ...) {
     time <- dat[[time]]
     y <- dat[[y]]
+    
+    # idx <- order(time)
+    # time <- time[idx]
+    # y <- y[idx]
 
     ## Remove cases with zero variance
     if (var(y) == 0) {
