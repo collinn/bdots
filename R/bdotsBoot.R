@@ -9,8 +9,8 @@
 #' @param alpha Significance level
 #' @param padj Adjustment to make to pvalues for significance. Will be able to
 #' use anything from \code{p.adjust} function, but for now, just "oleson"
-#' @param permutation Boolean indicating whether to use permutation testing rather 
-#' thank adjusting alpha to control FWER. WARNING: This option is very much in beta testing 
+#' @param permutation Boolean indicating whether to use permutation testing rather
+#' thank adjusting alpha to control FWER. WARNING: This option is very much in beta testing
 #' and not recommended for general use. Also not available for paired tests or difference of difference
 #' @param cores Number of cores to use in parallel. Default is zero, which
 #' uses half of what is available.
@@ -118,28 +118,30 @@ bdotsBoot <- function(formula,
                       padj = "oleson",
                       permutation = FALSE,
                       cores = 0, ...) {
-  
+
   if (cores < 1) cores <- detectCores()/2
-  
+
   if (any(bdObj[['fitCode']] == 6)) {
     warning("Some observations had NULL gnls fits. These and their pairs will be removed")
     bdObj <- bdRemove(bdObj, fitCode = 6, removePairs = TRUE)
   }
-  
+
   prs <- bootParser(formula, bdObj)
   bdObj <- bootGroupSubset(prs, bdObj)
   innerDiff <- prs[["innerDiff"]] # unnamed char vec
   outerDiff <- prs[["outerDiff"]] # unnamed char vec
-  
+
   curveGrps <- setNames(prs[['subargs']], prs[['subnames']])
   curveFun <- makeCurveFun(bdObj)
-  
+
   ## Next, we want to get a bootstrapped distribution for each of the groups
   splitGroups <- split(bdObj, by = c(innerDiff, outerDiff)) # ok even if null
-  
-  
+
+
   ## This cannot stay here forever, its a super secret shortcut for just right now
-  if (exists("collinshortcut") & collinshortcut == TRUE) {
+  existsC <- exists("collinshortcut")
+  takeshortcut <- ifelse(existsC, collinshortcut, FALSE)
+  if (takeshortcut) {
     # just skip doing this
     curveList <- NULL
     ip <- NULL
@@ -155,26 +157,26 @@ bdotsBoot <- function(formula,
     # this needs to happen anyways, this is bootstrapped distributions
     ## WE NEED TO INDICATE IF PAIRED HERE
     groupDists <- parLapply(cl, splitGroups, getBootDist, b = Niter)
-    
+
     stopCluster(cl)
-    
+
     ## This is where we construct inner/outer groups
     # (ideally matching old bdots, at least for now)
     curveList <- createCurveList(groupDists, prs, splitGroups) # this is whats creates diff
     ip <- curveList[['diff']][['paired']]
   }
-  
-  
-  
+
+
+
   # Determine first if we are doing difference of differences
   dod <- ifelse(is.null(innerDiff), FALSE, TRUE)
-  
+
   ## Currently permutation doesnt exist for dod
   if (dod & permutation) {
     warning("Permutation testing does not yet work for difference of difference analysis. Switching to padj='oleson' instead")
     permutation <- FALSE
   }
-  
+
   ## And here we determine significant regions
   if (permutation) {
     message("WARNING: permutation testing is work in progress and limited in scope")
@@ -182,12 +184,12 @@ bdotsBoot <- function(formula,
     res <- permTest(splitGroups, prs, alpha = alpha, P = Niter) # in permutation.R
     obsT <- res[['obst']]
     nullT <- res[['nullt']]
-    
+
     # Do I want to return null distribution and vectors?
     # Do I compute any pvalues here? For now, just significant time
     time <- attr(bdObj, "time")
     sigTime <- bucket(res[["sigIdx"]], time)
-    
+
     # Remove things we don't need (temporary)
     pval <- NULL
     rho <- NULL
@@ -201,12 +203,12 @@ bdotsBoot <- function(formula,
     adjpval <- res[['adjpval']]
     time <- attr(bdObj, "time")
     sigTime <- bucket(adjpval <= alpha, time)
-    
+
     # Remove things from perm (this is temporary fix)
     obsT <- NULL
     nullT <- NULL
   }
-  
+
   ## maybe consider keeping ancillary data in list, i.e., res.
   structure(class = "bdotsBootObj",
             .Data = list(curveList = curveList,
