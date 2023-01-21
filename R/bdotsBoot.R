@@ -14,6 +14,7 @@
 #' and not recommended for general use. Also not available for paired tests or difference of difference
 #' @param cores Number of cores to use in parallel. Default is zero, which
 #' uses half of what is available.
+#' @param skipDist do not use
 #' @param ... not used
 #'
 #' @details The formula is the only tricky part of this. There will be a minor
@@ -116,7 +117,7 @@ bdotsBoot <- function(formula,
                       Niter = 1000,
                       alpha = 0.05,
                       padj = "oleson",
-                      permutation = FALSE,
+                      permutation = FALSE, skipDist = FALSE,
                       cores = 0, ...) {
 
   if (cores < 1) cores <- detectCores()/2
@@ -139,9 +140,7 @@ bdotsBoot <- function(formula,
 
 
   ## This cannot stay here forever, its a super secret shortcut for just right now
-  existsC <- exists("collinshortcut")
-  takeshortcut <- ifelse(existsC, collinshortcut, FALSE)
-  if (takeshortcut) {
+  if (skipDist) {
     # just skip doing this
     curveList <- NULL
     ip <- NULL
