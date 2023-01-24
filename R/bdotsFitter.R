@@ -149,14 +149,16 @@ curveFitter <- function(dat, ff, params, rho, numRefits = 0, getCovOnly = NULL, 
 
         ## This last resort should also be able to specify AR1 or not
         if (rho) {
-          fit <- gnls(eval(ff), start = params, data = dat,
+          fit <- tryCatch(gnls(eval(ff), start = params, data = dat,
                       correlation = corAR1(rho),
                       control = gnlsControl(maxIter = 0, nlsMaxIter = 0,
-                                            msMaxIter = 0, returnObject = TRUE))
+                                            msMaxIter = 0, returnObject = TRUE)),
+                      error = function(e) NULL)
         } else {
-          fit <- gnls(eval(ff), start = params, data = dat,
+          fit <- tryCatch(gnls(eval(ff), start = params, data = dat,
                       control = gnlsControl(maxIter = 0, nlsMaxIter = 0,
-                                            msMaxIter = 0, returnObject = TRUE))
+                                            msMaxIter = 0, returnObject = TRUE)),
+                      error = function(e) NULL)
         }
       }
     }

@@ -15,7 +15,7 @@ logistic <- function(dat, y, time, params = NULL, ...) {
   logisticPars <- function(dat, y, time, ...) {
     time <- dat[[time]]
     y <- dat[[y]]
-    
+
     # idx <- order(time)
     # time <- time[idx]
     # y <- y[idx]
@@ -35,7 +35,12 @@ logistic <- function(dat, y, time, params = NULL, ...) {
     q25 <- .25 * r + mini
     time75 <- time[which.min(abs(q75 - y))]
     time25 <- time[which.min(abs(q25 - y))]
-    slope <- (q75 - q25) / (time75 - time25)
+
+    # need to not accidentally get Inf which happens when dividing by zero
+    tr <- time75 - time25
+    tr <- ifelse(tr == 0, median(time), tr)
+
+    slope <- (q75 - q25) / tr
 
     return(c(mini = mini, peak = peak, slope = slope, cross = cross))
   }
