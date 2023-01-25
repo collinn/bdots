@@ -13,18 +13,13 @@
 #' @param P number of permutations
 permTest <- function(x, prs, alpha, P, cores = detectCores()-1L) {
   ip <- isPaired(x)
-  # if (ip) warning("paired permutation testing current not available. Running unpaired")
-  #ip <- FALSE # paired testing currently not implemented
   dod <- !is.null(prs$innerDiff)
-  if (dod) stop("Permutation not available yet for difference of differences")
-
-  ## Need these for all
-  pgroups <- prs$outerDiff
-  x <- bdots:::rbindlist.bdObjList(x)
-  n <- nrow(x)
-
-  ## Get the t stats for observed
-  tvec <- getT(x, seq_len(n), group = pgroups, whole = TRUE)
+  if (dod) {
+    msg <- "Permutation not available for difference of differences."
+    msg <- paste(msg, "Please contact the package author if this is something",
+    "you're interested in having implemented.")
+    stop(msg)
+  }
 
   ## I guess let's do parallel its faster
   if (Sys.info()['sysname'] == "Darwin") {
@@ -34,34 +29,43 @@ permTest <- function(x, prs, alpha, P, cores = detectCores()-1L) {
   }
   invisible(clusterEvalQ(cl, {library(bdots)}))
 
-  ## Now compute null distribution
-  if (!ip) {
-    permmat <- replicate(P, sample(seq_len(n), n))
+  ## Need these for all
+  pgroups <- prs$outerDiff
+  x <- bdots:::rbindlist.bdObjList(x)
+  n <- nrow(x)
 
-    ## Get max tstat across permutations (null distribution)
-    tnull <- parApply(cl, permmat, 2, function(y) {
-      getT(x, y, group = pgroups)
-    })
-    qq <- quantile(tnull, probs = 1-alpha/2)
-    sigIdx <- tvec > qq
-  } else  if (ip) {
-    ## First half of permmat
-    permmat <- replicate(P, sample(c(TRUE, FALSE), n/2, replace = TRUE))
-    permmat <- rbind(permmat, !permmat)
-    tnull <- parApply(cl, permmat, 2, function(y) {
-      bidx <- bool2idx(y)
-      getT(x, bidx, group = pgroups)
-    })
-    qq <- quantile(tnull, probs = 1-alpha/2)
-    sigIdx <- tvec > qq
+  ## Get the t stats for observed
+  tvec <- getT(x, seq_len(n), group = pgroups, whole = TRUE)
+
+  ## Start with case no DOD
+  if (!dod) {
+    ## Now compute null distribution
+    if (!ip) {
+      permmat <- replicate(P, sample(seq_len(n), n))
+
+      ## Get max tstat across permutations (null distribution)
+      tnull <- parApply(cl, permmat, 2, function(y) {
+        getT(x, y, group = pgroups)
+      })
+      qq <- quantile(tnull, probs = 1-alpha/2)
+      sigIdx <- tvec > qq
+    } else  if (ip) {
+      ## First half of permmat
+      permmat <- replicate(P, sample(c(TRUE, FALSE), n/2, replace = TRUE))
+      permmat <- rbind(permmat, !permmat)
+      tnull <- parApply(cl, permmat, 2, function(y) {
+        bidx <- bool2idx(y)
+        getT(x, bidx, group = pgroups)
+      })
+      qq <- quantile(tnull, probs = 1-alpha/2)
+      sigIdx <- tvec > qq
+    }
   }
 
   stopCluster(cl)
 
   return(list(obst = tvec, nullt = tnull, sigIdx = sigIdx))
-
 }
-
 
 #' Need to turn  T/F into indices and I think I have an idea how
 #' @param b vector of boolean
