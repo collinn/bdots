@@ -141,6 +141,14 @@ summary.bdotsBootObj <- function(object, ...) {
 
   padj_method <- match.arg(attr(bdBootObj, "call")[['padj']],
                            c("oleson", stats::p.adjust.methods))
+  if (bdCall$permutation) {
+    padj_method <- "Permutation"
+    alphastar <- "NA"
+    rho <- "NA"
+  }
+
+  alpha <- ifelse(is.null(bdCall$alpha), 0.05, bdCall$alpha)
+
 
 
   ## group specific info
@@ -168,7 +176,7 @@ summary.bdotsBootObj <- function(object, ...) {
 
   structure(.Data = list(formula = formula,
                          alphastar = alphastar,
-                         alpha = bdCall$alpha,
+                         alpha = alpha,
                          sigTime = sigTime,
                          rho = rho,
                          dod = dod,
@@ -179,7 +187,8 @@ summary.bdotsBootObj <- function(object, ...) {
                          timeRange = timeRange,
                          ntime = length(time),
                          curveType = curveType,
-                         padj_method = padj_method),
+                         padj_method = padj_method,
+                         permutation = bdCall$permutation),
             class = "bdotsBootSummary",
             call = bdCall)
 
@@ -212,12 +221,16 @@ print.bdotsBootSummary <- function(x, ...) {
   } else {
     cat("Difference:", x[['diffs']][['outerDiff']], "\n")
   }
+
   cat("\n")
   cat("Autocorrelation Estimate:", x$rho, "\n")
-  cat("Alpha adjust method:", x$padj_method, "\n")
+  cat("FWER adjust method:", x$padj_method, "\n")
   cat("Alpha:", x$alpha, "\n")
-  cat("Adjusted alpha:", x[['alphastar']], "\n")
-  cat("Significant Intervals at adjusted alpha:\n")
+
+  if (!x$permutation) {
+    cat("Adjusted alpha:", x[['alphastar']], "\n")
+  }
+  cat("Significant Intervals:\n")
   print(x[['sigTime']])
 
   ## Return the summary invisibly
