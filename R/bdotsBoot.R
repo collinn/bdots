@@ -180,7 +180,7 @@ bdotsBoot <- function(formula,
   if (permutation) {
     message("WARNING: permutation testing is work in progress and limited in scope")
     # do permutation
-    res <- permTest(splitGroups, prs, alpha = alpha, P = Niter) # in permutation.R
+    res <- permTest(splitGroups, prs, alpha = alpha, P = Niter, cores = cores) # in permutation.R
     obsT <- res[['obst']]
     nullT <- res[['nullt']]
 
