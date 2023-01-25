@@ -2,7 +2,7 @@
 # function to subset bdObj from parser
 # function to create distribution for each group (bootstrap)
 # function to create curveList (along with inner/outer functions)
-# alpha adjustment function 
+# alpha adjustment function
 # bucket function
 
 ##------------------------------------------------------------------------------
@@ -25,13 +25,66 @@ bootGroupSubset <- function(l, bdObj) {
   bd[, c(resNames[1], subnames, resNames[-1]), with = FALSE]
 }
 
+
+#' Create old bdots curve list
+#'
+#' @param x list of group distributions
+#' @param prs named list of parsed call
+#' @param splitGroups splitGroups
+createCurveList <- function(x, prs, splitGroups) {
+
+  ## Whats what
+  innerDiff <- prs[["innerDiff"]]
+  outerDiff <- prs[["outerDiff"]]
+  curveGrps <- setNames(prs[['subargs']], prs[['subnames']])
+
+  ## Ok, are we dod or not?
+  dod <- !is.null(innerDiff)
+
+  if (!dod) {
+    ## Really, this should be called outer diff list since there is no inner group
+    diffList <- makeInnerDiffList(x, splitGroups)
+    res <- structure(.Data = setNames(c(x, list(diffList)), c(names(x), "diff")),
+                     class = c("innerGroupCurveList", "groupCurveList"))
+  } else {
+    xnames <- vapply(strsplit(names(x), "\\."), `[[`, character(1), 2)
+
+    ## we subset by innerDiff because we want like terms together
+    gname <- paste0("^", curveGrps[[outerDiff]][1], "$")
+    idx <- grepl(gname, xnames)
+
+    ## List of soon-to-be innerLists
+    xx <- setNames(list(x[idx], x[!idx]), c(xnames[idx][1], xnames[!idx][1]))
+
+    ## Make innerDiffList
+    diffList <- Map(makeInnerDiffList,
+                    curveList = xx,
+                    oP = list(splitGroups[idx], splitGroups[!idx]))
+
+    outerlists <- Map(function(x, y) {
+      nn <- vapply(strsplit(names(x), "\\."), `[[`, character(1), 1)
+      structure(.Data = setNames(c(x, list(y)), c(nn, "diff")),
+                class = c("innerGroupCurveList", "groupCurveList"))
+    }, x = xx, y = diffList)
+
+    obj <- rbindlist.bdObjList(splitGroups)
+    obj <- split.bdotsObj(obj, by = outerDiff, drop = TRUE)
+    diffList <- makeOuterDiffList(outerlists, obj)
+
+    res <- structure(.Data = setNames(c(outerlists, list(diffList)),
+                                      c(names(outerlists), "diff")),
+                     class = c("outerGroupCurveList","groupCurveList"))
+  }
+  return(res)
+}
+
 ##------------------------------------------------------------------------------
 ## Make diffList from curveList
 makeInnerDiffList <- function(curveList, oP) {
   diffList <- Map(function(x, y) {
     y - x
   }, curveList[[1]], curveList[[2]])
-  
+
   if (ip <- isPaired(oP)) {
     diffList$sd <- apply(diffList$curveMat, 2, sd) # this is correct
     diffList$n <- nrow(oP[[1]]) - 1L
@@ -50,17 +103,17 @@ makeOuterDiffList <- function(res, obj) {
   res <- unlist(res, recursive = FALSE)
   idx <- grep("diff", names(res))
   if (length(idx) != 2L) stop("something weird in curveBooter. Contact author")
-  
+
   ## diff of diff (length one list)
   diffList <- Map(function(x, y) {
     Map(function(a, b) {
       a - b
     }, x, y)
   }, res[idx[1]], res[idx[2]])
-  
+
   ## Map returns a lenght 1 list
   diffList <- diffList[[1]]
-  
+
   ## snap, we can
   if (ip <- isPaired(obj)) {
     diffList$sd <- apply(diffList$curveMat, 2, sd)
@@ -74,115 +127,6 @@ makeOuterDiffList <- function(res, obj) {
             class = c("bdOuterDiffList", "bdDiffList"))
 }
 
-
-#' Create Distribution for Groups
-#' 
-#' @param x A subset object from bdObj
-#' @param b Number of bootstraps
-getBootDist <- function(x, b = 1000) {
-  
-  ## First, things I need from x
-  curveFun <- makeCurveFun(x)
-  time <- attr(x, "time")
-  timeName <- attr(x, "call")$time
-  parNames <- colnames(coef(x))
-  
-  ## Then we get the bootstrapped parameters as a list
-  bsPars <- function(x) {
-    idx <- sample(seq_len(nrow(x)), replace = TRUE)
-    xn <- x[idx, ]
-    pp <- ncol(coef(xn))
-    xn$splitvar <- seq_len(nrow(x))
-    xns <- split(xn, by = "splitvar")
-    xpar <- vapply(xns, function(z) {
-      rmvnorm(1, coef(z), vcov(z$fit[[1]]))
-    }, numeric(pp))
-    rowMeans(xpar)
-  }
-  mm <- replicate(b, bsPars(x), simplify = TRUE)
-  mm <- t(mm)
-  parList <- lapply(split(mm, row(mm)), function(y) {
-    y <- as.list(y)
-    y[[timeName]] <- time
-    setNames(y, c(parNames, timeName))
-  })
-  
-  ## Finally, function time
-  res <- lapply(parList, function(y) {force(y); do.call(curveFun, y)})
-  res <- matrix(unlist(res, use.names = FALSE), nrow = length(res), byrow = TRUE)
-  
-  ## Ok, let's end by making this a bdCurveList to match other bdots
-  fit <- colMeans(res)
-  sd <- apply(res, 2, sd)
-  
-  structure(.Data = list(fit = fit, sd = sd, 
-                         curveMat = res, parMat = mm, 
-                         n = nrow(x)), 
-            class = "bdCurveList")
-}
-
-
-#' Create old bdots curve list
-#' 
-#' @param x list of group distributions
-#' @param prs named list of parsed call
-#' @param splitGroups splitGroups
-createCurveList <- function(x, prs, splitGroups) {
-  
-  ## Whats what
-  innerDiff <- prs[["innerDiff"]] 
-  outerDiff <- prs[["outerDiff"]] 
-  curveGrps <- setNames(prs[['subargs']], prs[['subnames']])
-  
-  ## Ok, are we dod or not?
-  dod <- !is.null(innerDiff)
-  
-  if (!dod) {
-    diffList <- makeInnerDiffList(x, splitGroups)
-    res <- structure(.Data = setNames(c(x, list(diffList)), c(names(x), "diff")),
-                     class = c("innerGroupCurveList", "groupCurveList"))
-  } else {
-    xnames <- vapply(strsplit(names(x), "\\."), `[[`, character(1), 2) 
-    # xnames <- tryCatch({
-    #   ## error here if they have period in group values
-    #   vapply(strsplit(names(x), "\\."), `[[`, character(1), 2) 
-    # }, error = function(e) {
-    #   stop("Error parsing group values. If there are '.' in group values, try replacing with `_` and rerunning through bdotsFit")
-    # })
-    ## we subset by innerDiff because we want like terms together
-    gname <- paste0("^", curveGrps[[outerDiff]][1], "$")
-    idx <- grepl(gname, xnames)
-    
-    ## List of soon-to-be innerLists
-    xx <- setNames(list(x[idx], x[!idx]), c(xnames[idx][1], xnames[!idx][1]))
-    
-    ## Make innerDiffList
-    diffList <- Map(makeInnerDiffList, 
-                    curveList = xx, 
-                    oP = list(splitGroups[idx], splitGroups[!idx]))
-    
-    outerlists <- Map(function(x, y) {
-      nn <- vapply(strsplit(names(x), "\\."), `[[`, character(1), 1) 
-      # nn <- tryCatch({
-      #   ## error here if they have period in group values
-      #   vapply(strsplit(names(x), "\\."), `[[`, character(1), 1) 
-      # }, error = function(e) {
-      #   stop("Error parsing group values. If there are '.' in group values, try replacing with `_` and rerunning through bdotsFit")
-      # })
-      structure(.Data = setNames(c(x, list(y)), c(nn, "diff")),
-                class = c("innerGroupCurveList", "groupCurveList"))
-    }, x = xx, y = diffList)
-    
-    obj <- rbindlist.bdObjList(splitGroups)
-    obj <- split.bdotsObj(obj, by = outerDiff, drop = TRUE)
-    diffList <- makeOuterDiffList(outerlists, obj)
-    
-    res <- structure(.Data = setNames(c(outerlists, list(diffList)),
-                                      c(names(outerlists), "diff")),
-                     class = c("outerGroupCurveList","groupCurveList"))
-  }
-  return(res)
-}
 
 
 ##------------------------------------------------------------------------------

@@ -11,6 +11,7 @@ bdotsBoot(
   alpha = 0.05,
   padj = "oleson",
   permutation = FALSE,
+  skipDist = FALSE,
   cores = 0,
   ...
 )
@@ -27,9 +28,11 @@ bdotsBoot(
 \item{padj}{Adjustment to make to pvalues for significance. Will be able to
 use anything from \code{p.adjust} function, but for now, just "oleson"}
 
-\item{permutation}{Boolean indicating whether to use permutation testing rather 
-thank adjusting alpha to control FWER. WARNING: This option is very much in beta testing 
+\item{permutation}{Boolean indicating whether to use permutation testing rather
+thank adjusting alpha to control FWER. WARNING: This option is very much in beta testing
 and not recommended for general use. Also not available for paired tests or difference of difference}
+
+\item{skipDist}{do not use}
 
 \item{cores}{Number of cores to use in parallel. Default is zero, which
 uses half of what is available.}

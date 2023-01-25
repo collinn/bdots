@@ -145,27 +145,13 @@ bdotsBoot <- function(formula,
     curveList <- NULL
     ip <- NULL
   } else {
-    # do the normal thing
-    ## Make this parallel (maybe later)
-    if (Sys.info()['sysname'] == "Darwin") {
-      cl <- makePSOCKcluster(cores, setup_strategy = "sequential")
-    } else {
-      cl <- makePSOCKcluster(cores)
-    }
-    invisible(clusterEvalQ(cl, {library(bdots)}))
-    # this needs to happen anyways, this is bootstrapped distributions
-    ## WE NEED TO INDICATE IF PAIRED HERE
-    groupDists <- parLapply(cl, splitGroups, getBootDist, b = Niter)
-
-    stopCluster(cl)
+    ##  parallel moved inside of this function
+    groupDists <- createGroupDists(splitGroups, prs, b = Niter, cores)
 
     ## This is where we construct inner/outer groups
-    # (ideally matching old bdots, at least for now)
     curveList <- createCurveList(groupDists, prs, splitGroups) # this is whats creates diff
     ip <- curveList[['diff']][['paired']]
   }
-
-
 
   # Determine first if we are doing difference of differences
   dod <- ifelse(is.null(innerDiff), FALSE, TRUE)

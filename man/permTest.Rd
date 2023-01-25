@@ -4,7 +4,7 @@
 \alias{permTest}
 \title{Permutation testing for bboot}
 \usage{
-permTest(x, prs, alpha, P)
+permTest(x, prs, alpha, P, cores = detectCores() - 1L)
 }
 \arguments{
 \item{x}{this is splitGroups (each item of list bdotsObj)}

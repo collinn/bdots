@@ -94,18 +94,22 @@ split.bdotsObj <- function(x, f, drop = FALSE, by,...) {
 
 ## I need to make sure these make sense
 # specifically, I need the documentation to render for either when ?rbindlist called
+#' @export
+rbindlist <- function(x) UseMethod("rbindlist")
 
-## Don't export for now because fuck S3 generic matching
-rbindlist <- function(x, ...) {
-  UseMethod("rbindlist")
-}
-
+#' ## Don't export for now because fuck S3 generic matching
+#' rbindlist <- function(x, ...) {
+#'   UseMethod("rbindlist")
+#' }
+#'
 #' @importFrom data.table rbindlist
+#' @export
 rbindlist.default <- function(x, ...) {
   data.table::rbindlist(x, ...)
 }
-
+#'
 #' @importFrom data.table rbindlist
+#' @export
 rbindlist.list <- function(x, ...) {
   data.table::rbindlist(x, ...)
 }
@@ -118,11 +122,11 @@ rbindlist.list <- function(x, ...) {
 #' @param x bdotsObject
 #' @param ... for compatability with data.table
 #'
-#'
+#' @export
 rbindlist.bdObjList <- function(x, ...) {
   oldAttr <- attributes(x[[1]])
-  class(x) <- "list"
-  x <- rbindlist(x, ...)
+  #class(x) <- "list"
+  x <- data.table::rbindlist(x, ...)
   attributes(x) <- oldAttr
   x
 }
