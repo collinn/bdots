@@ -12,6 +12,7 @@
 #' @param alpha alpha for fwer
 #' @param P number of permutations
 permTest <- function(x, prs, alpha, P, cores = detectCores()-1L) {
+  # these all implicitly assumed sorted by subject so maybe should do that in bdotsFit
   ip <- isPaired(x)
   dod <- !is.null(prs$innerDiff)
   if (dod) {
@@ -60,6 +61,8 @@ permTest <- function(x, prs, alpha, P, cores = detectCores()-1L) {
       qq <- quantile(tnull, probs = 1-alpha/2)
       sigIdx <- tvec > qq
     }
+  } else if (dod) {
+
   }
 
   stopCluster(cl)

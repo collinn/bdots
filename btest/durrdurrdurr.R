@@ -101,119 +101,121 @@ permutation <- FALSE
 Niter <- 10
 alpha <- 0.05
 cores <- 7
-#load_all("~/packages/bdots/")
+load_all("~/packages/bdots/")
 
-boot <- bdotsBoot(formula = fixations ~ group(A, B),
-                  bdObj = fit, permutation = FALSE)
-# paired test 1
-boot2 <- bdotsBoot(formula = diffs(y, group2(1,2)) ~ group(A, B),
-                  bdObj = fit, permutation = FALSE)
-# paired test 2
-boot3 <- bdotsBoot(formula = diffs(y, group(A, B)) ~ group2(1, 2),
-                  bdObj = fit, permutation = FALSE)
-
-fit$id <- rep(1:20, times = 2)
-# unpaired test 1
-boot4 <- bdotsBoot(formula = diffs(y, group2(1,2)) ~ group(A, B),
-                   bdObj = fit, permutation = FALSE)
-# unpaired test 2
-boot5 <- bdotsBoot(formula = diffs(y, group(A, B)) ~ group2(1, 2),
-                   bdObj = fit, permutation = FALSE)
-# unpaired test1
-
+# boot <- bdotsBoot(formula = fixations ~ group(A, B),
+#                   bdObj = fit, permutation = TRUE)
+# # paired test 1
+# boot2 <- bdotsBoot(formula = diffs(y, group2(1,2)) ~ group(A, B),
+#                   bdObj = fit, permutation = FALSE)
+# # paired test 2
+# boot3 <- bdotsBoot(formula = diffs(y, group(A, B)) ~ group2(1, 2),
+#                   bdObj = fit, permutation = FALSE)
 #
-# x <- splitGroups
-# prs <- prs
-# alpha <- 0.05
-# P <- 250
-#
-#
-# x <- splitGroups
-# sgroups <- splitGroups
-# b <- Niter
-# prs
+# fit$id <- rep(1:20, times = 2)
+# # unpaired test 1
+# boot4 <- bdotsBoot(formula = diffs(y, group2(1,2)) ~ group(A, B),
+#                    bdObj = fit, permutation = FALSE)
+# # unpaired test 2
+# boot5 <- bdotsBoot(formula = diffs(y, group(A, B)) ~ group2(1, 2),
+#                    bdObj = fit, permutation = FALSE)
+# # unpaired test1
 
-#ok but what if dod???
 
-#' Create bootstrapped distribution of groups
-#'
-#' Function to create bootstrapped distribution of groups depending
-#' on paired status and difference of difference
-#'
-#' @param x list of bdObj
-#' @param prs list from boot parser
-#' @param b number of bootstraps
-createGroupDists <- function(x, prs, b) {
 
-  ## Now tend to parallel needs
-  if (Sys.info()['sysname'] == "Darwin") {
-    cl <- makePSOCKcluster(cores, setup_strategy = "sequential")
-  } else {
-    cl <- makePSOCKcluster(cores)
-  }
-  invisible(clusterEvalQ(cl, {library(bdots)}))
+x <- splitGroups
+prs
 
-  ## Is this a difference of difference?
-  dod <- !is.null(prs$innerDiff)
 
-  if (!dod) {
-    ## This means only length 2 so checking if paired is simple
-    ip <- isPaired(x)
-    if (!ip) {
-      groupDists <- parLapply(cl, x, getBootDistUnpaired, b) # <- the old way, nice
-      #stopCluster(cl)
-      #return(groupDists) # done
-    } else {
-      # if it is paired
-      groupDists <- getBootDistPaired(cl, x, b)
-      #stopCluster(cl)
-      #return(groupDists)
-    }
-  } else { # if difference of difference
-    ## Find out if inner/outer paired
-    ps <- isDODpaired(x, prs)
+## Step 1. What kind of pair we got
+ps <- isDODpaired(x, prs)
+P <- 10
 
-    ## Based on paired status
-    if (sum(ps) == 2) {
-      ## both paired
-      groupDists <- getBootDistPaired(cl, x, b)
-    } else if (sum(ps) == 0) {
-      ## Neither paired
-      groupDists <- parLapply(cl, x, getBootDistUnpaired, b)
-    } else {
-      ## This is the case if either inner or outer not but other is
-      nx <- strsplit(names(x), split = "\\.")
+## Step 2. Combine into paired up inner groups
+xx <- rbindlist(x)
+xx <- split(xx, by = prs[["outerDiff"]])
+group <- prs[['innerDiff']]
 
-      if (ps['ip']) {
-        # paired inner group will share the same outer group in the split object
-        ogn <- prs$subargs[[2]] # I hate this but this is values for outerDiff which also doesn't even make sense
-        idx <- vapply(nx, function(y) ogn[1] %in% y, logical(1))
-      } else if (ps['op']) {
-        ign <- prs$subargs[[1]]
-        idx <- vapply(nx, function(y) ign[1] %in% y, logical(1))
-      }
-      gd1 <- getBootDistPaired(cl, x[idx], b)
-      gd2 <- getBootDistPaired(cl, x[!idx], b)
-      groupDists <- c(gd1, gd2)
-    }
-  }
-  stopCluster(cl)
-  return(groupDists)
+x <- xx[[1]]
+
+getInnerPermuteMean <- function(x, idx, group) {
+  newvec <-  x[[group]][idx]
+  set(x, j = group, value = newvec)
+
+  timeName <- attr(x, "call")$time
+  TIME <- attributes(x)$time
+  ff <- makeCurveFun(x)
+
+  fit_s <- split(x, by = group)
+  mvl <- lapply(fit_s, function(y) {
+    cc <- coef(y)
+    cl <- apply(cc, 1, function(z) {
+      z <- as.list(z)
+      z[[timeName]] <- TIME
+      do.call(ff, z)
+    })
+    rowMeans(cl)
+  })
+  dm <- Reduce(`-`, mvl) # this won't work if they are different sizes so rowmeans first
+  dm
 }
 
+## Step 3. Get indices for permutation, idxa and idxb
+  # a. if paired in group find half permute then !flip (since boolean)
+  # b. if paired in outer make idxa == idxb
+  # c. if not paired at all generate four random idx based on n subjects
+## I will do this by creating a function that gives inner diff index
+# if (b) just use once, it will return conditional on (a) or (b)
+innerIndex <- function(P, n, pair) {
+  if (pair) {
+    permmat <- replicate(P, sample(c(TRUE, FALSE), n/2, replace = TRUE))
+    permmat <- rbind(permmat, !permmat)
+    permmat <- apply(permmat, 2, bool2idx)
+  } else {
+    permmat <- replicate(P, sample(seq_len(n)))
+  }
+  permmat
+}
 
+x <- splitGroups
+ps <- isDODpaired(x, prs)
+xx <- rbindlist(x)
+xx <- split(xx, by = prs[["outerDiff"]])
+nv <- vapply(xx, nrow, numeric(1))
+P <- 20
 
+## if both paired
+if (sum(ps) == 2) {
+  permA <- innerIndex(P, nv[1], pair = TRUE)
+  permB <- permA
+} else if (sum(ps) == 0) {
+  ## Neither paired
+  permA <- innerIndex(P, nv[1], pair = FALSE)
+  permB <- innerIndex(P, nv[2], pair = FALSE)
+} else if (ps['ip']) {
+  # both paired but outer different
+  permA <- innerIndex(P, nv[1], pair = TRUE)
+  permB <- innerIndex(P, nv[2], pair = TRUE)
+} else if (ps['op']) {
+  permA <- innerIndex(P, nv[1], pair = FALSE)
+  permB <- permA
+}
 
+## Step 4. Compute the inner mean vectors based on this
+# I guess do this in two steps at first
+clusterExport(cl, c("getInnerPermuteMean", "group", "xx"))
+clusterEvalQ(cl, library(bdots))
+clusterEvalQ(cl, devtools::load_all("~/packages/bdots"))
 
-
-
-
-
-
-
-
-
-
+## Could also do this with Map but does not lend itself to parallelization like this does
+diffmatA <- parApply(cl, permA, 2, function(y) {
+  getInnerPermuteMean(xx[[1]], y, group)
+})
+diffmatB <- parApply(cl, permB, 2, function(y) {
+  getInnerPermuteMean(xx[[2]], y, group)
+})
+# I now need a t statisitic for each row which means i also need some sort of sd
+diffmat <- diffmatA - diffmatB
 
 
 
