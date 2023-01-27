@@ -15,6 +15,7 @@
 #' @param cores Number of cores to use in parallel. Default is zero, which
 #' uses half of what is available.
 #' @param skipDist do not use
+#' @param singleMeans definitely do not use
 #' @param ... not used
 #'
 #' @details The formula is the only tricky part of this. There will be a minor
@@ -117,7 +118,7 @@ bdotsBoot <- function(formula,
                       Niter = 1000,
                       alpha = 0.05,
                       padj = "oleson",
-                      permutation = FALSE, skipDist = FALSE,
+                      permutation = FALSE, skipDist = FALSE, singleMeans = FALSE,
                       cores = 0, ...) {
 
   if (cores < 1) cores <- detectCores()/2
@@ -144,12 +145,21 @@ bdotsBoot <- function(formula,
     # just skip doing this
     curveList <- NULL
     ip <- NULL
-  } else {
+  } else if (!singleMeans) {
     ##  parallel moved inside of this function
     groupDists <- createGroupDists(splitGroups, prs, b = Niter, cores)
 
     ## This is where we construct inner/outer groups
     curveList <- createCurveList(groupDists, prs, splitGroups) # this is whats creates diff
+    ip <- curveList[['diff']][['paired']]
+  } else if (singleMeans) {
+    ## THIS IS RUNNING UNDER SINGLE MEANS ASSUMPTION
+    # pulled from old bdots in curveBooter_SINGLEMEAN.R
+    curveList <- curveBooter_sm(bdObj,
+                             outerDiff = outerDiff,
+                             innerDiff = innerDiff,
+                             N.iter = Niter,
+                             curveFun = curveFun)
     ip <- curveList[['diff']][['paired']]
   }
 
