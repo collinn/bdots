@@ -109,30 +109,99 @@ prs
 
 
 
+library(eyetrackSim)
+
+
+tt <- createData(ar1 = TRUE, trials = 10)$dts
+tt2 <- createData(ar1 = FALSE, trials = 100)$dts
+tt3 <- createData(ar1 = TRUE, trials = 100)$dts
+
+plot(tt[id == 1, fixations], type = 'l')
+plot(tt2[id == 1, fixations], type = 'l')
+plot(tt3[id == 1, fixations], type = 'l')
+
+tt <- createData(ar1 = TRUE, trials = 10, manymeans = FALSE, paired = TRUE)
+tt2 <- createData(ar1 = FALSE, trials = 100, manymeans = FALSE, paired = TRUE)$dts
+tt3 <- createData(ar1 = TRUE, trials = 100, manymeans = FALSE, paired = TRUE)$dts
+
+
+# if we are not doing many means, i.e., only single means (gay)
+if (FALSE) {
+
+}
+
+
+singleMeans <- function(n, trials, pars, paired, ar1, time) {
+  pars <- pars[[1]]
+  sigv <- 0.25 / sqrt(trials)
+
+  group1 <- createSingleMeanSubs(n, ar1, pars = pars, sig = sigv, rho = 0.8,
+                                 trials, time)
+
+  if (paired) {
+    # This just adds gaussian noise to first group
+    group2 <- createSingleMeanSubs(n, ar1, pars, rho = 0, sig = sigv, gg = "B",
+                                   trials, time)
+  } else {
+    group2 <- createSingleMeanSubs(n, ar1, pars, rho = 0.8, sig = sigv, gg = "B",
+                                   trials, time)
+  }
+  dts <- rbindlist(list(group1, group2))
+  parsA <- matrix(pars, ncol = 4, nrow = n, byrow = TRUE)
+  return(list(dts = dts, parsA = parsA, parsB = parsA))
+}
 
 
 
 
 
+tt <- tt$dts
+
+tt <- createData(ar1 = TRUE, trials = 100, manymeans = FALSE)$dts
+tt2 <- createData(ar1 = FALSE, trials = 100, manymeans = FALSE)$dts
+
+# tt <- tt[id %in% 1:4, ]
+# tt2 <- tt2[id %in% 1:4, ]
 
 
+colMeans(tt3$parsA)
+colMeans(coef(fit1)) # cor true should be true
+colMeans(coef(fit2)) # cor FALSE should be true
+colMeans(coef(fit3)) # cor true should be false
+colMeans(coef(fit4)) # cor FALSE # should be false
 
 
+fit1 <- bdotsFit(data = tt,
+                 subject = "id",
+                 group = "group",
+                 y = "fixations",
+                 time = "time",
+                 curveType = logistic())
 
 
+fit2 <- bdotsFit(data = tt,
+                 subject = "id",
+                 group = "group",
+                 y = "fixations",
+                 time = "time",
+                 cor = FALSE,
+                 curveType = logistic())
+
+fit3 <- bdotsFit(data = tt2,
+                 subject = "id",
+                 group = "group",
+                 y = "fixations",
+                 time = "time",
+                 curveType = logistic())
 
 
-
-
-
-
-
-
-
-
-
-
-
+fit4 <- bdotsFit(data = tt2,
+                 subject = "id",
+                 group = "group",
+                 y = "fixations",
+                 time = "time",
+                 cor = FALSE,
+                 curveType = logistic())
 
 
 

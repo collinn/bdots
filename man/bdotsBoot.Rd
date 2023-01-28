@@ -12,6 +12,7 @@ bdotsBoot(
   padj = "oleson",
   permutation = FALSE,
   skipDist = FALSE,
+  singleMeans = FALSE,
   cores = 0,
   ...
 )
@@ -33,6 +34,8 @@ thank adjusting alpha to control FWER. WARNING: This option is very much in beta
 and not recommended for general use. Also not available for paired tests or difference of difference}
 
 \item{skipDist}{do not use}
+
+\item{singleMeans}{definitely do not use}
 
 \item{cores}{Number of cores to use in parallel. Default is zero, which
 uses half of what is available.}
