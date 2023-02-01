@@ -141,11 +141,16 @@ summary.bdotsBootObj <- function(object, ...) {
 
   padj_method <- match.arg(attr(bdBootObj, "call")[['padj']],
                            c("oleson", stats::p.adjust.methods))
-  if (bdCall$permutation) {
-    padj_method <- "Permutation"
-    alphastar <- "NA"
-    rho <- "NA"
+  if (!is.null(bdCall$permutation)) {
+    if (bdCall$permutation) {
+      padj_method <- "Permutation"
+      alphastar <- "NA"
+      rho <- "NA"
+    }
+  } else {
+    bdCall$permutation <- FALSE
   }
+
 
   alpha <- ifelse(is.null(bdCall$alpha), 0.05, bdCall$alpha)
 

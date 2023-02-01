@@ -205,7 +205,12 @@ fit4 <- bdotsFit(data = tt2,
 
 
 
-
+## Ok, what would it look like to create all these fits
+# only n = 25 for time, taking us from 64 to 16
+simDataSettings <- expand.grid(manymeans = c(TRUE, FALSE),
+                               paired = c(TRUE, FALSE),
+                               ar1 = c(TRUE, FALSE),
+                               bdotscor = c(TRUE, FALSE))
 
 
 

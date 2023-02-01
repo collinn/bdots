@@ -1,4 +1,4 @@
-#' Fit nlme curves to grouped observations
+/#' Fit nlme curves to grouped observations
 #'
 #' Creates observation level curves to use in bdotsBoot
 #'
@@ -80,7 +80,7 @@ bdotsFit <- function(data, # dataset
   dat <- setDT(data)
   dat[, (group) := lapply(.SD, as.character), .SDcols = group]
   dat[, (subject) := lapply(.SD, as.character), .SDcols = subject]
-  
+
   ## Look for "." here to avoid issues later
   hasperiod <- vapply(subset(dat, select = group), function(x) {
     sum(grepl("\\.", x))}, numeric(1)) #|> sum()
