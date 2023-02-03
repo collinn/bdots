@@ -36,7 +36,7 @@ permTest <- function(x, prs, alpha, P, cores = detectCores()-1L) {
   n <- nrow(x)
 
   ## Get the t stats for observed
-  tvec <- getT(x, seq_len(n), group = pgroups, whole = TRUE)
+  tvec <- getT(x, seq_len(n), group = pgroups, whole = TRUE, addVar = FALSE)
 
   ## Start with case no DOD
   if (!dod) {
@@ -85,7 +85,7 @@ bool2idx <- function(b) {
 #' @param idx permutation to use
 #' @param group group that we are permuting against
 #' @param whole return vector of T stats or just the max
-getT <- function(x, idx, group, whole = FALSE) {
+getT <- function(x, idx, group, whole = FALSE, addVar = TRUE) {
   x[[group]] <- x[[group]][idx]
 
   ## Stuff I need to  call the function (gross)
@@ -94,18 +94,40 @@ getT <- function(x, idx, group, whole = FALSE) {
   ff <- makeCurveFun(x)
 
   fit_s <- split(x, by = group)
-  mvl <- lapply(fit_s, function(y) {
-    cc <- coef(y)
-    cl <- apply(cc, 1, function(z) {
-      z <- as.list(z)
-      z[[timeName]] <- TIME
-      do.call(ff, z)
+
+  ## Do i sample with the added variation?
+  if (addVar == FALSE) {
+    mvl <- lapply(fit_s, function(y) {
+      cc <- coef(y)
+      cl <- apply(cc, 1, function(z) {
+        z <- as.list(z)
+        z[[timeName]] <- TIME
+        do.call(ff, z)
+      })
+      mm <- rowMeans(cl)
+      vv <- apply(cl, 1, var)
+      vvn <- vv/nrow(cc)
+      list(mean = mm, nvar = vvn)
     })
-    mm <- rowMeans(cl)
-    vv <- apply(cl, 1, var)
-    vvn <- vv/nrow(cc)
-    list(mean = mm, nvar = vvn)
-  })
+  } else {
+    mvl <- lapply(fit_s, function(y) {
+      ## Weird that this becomes a list
+      cc <- apply(y, 1, function(z) {
+        rmvnorm(1, coef(z$fit), vcov(z$fit))
+      }) |> t()
+      #cc <- coef(y)
+      cl <- apply(cc, 1, function(z) {
+        z <- as.list(z)
+        z[[timeName]] <- TIME
+        do.call(ff, z)
+      })
+      mm <- rowMeans(cl)
+      vv <- apply(cl, 1, var)
+      vvn <- vv/nrow(cc)
+      list(mean = mm, nvar = vvn)
+    })
+  }
+
 
   ## Guess I don't need a function for this
   x <- mvl[[1]]; y <- mvl[[2]]
