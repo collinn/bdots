@@ -1,4 +1,4 @@
-/#' Fit nlme curves to grouped observations
+#' Fit nlme curves to grouped observations
 #'
 #' Creates observation level curves to use in bdotsBoot
 #'
