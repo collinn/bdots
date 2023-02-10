@@ -288,63 +288,87 @@ expCurve <- function(dat, y, time, params = NULL, ...) {
 }
 
 
-#' ## -----------
+#' Logistic saccade curve function for nlme
 #'
-#' #' Logistic curve function for nlme
-#' #'
-#' #' DELETE THIS FUNCTION BEFORE GIT PUSH
-#' #'
-#' #' @param dat subject data to be used
-#' #' @param y outcome variable
-#' #' @param time time variable
-#' #' @param params \code{NULL} unless user wants to specify starting parameters for gnls
-#' #' @param ... just in case
-#' #'
-#' #' @details \code{y ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (time)) / (peak - mini)))}
-#' #' @export
-#' logistic2 <- function(dat, y, time, params = NULL, ...) {
+#' And even cooler logistic fitting function, will think of a better name later
 #'
-#'   logisticPars <- function(dat, y, time, ...) {
-#'     dat[, looks := mean(looks), by = starttime]
-#'     dat <- unique(dat)
-#'     time <- dat[[time]]
-#'     y <- dat[[y]]
+#' @param dat subject data to be used
+#' @param y outcome variable
+#' @param time time variable
+#' @param params \code{NULL} unless user wants to specify starting parameters for gnls
+#' @param startSamp how many samples from distribution should we use to investigate
+#' @param ... just in case
 #'
-#'     ## Remove cases with zero variance
-#'     if (var(y) == 0) {
-#'       return(NULL)
-#'     }
-#'
-#'     mini <- min(y)
-#'     peak <- max(y)
-#'     r <- (peak - mini)
-#'     cross <- time[which.min(abs(0.5*r - y))]
-#'
-#'     # slope
-#'     q75 <- .75 * r + mini
-#'     q25 <- .25 * r + mini
-#'     time75 <- time[which.min(abs(q75 - y))]
-#'     time25 <- time[which.min(abs(q25 - y))]
-#'     slope <- (q75 - q25) / (time75 - time25)
-#'
-#'     return(c(mini = mini, peak = peak, slope = slope, cross = cross))
-#'   }
-#'
-#'   if (is.null(params)) {
-#'     params <- logisticPars(dat, y, time)
-#'   } else {
-#'     if (length(params) != 4) stop("logistic requires 4 parameters be specified for refitting")
-#'     if (!all(names(params) %in% c("mini", "peak", "slope", "cross"))) {
-#'       stop("logistic parameters for refitting must be correctly labeled")
-#'     }
-#'   }
-#'   ## Return NA list if var(y) is 0
-#'   if (is.null(params)) {
-#'     return(NULL)
-#'   }
-#'   y <- str2lang(y)
-#'   time <- str2lang(time)
-#'   ff <- bquote(.(y) ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (.(time))) / (peak - mini))))
-#'   attr(ff, "parnames") <- names(params)
-#'   return(list(formula = ff, params = params))
-#' }
+#' @details \code{y ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (time)) / (peak - mini)))}
+#' @export
+logistic_sac <- function(dat, y, time, params = NULL, startSamp = 8,...) {
+
+  logisticPars <- function(dat, y, time, startSamp, ...) {
+    time <- dat[[time]]
+    y <- dat[[y]]
+
+    ## Remove cases with zero variance
+    if (var(y) == 0) {
+      return(NULL)
+    }
+
+    ## Sensible distribution of starting pars
+    spars <- structure(list(fn = c(1L, 1L, 1L, 1L),
+                            param = c("mini", "peak", "slope", "cross"),
+                            mean = c(0.115, 0.885, 0.0016, 765), sd = c(0.12, 0.12, 0.00075, 85), min = c(0, 0.5, 0.0009, 300),
+                            max = c(0.3, 1, 0.01, 1100)), row.names = c(NA, -4L), class = c("data.table", "data.frame"))
+
+    ## function def
+    fn <- function(p, t) {
+      b0 <- p[1] # base
+      b1 <- p[2] # max
+      sl <- p[3] # slope
+      xo <- p[4] # crossover
+      b0 + (b1-b0) / (1 + exp(4*sl*((xo-t)/(b1-b0))))
+    }
+
+    tryPars <- vector("list", length = startSamp)
+
+    ## Get starting pars
+    for (i in seq_len(startSamp)) {
+      maxFix <- 2
+      while (maxFix > 1 | maxFix < 0.6) { # added minimum independent of mbob
+        tryPars[[i]] <- Inf
+        while (any(spars[, tryPars[[i]] <= min | tryPars[[i]] >= max ])) {
+          tryPars[[i]] <- spars[, rnorm(length(tryPars[[i]]))*sd + mean]
+        }
+        maxFix <- max(fn(tryPars[[i]], time))
+      }
+    }
+
+    ## Find which is better fit
+    r2 <- vector("numeric", length = startSamp)
+    for (i in seq_len(startSamp)) {
+      yhat <- fn(tryPars[[i]], time)
+      r2[i] <- mean((y-yhat)^2)
+    }
+
+    finalPars <- tryPars[[which.min(r2)]]
+    names(finalPars) <- c("mini", "peak", "slope", "cross")
+
+    return(finalPars)
+  }
+
+  if (is.null(params)) {
+    params <- logisticPars(dat, y, time, startSamp)
+  } else {
+    if (length(params) != 4) stop("logistic requires 4 parameters be specified for refitting")
+    if (!all(names(params) %in% c("mini", "peak", "slope", "cross"))) {
+      stop("logistic parameters for refitting must be correctly labeled")
+    }
+  }
+  ## Return NA list if var(y) is 0
+  if (is.null(params)) {
+    return(NULL)
+  }
+  y <- str2lang(y)
+  time <- str2lang(time)
+  ff <- bquote(.(y) ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (.(time))) / (peak - mini))))
+  attr(ff, "parnames") <- names(params)
+  return(list(formula = ff, params = params))
+}

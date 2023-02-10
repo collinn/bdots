@@ -4,7 +4,7 @@
 \alias{getT}
 \title{Generate t-distribution for permutation}
 \usage{
-getT(x, idx, group, whole = FALSE)
+getT(x, idx, group, whole = FALSE, addVar = TRUE)
 }
 \arguments{
 \item{x}{bdObj}
