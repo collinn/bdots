@@ -187,7 +187,7 @@ polynomial <- function(dat, y, time, degree, raw = TRUE, params = NULL, ...) {
     return(NULL)
   }
 
-  time_names <- paste0("I(Time^", seq(degree + 1L) - 1L , ")")
+  time_names <- paste0("(Time^", seq(degree + 1L) - 1L , ")")
 
   ff <- paste(names(params), time_names, sep = "*", collapse = "+")
   ff <- str2lang(ff)
