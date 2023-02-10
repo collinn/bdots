@@ -372,3 +372,107 @@ logistic_sac <- function(dat, y, time, params = NULL, startSamp = 8,...) {
   attr(ff, "parnames") <- names(params)
   return(list(formula = ff, params = params))
 }
+
+
+
+
+
+#' Double Gauss curve function for nlme
+#'
+#' Double Gauss function used in fitting nlme curve for observations but now even
+#' better since it samples across a sensible distribution for starting parameters
+#'
+#' @param dat subject data to be used
+#' @param y outcome variable, character vector
+#' @param time time variable, character vector
+#' @param params \code{NULL} unless user wants to specify starting parameters for gnls
+#' @param startSamp how many samples from distribution should we use to investigate
+#' @param ... just in case
+#'
+#' @details User should only have to worry about setting concavity
+#' of this function
+#'
+#' \code{y ~ (time < mu) * (exp(-1 * (time - mu) ^ 2
+#' / (2 * sig1 ^ 2)) * (ht - base1) + base1)
+#' + (mu <= time) * (exp(-1 * (time - mu) ^ 2
+#'                          / (2 * sig2 ^ 2)) * (ht - base2) + base2)}
+#' @export
+doubleGauss_sac <- function(dat, y, time, params = NULL, startSamp = 8, ...) {
+
+  dgaussPars <- function(dat, y, time, startSamp = 8) {
+    time <- dat[[time]]
+    y <- dat[[y]]
+
+    ## Remove cases with zero variance
+    if (var(y) == 0) {
+      return(NULL)
+    }
+
+    spars <- structure(list(fn = c(2L, 2L, 2L, 2L, 2L, 2L),
+                            param = c("mu",  "ht", "sig1", "sig2", "base1", "base2"),
+                            mean = c(630, 0.18, 130, 250, 0.05, 0.05),
+                            sd = c(77, 0.05, 30, 120, 0.015, 0.015),
+                            min = c(300, 0.05, 50, 50, 0, 0),
+                            max = c(1300, 0.35, 250, 400, 0.15, 0.15)),
+                       row.names = c(NA, -6L), class = c("data.table","data.frame"))
+
+    ## function def
+    fn <- function(p, t) {
+      mu <- p[1]
+      ht <- p[2]
+      s1 <- p[3]
+      s2 <- p[4]
+      b1 <- p[5]
+      b2 <- p[6]
+      lhs <- (t < mu) * ((ht-b1) * exp((t - mu)^2/(-2*s1^2)) + b1)
+      rhs <- (t >= mu) * ((ht-b2) * exp((t - mu)^2/(-2*s2^2)) + b2)
+      lhs+rhs
+    }
+
+    tryPars <- vector("list", length = startSamp)
+
+    for (i in seq_len(startSamp)) {
+      maxFix <- 2
+      while (maxFix > 1) {
+        tryPars[[i]] <- Inf
+        while (any(spars[, tryPars[[i]] <= min | tryPars[[i]] >= max ])) {
+          tryPars[[i]] <- spars[, rnorm(length(tryPars[[i]]))*sd + mean]
+        }
+        maxFix <- max(fn(tryPars[[i]], time))
+      }
+    }
+
+    r2 <- vector("numeric", length = startSamp)
+    for (i in seq_len(startSamp)) {
+      yhat <- fn(tryPars[[i]], time)
+      r2[i] <- mean((y-yhat)^2)
+    }
+
+    finalPars <- tryPars[[which.min(r2)]]
+    names(finalPars) <- c("mu", "ht", "sig1", "sig2", "base1", "base2")
+
+    return(finalPars)
+  }
+
+  if (is.null(params)) {
+    params <- dgaussPars(dat, y, time, startSamp)
+  } else {
+    if (length(params) != 6) stop("doubleGauss requires 6 parameters be specified for refitting")
+    if (!all(names(params) %in% c("mu", "ht", "sig1", "sig2", "base1", "base2"))) {
+      stop("doubleGauss parameters for refitting must be correctly labeled")
+    }
+  }
+  ## Return NA list if var(y) is 0
+  if (is.null(params)) {
+    return(NULL)
+  }
+
+  y <- str2lang(y)
+  time <- str2lang(time)
+  ff <- bquote(.(y) ~ (.(time) < mu) * (exp(-1 * (.(time) - mu) ^ 2
+                                            / (2 * sig1 ^ 2)) * (ht - base1) + base1)
+               + (mu <= .(time)) * (exp(-1 * (.(time) - mu) ^ 2
+                                        / (2 * sig2 ^ 2)) * (ht - base2) + base2))
+  attr(ff, "parnames") <- names(params)
+  return(list(formula = ff, params = params))
+}
