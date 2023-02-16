@@ -176,7 +176,7 @@ p_adjust <- function(p, method = "oleson", n = length(p),
 
     alphastar <- findModifiedAlpha(rho, n, df, alpha, cores = cores)
     k <- alphastar/alpha
-    adjpval <- p/k
+    adjpval <- min(p/k, 1)
     attr(adjpval, "alphastar") <- alphastar
     attr(adjpval, "rho") <- rho
   } else {
