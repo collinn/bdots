@@ -48,7 +48,7 @@ permTest <- function(x, prs, alpha, P, cores = detectCores()-1L) {
       tnull <- parApply(cl, permmat, 2, function(y) {
         getT(x, y, group = pgroups)
       })
-      qq <- quantile(tnull, probs = 1-alpha/2)
+      qq <- quantile(tnull, probs = 1-alpha)
       sigIdx <- tvec > qq
     } else  if (ip) {
       ## First half of permmat
@@ -58,7 +58,7 @@ permTest <- function(x, prs, alpha, P, cores = detectCores()-1L) {
         bidx <- bool2idx(y)
         getT(x, bidx, group = pgroups)
       })
-      qq <- quantile(tnull, probs = 1-alpha/2)
+      qq <- quantile(tnull, probs = 1-alpha)
       sigIdx <- tvec > qq
     }
   }
@@ -133,7 +133,10 @@ getT <- function(x, idx, group, whole = FALSE, addVar = TRUE) {
   x <- mvl[[1]]; y <- mvl[[2]]
   xm <- x$mean; xv <- x$nvar
   ym <- y$mean; yv <- y$nvar
+
+  # Try this not abs value
   Tt <- abs(xm-ym) / sqrt(yv + xv)
+  #Tt <- (xm-ym) / sqrt(yv + xv)
 
   ifelse(whole, return(Tt), return(max(Tt)))
 }
