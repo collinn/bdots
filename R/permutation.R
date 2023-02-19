@@ -134,9 +134,7 @@ getT <- function(x, idx, group, whole = FALSE, addVar = TRUE) {
   xm <- x$mean; xv <- x$nvar
   ym <- y$mean; yv <- y$nvar
 
-  # Try this not abs value
   Tt <- abs(xm-ym) / sqrt(yv + xv)
-  #Tt <- (xm-ym) / sqrt(yv + xv)
 
   ifelse(whole, return(Tt), return(max(Tt)))
 }
