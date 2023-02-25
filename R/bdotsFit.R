@@ -10,7 +10,7 @@
 #' greater than one
 #' @param curveType See details/vignette
 #' @param cores number of cores. Default is \code{0}, indicating half cores available
-#' @param cor Boolean. Autocorrelation?
+#' @param ar Value indicates estimate for autocorrelation. A value of zero indicates to fit without AR(1) assumption
 #' @param numRefits Integer indicating number of attempts to fit an observation
 #' if the first attempt fails
 #' @param verbose currently not used
@@ -31,7 +31,6 @@
 #'                 y = "Fixations",
 #'                 group = c("Group", "LookType"),
 #'                 curveType = doubleGauss(concave = TRUE),
-#'                 cor = TRUE,
 #'                 numRefits = 2,
 #'                 cores = 0,
 #'                 verbose = FALSE)
@@ -47,7 +46,7 @@ bdotsFit <- function(data, # dataset
                      y, # response vector
                      group, # groups for subjects
                      curveType = doubleGauss(concave = TRUE),
-                     cor = TRUE, # autocorrelation?
+                     ar = 0, # autocorrelation?
                      numRefits = 0,
                      cores = 0, # cores to use, 0 == 50% of available
                      verbose = FALSE,
@@ -67,14 +66,21 @@ bdotsFit <- function(data, # dataset
   }
 
   # Should verify that we don't have rho set and cor = FALSE
-  if (!exists("rho")) {
-    rho <- ifelse(cor, 0.9, 0)
+  if (ar < 0) {
+    rho <- 0
+  } else if (ar > 1) {
+    rho <- 0.9
   } else {
-    if (cor & (rho >= 1 | rho < 0)) {
-      warning("cor set to TRUE with invalid rho. Setting rho to 0.9")
-      rho <- 0.9
-    }
+    rho <- ar
   }
+  # if (!exists("rho")) {
+  #   rho <- ifelse(cor, 0.9, 0)
+  # } else {
+  #   if (cor & (rho >= 1 | rho < 0)) {
+  #     warning("cor set to TRUE with invalid rho. Setting rho to 0.9")
+  #     rho <- 0.9
+  #   }
+  # }
 
   ## Factors are bad, m'kay?
   dat <- setDT(data)
@@ -105,19 +111,7 @@ bdotsFit <- function(data, # dataset
 
   timeSame <- identical(Reduce(intersect, timetest, init = timetest[[1]]),
                         Reduce(union, timetest, init = timetest[[1]]))
-  #if (!timeSame) stop("Observed times are different between groups")
-  # if (!timeSame) {
-  #   warning("Observed times are not identical between groups. This will result in weird plotting behavior")
-  # }
 
-  ## This should work inside function. Let's check
-  # if this happens, need to modify X for plots to work
-  # if (any(dat[, .N, by = c(subject, time, group)]$N > 1)) {
-  #   warning("Some subjects have multiple observations for unique time. These will be averaged")
-  #   yval <- deparse(substitute(y))
-  #   dat[, substitute(y) := mean(get(y)), by = c(subject, time, group)]
-  #   dat <- unique(dat, by = c(subject, time, group))
-  # }
 
   splitVars <- c(subject, group)
   newdat <- split(dat, by = splitVars, drop = TRUE)

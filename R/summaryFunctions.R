@@ -224,7 +224,7 @@ print.bdotsBootSummary <- function(x, ...) {
     cat("Outer Difference:", x[['diffs']][['outerDiff']], "\n")
     cat("Inner Difference:", x[['diffs']][['innerDiff']], "\n")
   } else {
-    cat("Difference:", x[['diffs']][['outerDiff']], "\n")
+    cat("Difference:", x[['diffs']][['outerDiff']], "--", x[['curveGroup']][[1]], "\n")
   }
 
   cat("\n")

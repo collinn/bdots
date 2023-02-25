@@ -4,6 +4,9 @@
 #'
 #' @param bdObj An object of class 'bdotsObj' returned from \code{bdotsFit}
 #' @param fitCode A length one integer indicating observations to refit. See Details
+#' @param subset Either an expression that evaluates to a logical used to subset the \code{bdObj},
+#' (using \code{data.table} syntax) or a numeric vector of indices to subset. Default is \code{NULL}.
+#' When not \code{NULL}, any arguments to \code{fitCode} are ignored.
 #' @param quickRefit Boolean indicating if a quick refit should be used. If TRUE,
 #' rather than prompting the user for adjustments for each observation, \code{bdotsReft}
 #' will jitter the parameters of all observations indicated by \code{fitCode} and attempt
@@ -28,10 +31,13 @@
 #' user will be prompted through a menu to individually refit observations
 #' @import data.table
 #' @export
-bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = FALSE,
+bdotsRefit <- function(bdObj, fitCode = 1L, subset = NULL, quickRefit = FALSE,
                        numRefits = 2L, paramDT = NULL, ...) {
 
   if (is.null(fitCode)) fitCode <- 1L
+
+  ## Capture this expression first
+  subset <- substitute(subset)
 
   if (is.null(attr(bdObj, "X")$X)) {
     stop("Dataset must be provided")
@@ -56,11 +62,39 @@ bdotsRefit <- function(bdObj, fitCode = 1L, quickRefit = FALSE,
       ..nn <- NULL # need to do this so that package will compile
       rm(..nn) # and need to do this for DT scoping next line
       bd_identifiers <- do.call(paste, bdObj[, ..nn]) # all subjects
-      
+
       NEEDS_REFIT_IDX <- !(bd_identifiers %in% HAS_PRIOR_REFIT)
-      idx <- which(bdObj$fitCode >= fitcode & NEEDS_REFIT_IDX)
+
+
+      ## Have to suss through the subset for refit but logic should
+      # make sense if you squint your eyes and think about it
+      if (!is.null(subset)) {
+        if (is.numeric(subset)) {
+          idx <- seq_len(nrow(bdObj)) %in% subset
+        } else {
+          tryCatch({
+            idx <- with(bdObj, eval(subset))
+            #idx <- which(idx) ## Needs to be logical when refitting
+          }, error = function(e) "Argument to `subset` not a proper expression")
+        }
+        idx <- which(idx & NEEDS_REFIT_IDX)
+      } else {
+        idx <- which(bdObj$fitCode >= fitcode & idx)
+      }
+
     } else {
-      idx <- which(bdObj$fitCode >= fitCode)
+      if (!is.null(subset)) {
+        if (is.numeric(subset)) {
+          idx <- seq_len(nrow(bdObj)) %in% subset
+        } else {
+          tryCatch({
+            idx <- with(bdObj, eval(subset))
+            idx <- which(idx) # needs to be row indices not logicals
+          }, error = function(e) "Argument to `subset` not a proper expression")
+        }
+      } else {
+        idx <- which(bdObj$fitCode >= fitCode)
+      }
     }
 
     ## Handle case where no refits

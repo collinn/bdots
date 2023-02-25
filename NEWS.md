@@ -1,3 +1,10 @@
+# bdots 2-24-2023
+- MAJOR UPDATE!
+- Permutation testing now available
+- Major changes to bootstrapping algorithm with implications for all previous verions (see ?)
+- Refitting can be done with indices or logical expressions instead of fitCodes
+
+
 # bdots 11-10-2022
 - Subset data in vignettes for computational time constraints in cran submission
 

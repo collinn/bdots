@@ -95,26 +95,26 @@ boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unr
 load("~/packages/bdots/data/ci.rda")
 ci <- as.data.table(ci)
 ci <- ci[LookType == "Target", ]
-res.l <- bdotsFit(data = ci,
-                              subject = "Subject",
-                              time = "Time",
-                              y = "Fixations",
-                              group = "protocol",
-                              curveType = logistic(),
-                              cor = TRUE,
-                              numRefits = 2)
+res <- bdotsFit(data = ci,
+                subject = "Subject",
+                time = "Time",
+                y = "Fixations",
+                group = "protocol",
+                curveType = logistic(),
+                cor = TRUE,
+                numRefits = 2)
 
 # tt <- bdotsRefit(res.l, fitCode = 0)
 # tt2 <- bdotsRefit(tt, fitCode = 0)
 
 boot <- bdotsBoot(formula = y ~ protocol(CI, NH),
-                  bdObj = res.l,
+                  bdObj = res,
                   Niter = 250,
                   alpha = 0.05,
                   padj = "oleson",
                   cores = 7)
 boot2 <- bdotsBoot(formula = y ~ protocol(CI, NH),
-                   bdObj = res.l,
+                   bdObj = res,
                    Niter = 250,
                    alpha = 0.05,
                    padj = "oleson",
