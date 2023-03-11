@@ -36,7 +36,7 @@ permTest <- function(x, prs, alpha, P, cores = detectCores()-1L) {
   n <- nrow(x)
 
   ## Get the t stats for observed
-  tvec <- getT(x, seq_len(n), group = pgroups, whole = TRUE, addVar = FALSE)
+  tvec <- getT(x, seq_len(n), group = pgroups, whole = TRUE, addVar = FALSE, ip)
 
   ## Start with case no DOD
   if (!dod) {
@@ -50,13 +50,13 @@ permTest <- function(x, prs, alpha, P, cores = detectCores()-1L) {
       })
       qq <- quantile(tnull, probs = 1-alpha)
       sigIdx <- tvec > qq
-    } else  if (ip) {
+    } else if (ip) {
       ## First half of permmat
       permmat <- replicate(P, sample(c(TRUE, FALSE), n/2, replace = TRUE))
       permmat <- rbind(permmat, !permmat)
       tnull <- parApply(cl, permmat, 2, function(y) {
         bidx <- bool2idx(y)
-        getT(x, bidx, group = pgroups)
+        getT(x, bidx, group = pgroups, ip)
       })
       qq <- quantile(tnull, probs = 1-alpha)
       sigIdx <- tvec > qq
@@ -85,7 +85,8 @@ bool2idx <- function(b) {
 #' @param idx permutation to use
 #' @param group group that we are permuting against
 #' @param whole return vector of T stats or just the max
-getT <- function(x, idx, group, whole = FALSE, addVar = TRUE) {
+#' @param ip boolean indicating if paired
+getT <- function(x, idx, group, whole = FALSE, addVar = TRUE, ip = FALSE) {
   x[[group]] <- x[[group]][idx]
 
   ## Stuff I need to  call the function (gross)
@@ -134,7 +135,12 @@ getT <- function(x, idx, group, whole = FALSE, addVar = TRUE) {
   xm <- x$mean; xv <- x$nvar
   ym <- y$mean; yv <- y$nvar
 
-  Tt <- abs(xm-ym) / sqrt(yv + xv)
+  if (!ip) {
+    Tt <- abs(xm-ym) / sqrt(yv + xv)
+  } else {
+    dd <- xm-ym
+    Tt <- abs(dd) / (dd / sqrt(length(dd)))
+  }
 
   ifelse(whole, return(Tt), return(max(Tt)))
 }

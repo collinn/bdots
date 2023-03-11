@@ -221,9 +221,8 @@ linear <- function(dat, y, time, params = NULL, ...) {
     if (var(y) == 0) {
       return(NULL)
     }
-    bb <- min(y)
-    mm <- (max(y) - bb) / max(time)
-
+    mm <- (max(y) - min(y)) / max(time)
+    bb <- mean(y) - mm * mean(time)
     return(c(intercept = bb, slope = mm))
   }
 
