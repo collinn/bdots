@@ -142,7 +142,7 @@ getT <- function(x, idx, group, whole = FALSE, addVar = TRUE, ip = FALSE) {
     Tt <- abs(xm-ym) / sqrt(yv + xv)
   } else {
     dd <- xm-ym
-    Tt <- abs(dd) / (sd(dd) / sqrt(length(nn)))
+    Tt <- abs(dd) / (sd(dd) / sqrt(nn))
   }
 
   ifelse(whole, return(Tt), return(max(Tt)))
