@@ -11,7 +11,7 @@ bdotsFit(
   y,
   group,
   curveType = doubleGauss(concave = TRUE),
-  cor = TRUE,
+  ar = 0,
   numRefits = 0,
   cores = 0,
   verbose = FALSE,
@@ -32,7 +32,7 @@ greater than one}
 
 \item{curveType}{See details/vignette}
 
-\item{cor}{Boolean. Autocorrelation?}
+\item{ar}{Value indicates estimate for autocorrelation. A value of zero indicates to fit without AR(1) assumption}
 
 \item{numRefits}{Integer indicating number of attempts to fit an observation
 if the first attempt fails}
@@ -63,7 +63,6 @@ res <- bdotsFit(data = cohort_unrelated,
                 y = "Fixations",
                 group = c("Group", "LookType"),
                 curveType = doubleGauss(concave = TRUE),
-                cor = TRUE,
                 numRefits = 2,
                 cores = 0,
                 verbose = FALSE)

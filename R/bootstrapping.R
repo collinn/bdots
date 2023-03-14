@@ -30,8 +30,6 @@ createGroupDists <- function(x, prs, b, cores) {
     } else {
       # if it is paired
       groupDists <- getBootDistPaired(cl, x, b)
-      #stopCluster(cl)
-      #return(groupDists)
     }
   } else { # if difference of difference
     ## Find out if inner/outer paired
@@ -90,20 +88,12 @@ getBootDistPaired <- function(cl, x, b) {
     rowMeans(xpar)
   }
 
-  # getIdxThenPars <- function(y) {
-  #   idx <- sample(seq_len(nrow(y[[1]])), replace = TRUE)
-  #   pars1 <- t(bsPars(y[[1]], idx))
-  #   pars2 <- t(bsPars(y[[2]], idx))
-  #   list(pars1 = pars1, pars2 = pars2)
-  # }
 
   getIdxThenPars <- function(y) {
     idx <- sample(seq_len(nrow(y[[1]])), replace = TRUE)
     pars <- lapply(y, bsPars, idx)
   }
 
-  #clusterEvalQ(cl, library(mvtnorm))
-  #clusterExport(cl, varlist = c("bsPars", "getIdxThenPars", "x"))
   clusterExport(cl, varlist = ls(), envir = environment())
 
   ## Ok get coefs from each group
@@ -135,9 +125,6 @@ getBootDistPaired <- function(cl, x, b) {
   d <- lapply(split(mm, row(mm)), turnToDist)
   res <- setNames(d, names(x))
 
-  # d1 <- turnToDist(mm[1, ])
-  # d2 <- turnToDist(mm[2, ])
-  # res <- setNames(list(d1, d2), names(x))
   return(res)
 
 }

@@ -7,6 +7,7 @@
 bdotsRefit(
   bdObj,
   fitCode = 1L,
+  subset = NULL,
   quickRefit = FALSE,
   numRefits = 2L,
   paramDT = NULL,
@@ -17,6 +18,10 @@ bdotsRefit(
 \item{bdObj}{An object of class 'bdotsObj' returned from \code{bdotsFit}}
 
 \item{fitCode}{A length one integer indicating observations to refit. See Details}
+
+\item{subset}{Either an expression that evaluates to a logical used to subset the \code{bdObj},
+(using \code{data.table} syntax) or a numeric vector of indices to subset. Default is \code{NULL}.
+When not \code{NULL}, any arguments to \code{fitCode} are ignored.}
 
 \item{quickRefit}{Boolean indicating if a quick refit should be used. If TRUE,
 rather than prompting the user for adjustments for each observation, \code{bdotsReft}
