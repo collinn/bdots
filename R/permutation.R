@@ -108,7 +108,7 @@ getT <- function(x, idx, group, whole = FALSE, addVar = TRUE, ip = FALSE) {
       mm <- rowMeans(cl)
       vv <- apply(cl, 1, var)
       vvn <- vv/nrow(cc)
-      list(mean = mm, nvar = vvn, nn = nrow(cc))
+      list(mean = mm, nvar = vvn, nn = nrow(cc), curveList = cl)
     })
   } else {
     mvl <- lapply(fit_s, function(y) {
@@ -125,7 +125,7 @@ getT <- function(x, idx, group, whole = FALSE, addVar = TRUE, ip = FALSE) {
       mm <- rowMeans(cl)
       vv <- apply(cl, 1, var)
       vvn <- vv/nrow(cc)
-      list(mean = mm, nvar = vvn, nn = nrow(cc))
+      list(mean = mm, nvar = vvn, nn = nrow(cc), curveList = cl)
     })
   }
 
@@ -136,13 +136,18 @@ getT <- function(x, idx, group, whole = FALSE, addVar = TRUE, ip = FALSE) {
   ym <- y$mean; yv <- y$nvar
 
   ## If paired, this will be same as y$nn
-  nn <- x$nn
+  clx <- x$curveList; cly <- y$curveList
+
+  browser()
 
   if (!ip) {
     Tt <- abs(xm-ym) / sqrt(yv + xv)
   } else {
-    dd <- xm-ym
-    Tt <- abs(dd) / (sd(dd) / sqrt(nn))
+    dif <- clx - cly
+    dd <- rowMeans(dif)
+    vv <- apply(dif, 1, var)
+    vv <- vv / x$nn
+    Tt <- abs(dd) / sqrt(vv)
   }
 
   ifelse(whole, return(Tt), return(max(Tt)))
