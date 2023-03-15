@@ -138,8 +138,6 @@ getT <- function(x, idx, group, whole = FALSE, addVar = TRUE, ip = FALSE) {
   ## If paired, this will be same as y$nn
   clx <- x$curveList; cly <- y$curveList
 
-  browser()
-
   if (!ip) {
     Tt <- abs(xm-ym) / sqrt(yv + xv)
   } else {
