@@ -56,7 +56,7 @@ permTest <- function(x, prs, alpha, P, cores = detectCores()-1L) {
       permmat <- rbind(permmat, !permmat)
       tnull <- parApply(cl, permmat, 2, function(y) {
         bidx <- bool2idx(y)
-        getT(x, bidx, group = pgroups, whole = FALSE, addVar = FALSE, ip = ip)
+        getT(x, bidx, group = pgroups, whole = FALSE, addVar = TRUE, ip = ip)
       })
       qq <- quantile(tnull, probs = 1-alpha)
       sigIdx <- tvec > qq
