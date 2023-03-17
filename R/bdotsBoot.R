@@ -191,7 +191,6 @@ bdotsBoot <- function(formula,
     alphastar <- NULL
     adjpval <- NULL
   } else {
-    browser()
     res <- alphaAdjust(curveList, padj, alpha, cores)
     pval <- res[['pval']]
     rho <- res[['rho']]
