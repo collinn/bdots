@@ -10,6 +10,7 @@
 #' greater than one
 #' @param curveType See details/vignette
 #' @param cores number of cores. Default is \code{0}, indicating half cores available
+#' @param cor autocorrelation TRUE/FALSE
 #' @param ar Value indicates estimate for autocorrelation. A value of zero indicates to fit without AR(1) assumption
 #' @param numRefits Integer indicating number of attempts to fit an observation
 #' if the first attempt fails
@@ -46,6 +47,7 @@ bdotsFit <- function(data, # dataset
                      y, # response vector
                      group, # groups for subjects
                      curveType = doubleGauss(concave = TRUE),
+                     cor = TRUE,
                      ar = 0, # autocorrelation?
                      numRefits = 0,
                      cores = 0, # cores to use, 0 == 50% of available
@@ -66,21 +68,21 @@ bdotsFit <- function(data, # dataset
   }
 
   # Should verify that we don't have rho set and cor = FALSE
-  if (ar < 0) {
-    rho <- 0
-  } else if (ar > 1) {
-    rho <- 0.9
-  } else {
-    rho <- ar
-  }
-  # if (!exists("rho")) {
-  #   rho <- ifelse(cor, 0.9, 0)
+  # if (ar < 0) {
+  #   rho <- 0
+  # } else if (ar > 1) {
+  #   rho <- 0.9
   # } else {
-  #   if (cor & (rho >= 1 | rho < 0)) {
-  #     warning("cor set to TRUE with invalid rho. Setting rho to 0.9")
-  #     rho <- 0.9
-  #   }
+  #   rho <- ar
   # }
+  if (!exists("rho")) {
+    rho <- ifelse(cor, 0.9, 0)
+  } else {
+    if (cor & (rho >= 1 | rho < 0)) {
+      warning("cor set to TRUE with invalid rho. Setting rho to 0.9")
+      rho <- 0.9
+    }
+  }
 
   ## Factors are bad, m'kay?
   dat <- setDT(data)

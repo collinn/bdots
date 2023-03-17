@@ -11,6 +11,7 @@ bdotsFit(
   y,
   group,
   curveType = doubleGauss(concave = TRUE),
+  cor = TRUE,
   ar = 0,
   numRefits = 0,
   cores = 0,
@@ -31,6 +32,8 @@ bdotsFit(
 greater than one}
 
 \item{curveType}{See details/vignette}
+
+\item{cor}{autocorrelation TRUE/FALSE}
 
 \item{ar}{Value indicates estimate for autocorrelation. A value of zero indicates to fit without AR(1) assumption}
 
