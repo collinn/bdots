@@ -174,7 +174,7 @@ bdotsBoot <- function(formula,
 
   ## And here we determine significant regions
   if (permutation) {
-    message("WARNING: permutation testing is work in progress and limited in scope")
+    #message("WARNING: permutation testing is work in progress and limited in scope")
     # do permutation
     res <- permTest(splitGroups, prs, alpha = alpha, P = Niter, cores = cores) # in permutation.R
     obsT <- res[['obst']]
