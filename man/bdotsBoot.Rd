@@ -13,6 +13,7 @@ bdotsBoot(
   permutation = FALSE,
   skipDist = FALSE,
   singleMeans = FALSE,
+  permAddVar = TRUE,
   cores = 0,
   ...
 )
@@ -36,6 +37,8 @@ and not recommended for general use. Also not available for paired tests or diff
 \item{skipDist}{do not use}
 
 \item{singleMeans}{definitely do not use}
+
+\item{permAddVar}{Boolean. Add observed variability for perms?}
 
 \item{cores}{Number of cores to use in parallel. Default is zero, which
 uses half of what is available.}

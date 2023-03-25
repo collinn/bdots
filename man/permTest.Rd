@@ -4,7 +4,7 @@
 \alias{permTest}
 \title{Permutation testing for bboot}
 \usage{
-permTest(x, prs, alpha, P, cores = detectCores() - 1L)
+permTest(x, prs, alpha, P, cores = detectCores() - 1L, pAddVar = TRUE)
 }
 \arguments{
 \item{x}{this is splitGroups (each item of list bdotsObj)}
@@ -14,6 +14,8 @@ permTest(x, prs, alpha, P, cores = detectCores() - 1L)
 \item{alpha}{alpha for fwer}
 
 \item{P}{number of permutations}
+
+\item{pAddVar}{sample from distribution when doing perm test?}
 }
 \description{
 Provides alternative for controlling FWER

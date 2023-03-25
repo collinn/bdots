@@ -16,6 +16,7 @@
 #' uses half of what is available.
 #' @param skipDist do not use
 #' @param singleMeans definitely do not use
+#' @param permAddVar Boolean. Add observed variability for perms?
 #' @param ... not used
 #'
 #' @details The formula is the only tricky part of this. There will be a minor
@@ -118,7 +119,8 @@ bdotsBoot <- function(formula,
                       Niter = 1000,
                       alpha = 0.05,
                       padj = "oleson",
-                      permutation = FALSE, skipDist = FALSE, singleMeans = FALSE,
+                      permutation = FALSE, skipDist = FALSE,
+                      singleMeans = FALSE, permAddVar = TRUE,
                       cores = 0, ...) {
 
   if (cores < 1) cores <- detectCores()/2
@@ -176,7 +178,8 @@ bdotsBoot <- function(formula,
   if (permutation) {
     #message("WARNING: permutation testing is work in progress and limited in scope")
     # do permutation
-    res <- permTest(splitGroups, prs, alpha = alpha, P = Niter, cores = cores) # in permutation.R
+    res <- permTest(splitGroups, prs, alpha = alpha, P = Niter, cores = cores,
+                    pAddVar = permAddVar) # in permutation.R
     obsT <- res[['obst']]
     nullT <- res[['nullt']]
 

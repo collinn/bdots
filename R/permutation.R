@@ -11,7 +11,8 @@
 #' @param prs from parser, indicates inner/outer groups
 #' @param alpha alpha for fwer
 #' @param P number of permutations
-permTest <- function(x, prs, alpha, P, cores = detectCores()-1L) {
+#' @param pAddVar sample from distribution when doing perm test?
+permTest <- function(x, prs, alpha, P, cores = detectCores()-1L, pAddVar = TRUE) {
   # these all implicitly assumed sorted by subject so maybe should do that in bdotsFit
   ip <- isPaired(x)
   dod <- !is.null(prs$innerDiff)
@@ -46,7 +47,7 @@ permTest <- function(x, prs, alpha, P, cores = detectCores()-1L) {
 
       ## Get max tstat across permutations (null distribution)
       tnull <- parApply(cl, permmat, 2, function(y) {
-        getT(x, y, group = pgroups)
+        getT(x, y, group = pgroups, addVar = pAddVar)
       })
       qq <- quantile(tnull, probs = 1-alpha)
       sigIdx <- tvec > qq
@@ -56,7 +57,7 @@ permTest <- function(x, prs, alpha, P, cores = detectCores()-1L) {
       permmat <- rbind(permmat, !permmat)
       tnull <- parApply(cl, permmat, 2, function(y) {
         bidx <- bool2idx(y)
-        getT(x, bidx, group = pgroups, whole = FALSE, addVar = TRUE, ip = ip)
+        getT(x, bidx, group = pgroups, whole = FALSE, addVar = pAddVar, ip = ip)
       })
       qq <- quantile(tnull, probs = 1-alpha)
       sigIdx <- tvec > qq
