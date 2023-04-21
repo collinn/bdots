@@ -83,7 +83,7 @@ getFitCorforGroups <- function(x, val, ciBands = FALSE, method = "pearson") {
 
   v <- dt[[val]]
 
-  jj## possibly replace with cor.test if we want confidence intervals
+  ## possibly replace with cor.test if we want confidence intervals
   if (ciBands) {
     cormat <- apply(m, 2, function(y) {
       qq <- cor.test(x = y, y = v, method = method)
