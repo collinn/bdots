@@ -31,8 +31,8 @@
 #' user will be prompted through a menu to individually refit observations
 #' @import data.table
 #' @export
-bdotsRefit <- function(bdObj, fitCode = 1L, subset = NULL, quickRefit = FALSE,
-                       numRefits = 2L, paramDT = NULL, ...) {
+brefit <- function(bdObj, fitCode = 1L, subset = NULL, quickRefit = FALSE,
+                   numRefits = 2L, paramDT = NULL, ...) {
 
   if (is.null(fitCode)) fitCode <- 1L
 

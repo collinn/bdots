@@ -97,31 +97,31 @@
 #'
 #' ## fit <- bdotsFit(cohort_unrelated, ...)
 #'
-#' boot1 <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
-#'                    bdObj = fit,
-#'                    N.iter = 1000,
-#'                    alpha = 0.05,
-#'                    p.adj = "oleson",
-#'                    cores = 4)
+#' boot1 <- bboot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
+#'                bdObj = fit,
+#'                N.iter = 1000,
+#'                alpha = 0.05,
+#'                p.adj = "oleson",
+#'                cores = 4)
 #'
-#' boot2 <- bdotsBoot(formula = Fixations ~ Group(50, 65) + LookType(Cohort),
-#'                    bdObj = fit,
-#'                    N.iter = 1000,
-#'                    alpha = 0.05,
-#'                    p.adj = "oleson",
-#'                    cores = 4)
+#' boot2 <- bboot(formula = Fixations ~ Group(50, 65) + LookType(Cohort),
+#'                bdObj = fit,
+#'                N.iter = 1000,
+#'                alpha = 0.05,
+#'                p.adj = "oleson",
+#'                cores = 4)
 #' }
 #'
 #' @import data.table
 #' @export
-bdotsBoot <- function(formula,
-                      bdObj,
-                      Niter = 1000,
-                      alpha = 0.05,
-                      padj = "oleson",
-                      permutation = FALSE, skipDist = FALSE,
-                      singleMeans = FALSE, permAddVar = TRUE,
-                      cores = 0, ...) {
+bboot <- function(formula,
+                  bdObj,
+                  Niter = 1000,
+                  alpha = 0.05,
+                  padj = "oleson",
+                  permutation = FALSE, skipDist = FALSE,
+                  singleMeans = FALSE, permAddVar = TRUE,
+                  cores = 0, ...) {
 
   if (cores < 1) cores <- detectCores()/2
 

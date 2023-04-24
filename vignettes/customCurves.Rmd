@@ -23,23 +23,23 @@ cohort_unrelated <- as.data.table(cohort_unrelated)
 cohort_unrelated <- cohort_unrelated[Subject < 10, ]
 ```
 
-We saw in the [general overview](bdots.html) when first generating our model fits with `bdotsFit` that we we could specify the curve with the argument `curveType`. Presently, the `bdots` package contains three options for this: `doubleGauss`, `logistic`, and `polynomial`. Documentation is included for each of these curves. 
+We saw in the [general overview](bdots.html) when first generating our model fits with `bfit` that we we could specify the curve with the argument `curveType`. Presently, the `bdots` package contains three options for this: `doubleGauss`, `logistic`, and `polynomial`. Documentation is included for each of these curves. 
 
 ```{r}
 library(bdots)
 
-fit <- bdotsFit(data = cohort_unrelated,
-                subject = "Subject",
-                time = "Time",
-                y = "Fixations",
-                group = c("DB_cond", "LookType"),
-                curveType = doubleGauss(concave = TRUE),
-                cores = 2)
+fit <- bfit(data = cohort_unrelated,
+            subject = "Subject",
+            time = "Time",
+            y = "Fixations",
+            group = c("DB_cond", "LookType"),
+            curveType = doubleGauss(concave = TRUE),
+            cores = 2)
 ```
 
 Note that each of these is a function in their own right and must be passed in as a `call` object. Curve functions that include arguments further specifying the type of curve, i.e., `doubleGauss(concave = TRUE)` and `polynomial(degree = n)`, should include these when the call is passed into `bdotsFit` as seen in the example above.
 
-Because each of the functions exists independently of `bdotsFit`, users can specify their own curve functions for the fitting and bootstrapping process. The purpose of this vignette is to demonstrate how to do so. If you find that you have a curve function that is especially useful, please create a request to have it added to the `bdots` package [here](https://github.com/collinn/bdots/issues).
+Because each of the functions exists independently of `bfit`, users can specify their own curve functions for the fitting and bootstrapping process. The purpose of this vignette is to demonstrate how to do so. If you find that you have a curve function that is especially useful, please create a request to have it added to the `bdots` package [here](https://github.com/collinn/bdots/issues).
 
 We will examine the `doubleGauss` function in more detail to see how we might go about creating our own. First, let's identify the components of this function
 
@@ -96,13 +96,13 @@ doubleGauss2 <- function (dat, y, time, params = NULL, concave = TRUE, ...) {
     return(list(formula = ff, params = params))
 }
 
-same_fit_different_day <- bdotsFit(data = cohort_unrelated,
-                                   subject = "Subject",
-                                   time = "Time",
-                                   y = "Fixations",
-                                   group = c("DB_cond", "LookType"),
-                                   curveType = doubleGauss2(concave = TRUE),
-                                   cores = 2)
+same_fit_different_day <- bfit(data = cohort_unrelated,
+                               subject = "Subject",
+                               time = "Time",
+                               y = "Fixations",
+                               group = c("DB_cond", "LookType"),
+                               curveType = doubleGauss2(concave = TRUE),
+                               cores = 2)
 ```
 
 Seeds have not yet been implemented, so there is some possibility that the resulting parameters are slightly different; however, using the `coef` function, we can roughly confirm their equivalence

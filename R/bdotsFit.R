@@ -26,33 +26,33 @@
 #'
 #' @examples
 #' \dontrun{
-#' res <- bdotsFit(data = cohort_unrelated,
-#'                 subject = "Subject",
-#'                 time = "Time",
-#'                 y = "Fixations",
-#'                 group = c("Group", "LookType"),
-#'                 curveType = doubleGauss(concave = TRUE),
-#'                 numRefits = 2,
-#'                 cores = 0,
-#'                 verbose = FALSE)
+#' res <- bfit(data = cohort_unrelated,
+#'             subject = "Subject",
+#'             time = "Time",
+#'             y = "Fixations",
+#'             group = c("Group", "LookType"),
+#'             curveType = doubleGauss(concave = TRUE),
+#'             numRefits = 2,
+#'             cores = 0,
+#'             verbose = FALSE)
 #' }
 #'
 #' @import data.table
 #' @import parallel
 #' @importFrom utils object.size
 #' @export
-bdotsFit <- function(data, # dataset
-                     subject, # subjects
-                     time, # column for time
-                     y, # response vector
-                     group, # groups for subjects
-                     curveType = doubleGauss(concave = TRUE),
-                     cor = TRUE,
-                     ar = 0, # autocorrelation?
-                     numRefits = 0,
-                     cores = 0, # cores to use, 0 == 50% of available
-                     verbose = FALSE,
-                     ...) {
+bfit <- function(data, # dataset
+                 subject, # subjects
+                 time, # column for time
+                 y, # response vector
+                 group, # groups for subjects
+                 curveType = doubleGauss(concave = TRUE),
+                 cor = TRUE,
+                 ar = 0, # autocorrelation?
+                 numRefits = 0,
+                 cores = 0, # cores to use, 0 == 50% of available
+                 verbose = FALSE,
+                 ...) {
 
   if (cores < 1) cores <- detectCores()/2
   curveType <- substitute(curveType)
