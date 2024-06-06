@@ -10,10 +10,9 @@
 #' greater than one
 #' @param curveType See details/vignette
 #' @param cores number of cores. Default is \code{0}, indicating half cores available
-#' @param cor Boolean. Autocorrelation?
+#' @param ar Boolean. Autocorrelation?
 #' @param numRefits Integer indicating number of attempts to fit an observation
 #' if the first attempt fails
-#' @param verbose currently not used
 #' @param ... Secret
 #'
 #' @return Object of class 'bdotsObj', inherits from data.table
@@ -31,10 +30,9 @@
 #'                 y = "Fixations",
 #'                 group = c("Group", "LookType"),
 #'                 curveType = doubleGauss(concave = TRUE),
-#'                 cor = TRUE,
+#'                 ar = FALSE,
 #'                 numRefits = 2,
-#'                 cores = 0,
-#'                 verbose = FALSE)
+#'                 cores = 0)
 #' }
 #'
 #' @import data.table
@@ -47,10 +45,9 @@ bdotsFit <- function(data, # dataset
                      y, # response vector
                      group, # groups for subjects
                      curveType = doubleGauss(concave = TRUE),
-                     cor = TRUE, # autocorrelation?
+                     ar = FALSE, # autocorrelation?
                      numRefits = 0,
                      cores = 0, # cores to use, 0 == 50% of available
-                     verbose = FALSE,
                      ...) {
 
   if (cores < 1) cores <- detectCores()/2
@@ -66,21 +63,30 @@ bdotsFit <- function(data, # dataset
     stop(stopMsg)
   }
 
-  # Should verify that we don't have rho set and cor = FALSE
-  if (!exists("rho")) {
-    rho <- ifelse(cor, 0.9, 0)
-  } else {
-    if (cor & (rho >= 1 | rho < 0)) {
-      warning("cor set to TRUE with invalid rho. Setting rho to 0.9")
-      rho <- 0.9
-    }
+  # # Should verify that we don't have rho set and cor = FALSE
+  # if (!exists("rho")) {
+  #   rho <- ifelse(cor, 0.9, 0)
+  # } else {
+  #   if (cor & (rho >= 1 | rho < 0)) {
+  #     warning("cor set to TRUE with invalid rho. Setting rho to 0.9")
+  #     rho <- 0.9
+  #   }
+  # }
+
+  ## Determine if autocorrelation
+  if (!ar) { # no autocorrelation
+    rho <- 0
+  } else if (abs(ar) >= 1) { # ar specified as TRUE or invalid number
+    rho <- sign(ar)*0.9 # defaults to 0.9 (like original)
+  } else { # ar specified between -1 adn 2
+    rho <- ar
   }
 
   ## Factors are bad, m'kay?
   dat <- setDT(data)
   dat[, (group) := lapply(.SD, as.character), .SDcols = group]
   dat[, (subject) := lapply(.SD, as.character), .SDcols = subject]
-  
+
   ## Look for "." here to avoid issues later
   hasperiod <- vapply(subset(dat, select = group), function(x) {
     sum(grepl("\\.", x))}, numeric(1)) #|> sum()
@@ -90,10 +96,6 @@ bdotsFit <- function(data, # dataset
     if (length(badgrp) > 1) badgrp <- paste(badgrp, collapse = ", ")
     stop(paste("Cannot have '.' in group values. Consider replacing with '_'\n Replace values in columns:", badgrp))
   }
-
-  ## Let's only keep the columns we need (have not tested this yet)
-  ## Ok, let's try keeping everything in case we need correlation with fixed val
-  #dat <- dat[, c(y, time, subject, group), with = FALSE]
 
 
   timetest <- split(dat, by = group, drop = TRUE)
@@ -108,15 +110,6 @@ bdotsFit <- function(data, # dataset
   #if (!timeSame) stop("Observed times are different between groups")
   # if (!timeSame) {
   #   warning("Observed times are not identical between groups. This will result in weird plotting behavior")
-  # }
-
-  ## This should work inside function. Let's check
-  # if this happens, need to modify X for plots to work
-  # if (any(dat[, .N, by = c(subject, time, group)]$N > 1)) {
-  #   warning("Some subjects have multiple observations for unique time. These will be averaged")
-  #   yval <- deparse(substitute(y))
-  #   dat[, substitute(y) := mean(get(y)), by = c(subject, time, group)]
-  #   dat <- unique(dat, by = c(subject, time, group))
   # }
 
   splitVars <- c(subject, group)
