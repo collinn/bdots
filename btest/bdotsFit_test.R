@@ -13,7 +13,7 @@ res.l <- bdotsFit(data = cohort_unrelated,
                   time = "Time",
                   y = "Fixations",
                   group = c("Group", "LookType"),
-                  curveType = doubleGauss(concave = TRUE),
+                  curveFun = doubleGauss2(concave = TRUE),
                   ar = FALSE,
                   numRefits = 2,
                   cores = 8,
@@ -36,11 +36,14 @@ res2 <- bdotsFit(data = cohort_unrelated,
                 time = "Time",
                 y = "Fixations",
                 group = c("Group", "LookType"),
-                curveType = doubleGauss2(concave = TRUE),
-                cor = TRUE,
+                curveFun = doubleGauss(concave = TRUE),
+                ar = FALSE,
                 numRefits = 2,
                 cores = 8,
                 verbose = FALSE)
+
+
+
 
 res3 <- bdotsFit(data = cohort_unrelated,
                  subject = "Subject",
@@ -112,8 +115,8 @@ res <- bdotsFit(data = ci,
                 time = "Time",
                 y = "Fixations",
                 group = "protocol",
-                curveType = logistic(),
-                cor = TRUE,
+                curveFun = logistic(),
+                ar = FALSE,
                 numRefits = 2)
 
 # tt <- bdotsRefit(res.l, fitCode = 0)

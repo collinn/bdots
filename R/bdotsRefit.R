@@ -59,7 +59,7 @@ brefit <- function(bdObj, fitCode = 1L, subset = NULL, quickRefit = FALSE,
     ## Check if any refit has already occurred, make subset index
     HAS_PRIOR_REFIT <- attr(bdObj, "refit_idx") # old refit
     if (!is.null(HAS_PRIOR_REFIT)) {
-      ..nn <- NULL # need to do this so that package will compile
+      ..nn <- NULL # need to do this so that package will build
       rm(..nn) # and need to do this for DT scoping next line
       bd_identifiers <- do.call(paste, bdObj[, ..nn]) # all subjects
 
@@ -226,7 +226,7 @@ bdRefitter <- function(bdo, numRefits = 0L, rho = NULL,
   bdCall <- attr(bdo, "call")
   nn <- getIdentifierCols(bdo) #c(eval(bdCall[['subject']]), eval(bdCall[['group']])) # this is split vars!
   if (is.null(rho)) rho <- attr(bdo, "rho")
-  crvFun <- curve2Fun(bdCall[['curveType']])
+  crvFun <- curve2Fun(bdCall[['curveFun']])
 
   x <- getSubX(bdo)
 
@@ -386,6 +386,9 @@ bdUpdate <- function(bdo, numRefits) {
 
 ## Prints info for update
 printRefitUpdateInfo <- function(bdo) {
+
+  isar <- attr(bdo, "ar")
+
   bdCall <- attr(bdo, "call")
   rho <- attr(bdo, "rho")
   r2 <- round(bdo[['R2']], 3)
@@ -393,11 +396,21 @@ printRefitUpdateInfo <- function(bdo) {
   fc <- bdo[['fitCode']]
   fit <- bdo[['fit']][[1]]
   subname <- bdo[, eval(bdCall[['subject']]), with = FALSE]
-  msg <- paste0("Subject: ", subname, "\nR2: ", r2, "\nAR1: ",
-                as.logical(ar1), "\nrho: ", rho,
-                "\nfitCode: ", fc, "\n\n")
-  msg <- c(msg, "Model Parameters:\n")
-  cat(msg)
+
+  ## Yet another split dealing with AR assumption
+  if (isar) {
+    msg <- paste0("Subject: ", subname, "\nR2: ", r2, "\nAR1: ",
+                  as.logical(ar1), "\nrho: ", rho,
+                  "\nfitCode: ", fc, "\n\n")
+    msg <- c(msg, "Model Parameters:\n")
+    cat(msg)
+  } else {
+    msg <- paste0("Subject: ", subname, "\nR2: ", r2,
+                  "\nfitCode: ", fc, "\n\n")
+    msg <- c(msg, "Model Parameters:\n")
+    cat(msg)
+  }
+
   print(oldPars <- coef(fit))
 }
 

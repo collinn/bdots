@@ -8,7 +8,7 @@
 #' @param y Column name containing outcome of interest
 #' @param group Character vector containing column names of groups. Can be
 #' greater than one
-#' @param curveType See details/vignette
+#' @param curveFun Curve function for fitting observed data. See details/vignette
 #' @param cores number of cores. Default is \code{0}, indicating half cores available
 #' @param ar Value indicates estimate for autocorrelation. A value of zero indicates to fit without AR(1) assumption
 #' @param numRefits Integer indicating number of attempts to fit an observation
@@ -30,7 +30,7 @@
 #'             time = "Time",
 #'             y = "Fixations",
 #'             group = c("Group", "LookType"),
-#'             curveType = doubleGauss(concave = TRUE),
+#'             curveFun = doubleGauss(concave = TRUE),
 #'             numRefits = 2,
 #'             cores = 0,
 #'             verbose = FALSE)
@@ -45,7 +45,7 @@ bfit <- function(data, # dataset
                  time, # column for time
                  y, # response vector
                  group, # groups for subjects
-                 curveType = doubleGauss(concave = TRUE),
+                 curveFun = doubleGauss(concave = TRUE),
                  ar = FALSE, # autocorrelation?
                  numRefits = 0,
                  cores = 0, # cores to use, 0 == 50% of available
@@ -53,7 +53,7 @@ bfit <- function(data, # dataset
                  ...) {
 
   if (cores < 1) cores <- detectCores()/2
-  curveType <- substitute(curveType)
+  curveType <- substitute(curveFun) # didn't change curveType to curveFun anywhere else
   curveName <- curveType[[1]]
   curveType <- curve2Fun(curveType)
 
@@ -67,14 +67,16 @@ bfit <- function(data, # dataset
 
   ## Cor no longer arg so this should be cleaned up, as in
   # there is no way for them to deliver a rho argument
-  if (!exists("rho")) {
-    rho <- ifelse(ar, 0.9, 0)
-  } else {
-    if (ar & (rho >= 1 | rho < 0)) {
-      warning("cor set to TRUE with invalid rho. Setting rho to 0.9")
-      rho <- 0.9
-    }
-  }
+  # if (!exists("rho")) {
+  #   rho <- ifelse(ar, 0.9, 0)
+  # } else {
+  #   if (ar & (rho >= 1 | rho < 0)) {
+  #     warning("cor set to TRUE with invalid rho. Setting rho to 0.9")
+  #     rho <- 0.9
+  #   }
+  # }
+
+  rho <- ifelse(ar, 0.9, 0)
 
   ## Factors are bad, m'kay?
   dat <- setDT(data)
@@ -146,9 +148,10 @@ bfit <- function(data, # dataset
   groups <- list(groups = group,
                  vals = vals)
 
-  if (!ar) {
-    fitList$AR1 <- NULL
-  }
+  ## This breaks dependency somewhere
+  # if (!ar) {
+  #   fitList$AR1 <- NULL
+  # }
 
   res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
                    .Data = fitList,

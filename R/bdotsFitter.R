@@ -95,7 +95,7 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
   #dt$fit <- I(list(fit))
   dt$fit <- list(fit)
   dt$R2 <- R2
-  dt$AR1 <- (fitCode < 3)
+  dt$AR1 <- (fitCode < 3 & rho != 0)
   dt$fitCode <- fitCode
 
   ## Cleanest way to get formula, for now
