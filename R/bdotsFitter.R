@@ -92,7 +92,8 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
   dt <- as.data.table(matrix(c(fn, c("fit", "R2", "AR1", "fitCode")),
                              ncol = length(fn) + 4))
   names(dt) <- c(names(fn), c("fit", "R2", "AR1", "fitCode"))
-  dt$fit <- I(list(fit))
+  #dt$fit <- I(list(fit))
+  dt$fit <- list(fit)
   dt$R2 <- R2
   dt$AR1 <- (fitCode < 3)
   dt$fitCode <- fitCode

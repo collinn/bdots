@@ -146,6 +146,10 @@ bfit <- function(data, # dataset
   groups <- list(groups = group,
                  vals = vals)
 
+  if (!ar) {
+    fitList$AR1 <- NULL
+  }
+
   res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
                    .Data = fitList,
                    formula = ff,
