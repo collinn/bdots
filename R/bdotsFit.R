@@ -10,7 +10,6 @@
 #' greater than one
 #' @param curveType See details/vignette
 #' @param cores number of cores. Default is \code{0}, indicating half cores available
-#' @param cor autocorrelation TRUE/FALSE
 #' @param ar Value indicates estimate for autocorrelation. A value of zero indicates to fit without AR(1) assumption
 #' @param numRefits Integer indicating number of attempts to fit an observation
 #' if the first attempt fails
@@ -47,8 +46,7 @@ bfit <- function(data, # dataset
                  y, # response vector
                  group, # groups for subjects
                  curveType = doubleGauss(concave = TRUE),
-                 cor = TRUE,
-                 ar = 0, # autocorrelation?
+                 ar = FALSE, # autocorrelation?
                  numRefits = 0,
                  cores = 0, # cores to use, 0 == 50% of available
                  verbose = FALSE,
@@ -67,18 +65,12 @@ bfit <- function(data, # dataset
     stop(stopMsg)
   }
 
-  # Should verify that we don't have rho set and cor = FALSE
-  # if (ar < 0) {
-  #   rho <- 0
-  # } else if (ar > 1) {
-  #   rho <- 0.9
-  # } else {
-  #   rho <- ar
-  # }
+  ## Cor no longer arg so this should be cleaned up, as in
+  # there is no way for them to deliver a rho argument
   if (!exists("rho")) {
-    rho <- ifelse(cor, 0.9, 0)
+    rho <- ifelse(ar, 0.9, 0)
   } else {
-    if (cor & (rho >= 1 | rho < 0)) {
+    if (ar & (rho >= 1 | rho < 0)) {
       warning("cor set to TRUE with invalid rho. Setting rho to 0.9")
       rho <- 0.9
     }
@@ -98,11 +90,6 @@ bfit <- function(data, # dataset
     if (length(badgrp) > 1) badgrp <- paste(badgrp, collapse = ", ")
     stop(paste("Cannot have '.' in group values. Consider replacing with '_'\n Replace values in columns:", badgrp))
   }
-
-  ## Let's only keep the columns we need (have not tested this yet)
-  ## Ok, let's try keeping everything in case we need correlation with fixed val
-  #dat <- dat[, c(y, time, subject, group), with = FALSE]
-
 
   timetest <- split(dat, by = group, drop = TRUE)
   timetest <- lapply(timetest, function(x) unique(x[[time]]))
@@ -166,6 +153,7 @@ bfit <- function(data, # dataset
                    call = match.call(),
                    time = time_vec, # Now the union of all the times
                    rho = rho,
+                   ar = ar,
                    groups = groups,
                    X = X_env)
 }

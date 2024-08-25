@@ -72,8 +72,6 @@ bdotsFit <- function(data, # dataset
 #' and not recommended for general use. Also not available for paired tests or difference of difference
 #' @param cores Number of cores to use in parallel. Default is zero, which
 #' uses half of what is available.
-#' @param skipDist do not use
-#' @param singleMeans definitely do not use
 #' @param permAddVar Boolean. Add observed variability for perms?
 #' @param ... not used
 #'
@@ -85,8 +83,8 @@ bdotsBoot <- function(formula,
                       Niter = 1000,
                       alpha = 0.05,
                       padj = "oleson",
-                      permutation = FALSE, skipDist = FALSE,
-                      singleMeans = FALSE, permAddVar = TRUE,
+                      permutation = FALSE,
+                      permAddVar = TRUE,
                       cores = 0, ...) {
   tt <- match.call(expand.dots = TRUE)
   .Deprecated("bboot")

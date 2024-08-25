@@ -17,6 +17,10 @@
 #' @param datVarNames character vector indicating reponse and time values from parent call
 #' @param ... not used
 #'
+#' @details Of particular note here is that rho = 0 is proxy for assuming that
+#' ar = FALSE
+#'
+#'
 #' @import data.table
 bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
                         verbose, getCovOnly = NULL,
@@ -70,7 +74,13 @@ bdotsFitter <- function(dat, curveType, rho, numRefits = 0,
 
 
   hasCor <- !is.null(fit$modelStruct$corStruct)
-  fitCode <- 3L*(!hasCor) + 1L*(R2 < 0.95)*(R2 > 0.8) + 2L*(R2 < 0.8)
+
+  ## If ar = FALSE, fitCode should only be 0-3, 6
+  if (rho > 0) {
+    fitCode <- 3L*(!hasCor) + 1L*(R2 < 0.95)*(R2 > 0.8) + 2L*(R2 < 0.8)
+  } else {
+    fitCode <- 1L*(R2 < 0.95)*(R2 > 0.8) + 2L*(R2 < 0.8)
+  }
 
   ## This is an UNREASONABLY large object. makes up most of size of bdobject
   if (hasCor) {

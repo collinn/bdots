@@ -255,6 +255,13 @@ bdUpdate <- function(bdo, numRefits) {
   }
 
   rho <- attr(bdo, "rho")
+
+  ## Special sequencing if not originally fit with AR assumption
+  if (rho == 0) {
+    bdo <- bdUpdate_noAR(bdo, numRefits)
+    return(bdo)
+  }
+
   plot(bdo, gridSize = 1)
 
   ## Adding newPars here allows jitter to bounce around more
@@ -429,7 +436,7 @@ bdRemove <- function(bdObj, fitCode = 6L, removePairs = TRUE) {
 
 
 
-
+## Special update in case there is no fit
 bdUpdate_NULL <- function(bdo, numRefits) {
   plot(bdo, gridSize = 1)
 
@@ -600,6 +607,111 @@ bdUpdate_NULL <- function(bdo, numRefits) {
   return(bdo) # this will return to orig. bdUpdate call and then return again there
 }
 
+## Special updater if AR = FALSE
+# This entire R file is a disaster waiting to happen
+bdUpdate_noAR <- function(bdo, numRefits) {
 
+  plot(bdo, gridSize = 1)
+
+  ## Adding newPars here allows jitter to bounce around more
+  oldPars <- newPars <- printRefitUpdateInfo(bdo)
+
+  ## Increase jitter each  time it occurs
+  njitter <- 5L
+  accept <- FALSE
+  while (!accept) {
+
+    ## Maybe add in future ability to change row
+    rf_msg <- paste0("\nActions:\n",
+                     "1) Keep original fit\n",
+                     "2) Jitter parameters\n",
+                     "3) Adjust starting parameters manually\n",
+                     "4) See original fit metrics\n",
+                     "5) Delete subject\n",
+                     "99) Save and exit refitter")
+    cat(rf_msg)
+    resp <- NA
+    while (!(resp %in% c(1:6, 99))) {
+      resp <- readline("Choose (1-5, 99): ")
+    }
+
+    if (resp == 99) {
+      ## Since this called 2 levels down, need to break in frame 2 envs higher
+      assign("BREAK", TRUE, pos = parent.frame(n=2))
+      accept <- TRUE
+      break
+    }
+
+    if (resp == 1) {
+      accept <- TRUE
+      break
+    } else if (resp == 2) {
+      for (i in seq_along(newPars)) {
+        newPars[i] <- jitter(newPars[i], factor = njitter)
+      }
+      njitter <- njitter + 1L
+    } else if (resp == 3) {
+      newPars <- oldPars
+      cat("Press Return to keep original value\n")
+      for (pname in names(oldPars)) {
+        cat("Current value:\n")
+        print(oldPars[pname])
+        tmpval <- NA
+        while (is.na(as.numeric(tmpval))) { # possibly wrap this around try because otherwise it prints out warnings afterwards.
+          tmpval <- readline(paste0("New value for ", pname, ": "))
+          if (!is.na(as.numeric(tmpval))) {
+            newPars[pname] <- tmpval
+          } else if (tmpval == "") {
+            newPars[pname] <- oldPars[pname]
+            break
+          } else {
+            cat("Invalid entry, please enter numeric value\n")
+          }
+        }
+      }
+      class(newPars) <- "numeric"
+
+    } else if (resp == 4) {
+      printRefitUpdateInfo(bdo)
+      next # reset while loop
+    } else if (resp == 5) {
+      corr_resp <- FALSE
+      while (!corr_resp) {
+        dd <- readline("Delete observation? (Y/n): ")
+        if (dd  %in% c("Y", "n")) {
+          corr_resp <- TRUE
+        } else {
+          cat("Please enter 'Y' or 'n'\n")
+        }
+      }
+      if (dd == "Y") {
+        bdo <- NULL
+        break
+      }
+      next # reset while loop
+    }
+
+    ## Since function assumes no AR
+    rho <- 0
+    new_bdo <- bdRefitter(bdo, numRefits, rho, params = newPars)
+
+    both_bdo <- structure(.Data = list(bdo, new_bdo),
+                          class = "bdObjList")
+
+    both_bdo <- rbindlist.bdObjList(both_bdo)
+    plot(both_bdo, gridSize = "refit")
+
+    cat("Refit Info:\n")
+    printRefitUpdateInfo(new_bdo)
+    keep <- readline("Keep new fit? (y/n): ")
+    if (length(grep("y", keep, ignore.case = TRUE)) == 1) {
+      bdo <- new_bdo
+      accept <- TRUE
+    } else {
+      plot(bdo, gridSize = 1)
+    }
+  }
+  bdo
+}
 
 

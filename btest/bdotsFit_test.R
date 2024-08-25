@@ -8,6 +8,17 @@ library(parallel)
 library(nlme)
 library(mvtnorm)
 
+res.l <- bdotsFit(data = cohort_unrelated,
+                  subject = "Subject",
+                  time = "Time",
+                  y = "Fixations",
+                  group = c("Group", "LookType"),
+                  curveType = doubleGauss(concave = TRUE),
+                  ar = FALSE,
+                  numRefits = 2,
+                  cores = 8,
+                  verbose = FALSE)
+
 
 res.l <- bdotsFit(data = cohort_unrelated,
                 subject = "Subject",
@@ -43,6 +54,7 @@ res3 <- bdotsFit(data = cohort_unrelated,
                  verbose = FALSE)
 
 bdotsRefit(res.l, fitCode = 5)
+bdotsRefit(res.l)
 #res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
 res2 <- bdRemove(res.l, fitCode = 4L)
 

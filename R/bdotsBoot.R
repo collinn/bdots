@@ -14,9 +14,7 @@
 #' and not recommended for general use. Also not available for paired tests or difference of difference
 #' @param cores Number of cores to use in parallel. Default is zero, which
 #' uses half of what is available.
-#' @param skipDist do not use
-#' @param singleMeans definitely do not use
-#' @param permAddVar Boolean. Add observed variability for perms?
+#' @param permAddVar Boolean. Add observed within-subject variability for permutation testing?
 #' @param ... not used
 #'
 #' @details The formula is the only tricky part of this. There will be a minor
@@ -40,7 +38,7 @@
 #'
 #' ### Bootstrapped difference of curves
 #'
-#' This illustrates the case in which we are taking a simple bootstraped difference
+#' This illustrates the case in which we are taking a simple bootstrapped difference
 #' between two curves within a single group
 #'
 #' If only one group was provided in \code{bdotsFit}, we can take the bootstrapped
@@ -119,9 +117,20 @@ bboot <- function(formula,
                   Niter = 1000,
                   alpha = 0.05,
                   padj = "oleson",
-                  permutation = FALSE, skipDist = FALSE,
-                  singleMeans = FALSE, permAddVar = TRUE,
+                  permutation = FALSE,
+                  permAddVar = TRUE,
                   cores = 0, ...) {
+
+
+  ## These are secret shortcuts used for methods paper but not intended
+  # for distribution or general use
+  singleMeans <- ifelse(!exists("singleMeans"), FALSE, singleMeans)
+  skipDist <- ifelse(!exists("skipDist"), FALSE, skipDist)
+
+  if (!exists("singleMeans")) {
+    singleMeans <- FALSE
+  }
+
 
   if (cores < 1) cores <- detectCores()/2
 
@@ -142,7 +151,7 @@ bboot <- function(formula,
   splitGroups <- split(bdObj, by = c(innerDiff, outerDiff)) # ok even if null
 
 
-  ## This cannot stay here forever, its a super secret shortcut for just right now
+  ## This cannot stay here forever, its only here until methods published
   if (skipDist) {
     # just skip doing this
     curveList <- NULL
@@ -176,7 +185,6 @@ bboot <- function(formula,
 
   ## And here we determine significant regions
   if (permutation) {
-    #message("WARNING: permutation testing is work in progress and limited in scope")
     # do permutation
     res <- permTest(splitGroups, prs, alpha = alpha, P = Niter, cores = cores,
                     pAddVar = permAddVar) # in permutation.R

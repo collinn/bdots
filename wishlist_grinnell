@@ -1,0 +1,8 @@
+Things that HAVE to be done:
+
+1. change curveType to curveFun
+   - also needs to be changed in summary function
+
+2. if ar = FALSE, remove ar from fitcode calculation and just use R2. Can still let 6 = Failure
+    - need to watch out for refit function in this regard
+    - in multiple ways, really
