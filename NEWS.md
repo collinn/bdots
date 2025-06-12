@@ -1,7 +1,10 @@
+# bdots 6-10-2025 (v 2.0)
+- Change of name and some arguments to all major functions for brevity and clarification
+- Bootstrapping algorithm changed with major implications for prior users
+- Fixed errors in refitting process
+
 # bdots 2-24-2023
-- MAJOR UPDATE!
 - Permutation testing now available
-- Major changes to bootstrapping algorithm with implications for all previous verions (see ?)
 - Refitting can be done with indices or logical expressions instead of fitCodes
 
 

@@ -79,7 +79,7 @@ brefit <- function(bdObj, fitCode = 1L, subset = NULL, quickRefit = FALSE,
         }
         idx <- which(idx & NEEDS_REFIT_IDX)
       } else {
-        idx <- which(bdObj$fitCode >= fitcode & idx)
+        idx <- which(bdObj$fitCode >= fitcode & NEEDS_REFIT_IDX)
       }
 
     } else {

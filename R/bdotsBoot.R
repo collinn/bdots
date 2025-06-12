@@ -117,21 +117,23 @@ bboot <- function(formula,
                   Niter = 1000,
                   alpha = 0.05,
                   padj = "oleson",
-                  permutation = FALSE,
+                  permutation = TRUE,
                   permAddVar = TRUE,
                   cores = 0, ...) {
 
 
   ## These are secret shortcuts used for methods paper but not intended
-  # for distribution or general use
-  singleMeans <- ifelse(!exists("singleMeans"), FALSE, singleMeans)
-  skipDist <- ifelse(!exists("skipDist"), FALSE, skipDist)
+  ## for distribution or general use
 
-  if (!exists("singleMeans")) {
-    singleMeans <- FALSE
-  }
+  ## singleMeans - 'original' bdots implementation, that which we are showing is faulty
+  ## skipDist - only useful for permutation method, skips construction of bootstrapped distribution
+
+  dd <- list(...) # Evaluate arguments in dots
+  singleMeans <- ifelse(is.null(dd[["singleMeans"]]), FALSE, dd[["singleMeans"]])
+  skipDist <- ifelse(!is.null(dd[["skipDist"]]) & permutation, dd[["skipDist"]], FALSE)
 
 
+  ## Rest of the function as normal
   if (cores < 1) cores <- detectCores()/2
 
   if (any(bdObj[['fitCode']] == 6)) {
@@ -150,19 +152,12 @@ bboot <- function(formula,
   ## Next, we want to get a bootstrapped distribution for each of the groups
   splitGroups <- split(bdObj, by = c(innerDiff, outerDiff)) # ok even if null
 
-
   ## This cannot stay here forever, its only here until methods published
+  ## Basically only keep !singleMeans
   if (skipDist) {
     # just skip doing this
     curveList <- NULL
     ip <- NULL
-  } else if (!singleMeans) {
-    ##  parallel moved inside of this function
-    groupDists <- createGroupDists(splitGroups, prs, b = Niter, cores)
-
-    ## This is where we construct inner/outer groups
-    curveList <- createCurveList(groupDists, prs, splitGroups) # this is whats creates diff
-    ip <- curveList[['diff']][['paired']]
   } else if (singleMeans) {
     ## THIS IS RUNNING UNDER SINGLE MEANS ASSUMPTION
     # pulled from old bdots in curveBooter_SINGLEMEAN.R
@@ -171,6 +166,14 @@ bboot <- function(formula,
                              innerDiff = innerDiff,
                              N.iter = Niter,
                              curveFun = curveFun)
+    ip <- curveList[['diff']][['paired']]
+  } else {
+    ## This is the standard thing to happen, delete everything else in this if condition
+    ##  parallel moved inside of this function
+    groupDists <- createGroupDists(splitGroups, prs, b = Niter, cores)
+
+    ## This is where we construct inner/outer groups
+    curveList <- createCurveList(groupDists, prs, splitGroups) # this is whats creates diff
     ip <- curveList[['diff']][['paired']]
   }
 

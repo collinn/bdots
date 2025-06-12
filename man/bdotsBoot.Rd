@@ -11,8 +11,6 @@ bdotsBoot(
   alpha = 0.05,
   padj = "oleson",
   permutation = FALSE,
-  skipDist = FALSE,
-  singleMeans = FALSE,
   permAddVar = TRUE,
   cores = 0,
   ...
@@ -33,10 +31,6 @@ use anything from \code{p.adjust} function, but for now, just "oleson"}
 \item{permutation}{Boolean indicating whether to use permutation testing rather
 thank adjusting alpha to control FWER. WARNING: This option is very much in beta testing
 and not recommended for general use. Also not available for paired tests or difference of difference}
-
-\item{skipDist}{do not use}
-
-\item{singleMeans}{definitely do not use}
 
 \item{permAddVar}{Boolean. Add observed variability for perms?}
 

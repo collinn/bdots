@@ -10,9 +10,8 @@ bfit(
   time,
   y,
   group,
-  curveType = doubleGauss(concave = TRUE),
-  cor = TRUE,
-  ar = 0,
+  curveFun = doubleGauss(concave = TRUE),
+  ar = FALSE,
   numRefits = 0,
   cores = 0,
   verbose = FALSE,
@@ -31,9 +30,7 @@ bfit(
 \item{group}{Character vector containing column names of groups. Can be
 greater than one}
 
-\item{curveType}{See details/vignette}
-
-\item{cor}{autocorrelation TRUE/FALSE}
+\item{curveFun}{Curve function for fitting observed data. See details/vignette}
 
 \item{ar}{Value indicates estimate for autocorrelation. A value of zero indicates to fit without AR(1) assumption}
 
@@ -65,10 +62,9 @@ res <- bfit(data = cohort_unrelated,
             time = "Time",
             y = "Fixations",
             group = c("Group", "LookType"),
-            curveType = doubleGauss(concave = TRUE),
+            curveFun = doubleGauss(concave = TRUE),
             numRefits = 2,
-            cores = 0,
-            verbose = FALSE)
+            cores = 0)
 }
 
 }

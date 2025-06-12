@@ -56,7 +56,7 @@ fit <- bfit(data = cohort_unrelated,
             time = "Time",
             y = "Fixations",
             group = c("DB_cond", "LookType"),
-            curveType = doubleGauss(concave = TRUE),
+            curveFun = doubleGauss(concave = TRUE),
             cores = 2)
 ```
 

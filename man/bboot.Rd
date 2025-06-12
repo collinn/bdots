@@ -10,9 +10,7 @@ bboot(
   Niter = 1000,
   alpha = 0.05,
   padj = "oleson",
-  permutation = FALSE,
-  skipDist = FALSE,
-  singleMeans = FALSE,
+  permutation = TRUE,
   permAddVar = TRUE,
   cores = 0,
   ...
@@ -34,11 +32,7 @@ use anything from \code{p.adjust} function, but for now, just "oleson"}
 thank adjusting alpha to control FWER. WARNING: This option is very much in beta testing
 and not recommended for general use. Also not available for paired tests or difference of difference}
 
-\item{skipDist}{do not use}
-
-\item{singleMeans}{definitely do not use}
-
-\item{permAddVar}{Boolean. Add observed variability for perms?}
+\item{permAddVar}{Boolean. Add observed within-subject variability for permutation testing?}
 
 \item{cores}{Number of cores to use in parallel. Default is zero, which
 uses half of what is available.}
@@ -74,7 +68,7 @@ that we are interested in all red cars and trucks with the expression
 
 ### Bootstrapped difference of curves
 
-This illustrates the case in which we are taking a simple bootstraped difference
+This illustrates the case in which we are taking a simple bootstrapped difference
 between two curves within a single group
 
 If only one group was provided in \code{bdotsFit}, we can take the bootstrapped

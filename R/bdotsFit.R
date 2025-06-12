@@ -32,8 +32,7 @@
 #'             group = c("Group", "LookType"),
 #'             curveFun = doubleGauss(concave = TRUE),
 #'             numRefits = 2,
-#'             cores = 0,
-#'             verbose = FALSE)
+#'             cores = 0)
 #' }
 #'
 #' @import data.table
