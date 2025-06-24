@@ -44,7 +44,7 @@ bfit <- function(data, # dataset
                  time, # column for time
                  y, # response vector
                  group, # groups for subjects
-                 curveFun = doubleGauss(concave = TRUE),
+                 curveFun,
                  ar = FALSE, # autocorrelation?
                  numRefits = 0,
                  cores = 0, # cores to use, 0 == 50% of available
