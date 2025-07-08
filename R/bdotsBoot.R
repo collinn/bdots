@@ -154,6 +154,8 @@ bboot <- function(formula,
 
   ## This cannot stay here forever, its only here until methods published
   ## Basically only keep !singleMeans
+  #browser()
+
   if (skipDist) {
     # just skip doing this
     curveList <- NULL

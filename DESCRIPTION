@@ -7,9 +7,9 @@ Author: Collin Nolte, Michael Seedorff, Jacob Oleson, Grant Brown,
         Joseph Cavanaugh, and Bob McMurray
 Maintainer: Collin Nolte <collin-nolte@uiowa.edu>
 BugReports: https://github.com/collinn/bdots/issues
-Depends: R (>= 4.1.0), data.table
+Depends: R (>= 4.1.0)
 Imports: nlme, mvtnorm, parallel, stats, graphics, utils, ggplot2,
-        gridExtra
+        gridExtra, data.table
 LazyData: TRUE
 Description: Analyze differences among time series curves with p-value
         adjustment for multiple comparisons introduced in Oleson et al
