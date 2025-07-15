@@ -2,16 +2,10 @@
 % Please edit documentation in R/methods.R
 \name{rbindlist.default}
 \alias{rbindlist.default}
-\title{## Don't export for now because fuck S3 generic matching
-rbindlist <- function(x, ...) {
-  UseMethod("rbindlist")
-}}
+\title{## Don't export for now because fuck S3 generic matching}
 \usage{
-\method{rbindlist}{default}(x, ...)
+\method{rbindlist}{default}(l, ...)
 }
 \description{
 ## Don't export for now because fuck S3 generic matching
-rbindlist <- function(x, ...) {
-  UseMethod("rbindlist")
-}
 }

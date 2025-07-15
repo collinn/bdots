@@ -15,6 +15,8 @@ permTest(x, prs, alpha, P, cores = detectCores() - 1L, pAddVar = TRUE)
 
 \item{P}{number of permutations}
 
+\item{cores}{Number of cores to use}
+
 \item{pAddVar}{sample from distribution when doing perm test?}
 }
 \description{

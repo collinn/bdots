@@ -67,7 +67,7 @@ createCurveList <- function(x, prs, splitGroups) {
                 class = c("innerGroupCurveList", "groupCurveList"))
     }, x = xx, y = diffList)
 
-    obj <- rbindlist.bdObjList(splitGroups)
+    obj <- brbindlist(splitGroups)
     obj <- split.bdotsObj(obj, by = outerDiff, drop = TRUE)
     diffList <- makeOuterDiffList(outerlists, obj)
 

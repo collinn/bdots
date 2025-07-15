@@ -10,7 +10,7 @@ bfit(
   time,
   y,
   group,
-  curveFun = doubleGauss(concave = TRUE),
+  curveFun,
   ar = FALSE,
   numRefits = 0,
   cores = 0,

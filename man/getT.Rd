@@ -15,6 +15,8 @@ getT(x, idx, group, whole = FALSE, addVar = TRUE, ip = FALSE)
 
 \item{whole}{return vector of T stats or just the max}
 
+\item{addVar}{Boolean indicating if we should add variability from nlme}
+
 \item{ip}{boolean indicating if paired}
 }
 \description{

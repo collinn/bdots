@@ -17,6 +17,7 @@ knitr::opts_chunk$set(
 
 ```{r setup, include = FALSE}
 library(bdots)
+library(data.table)
 # Make smaller for cran
 cohort_unrelated$Subject <- as.numeric(cohort_unrelated$Subject)
 cohort_unrelated <- as.data.table(cohort_unrelated)
@@ -33,7 +34,7 @@ fit <- bfit(data = cohort_unrelated,
             time = "Time",
             y = "Fixations",
             group = c("DB_cond", "LookType"),
-            curveType = doubleGauss(concave = TRUE),
+            curveFun = doubleGauss(concave = TRUE),
             cores = 2)
 ```
 
@@ -101,7 +102,7 @@ same_fit_different_day <- bfit(data = cohort_unrelated,
                                time = "Time",
                                y = "Fixations",
                                group = c("DB_cond", "LookType"),
-                               curveType = doubleGauss2(concave = TRUE),
+                               curveFun = doubleGauss2(concave = TRUE),
                                cores = 2)
 ```
 

@@ -2,8 +2,7 @@
 - Change of name and some arguments to all major functions for brevity and clarification
 - Bootstrapping algorithm changed with major implications for prior users
 - Fixed errors in refitting process
-
-# bdots 2-24-2023
+- Move data.table from Imports to Depends
 - Permutation testing now available
 - Refitting can be done with indices or logical expressions instead of fitCodes
 

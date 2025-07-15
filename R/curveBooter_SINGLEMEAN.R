@@ -9,7 +9,7 @@ curveBooter_sm <- function(Obj, outerDiff, innerDiff = NULL, N.iter, curveFun) {
 
   if (!is.null(innerDiff)) {
     obj <- split.bdotsObj(Obj, by = outerDiff, drop = TRUE)
-    res <- lapply(obj, curveBooter, outerDiff = innerDiff,
+    res <- lapply(obj, curveBooter_sm, outerDiff = innerDiff,
                   N.iter = N.iter, curveFun = curveFun)
 
     diffList <- makeOuterDiffList_sm(res, obj)

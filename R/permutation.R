@@ -11,6 +11,7 @@
 #' @param prs from parser, indicates inner/outer groups
 #' @param alpha alpha for fwer
 #' @param P number of permutations
+#' @param cores Number of cores to use
 #' @param pAddVar sample from distribution when doing perm test?
 permTest <- function(x, prs, alpha, P, cores = detectCores()-1L, pAddVar = TRUE) {
   # these all implicitly assumed sorted by subject so maybe should do that in bdotsFit
@@ -33,7 +34,8 @@ permTest <- function(x, prs, alpha, P, cores = detectCores()-1L, pAddVar = TRUE)
 
   ## Need these for all
   pgroups <- prs$outerDiff
-  x <- bdots:::rbindlist.bdObjList(x)
+  #x <- bdots:::rbindlist.bdObjList(x)
+  x <- rbindlist(x)
   n <- nrow(x)
 
   ## Get the t stats for observed
@@ -86,6 +88,7 @@ bool2idx <- function(b) {
 #' @param idx permutation to use
 #' @param group group that we are permuting against
 #' @param whole return vector of T stats or just the max
+#' @param addVar Boolean indicating if we should add variability from nlme
 #' @param ip boolean indicating if paired
 getT <- function(x, idx, group, whole = FALSE, addVar = TRUE, ip = FALSE) {
   x[[group]] <- x[[group]][idx]

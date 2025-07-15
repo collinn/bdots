@@ -2,7 +2,7 @@
 title: "Correlation Function"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Correlations}
+  %\VignetteIndexEntry{Correlation Function}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r, include=FALSE}
 library(bdots)
+library(data.table)
 # Make smaller for cran
 cohort_unrelated$Subject <- as.numeric(cohort_unrelated$Subject)
 cohort_unrelated <- as.data.table(cohort_unrelated)
@@ -47,7 +48,7 @@ fit <- bfit(data = dat,
             subject = "Subject",
             time = "Time",
             group = c("LookType", "Group"),
-            y = "Fixations", curveType = doubleGauss2(),
+            y = "Fixations", curveFun = doubleGauss2(),
             cores = 2)
 ```
 Using this fit object, we now introduce the `bcor` function, taking four arguments:
