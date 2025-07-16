@@ -41,3 +41,7 @@ bdotsFitter(
 \description{
 The one subject version of bdotsFit
 }
+\details{
+Of particular note here is that rho = 0 is proxy for assuming that
+ar = FALSE
+}

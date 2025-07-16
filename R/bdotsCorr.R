@@ -11,7 +11,7 @@
 #' @param method Arguments for `cor` or `cor.test`. The default option us `method = "pearson"`
 #'
 #' @export
-bdotsCorr <- function(bdObj, val, ciBands = FALSE, method = "pearson") {
+bcorr <- function(bdObj, val, ciBands = FALSE, method = "pearson") {
 
   Group <- Correlation <- lower <- upper <- . <- NULL
 

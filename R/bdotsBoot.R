@@ -14,7 +14,7 @@
 #' and not recommended for general use. Also not available for paired tests or difference of difference
 #' @param cores Number of cores to use in parallel. Default is zero, which
 #' uses half of what is available.
-#' @param skipDist do not use
+#' @param permAddVar Boolean. Add observed within-subject variability for permutation testing?
 #' @param ... not used
 #'
 #' @details The formula is the only tricky part of this. There will be a minor
@@ -38,7 +38,7 @@
 #'
 #' ### Bootstrapped difference of curves
 #'
-#' This illustrates the case in which we are taking a simple bootstraped difference
+#' This illustrates the case in which we are taking a simple bootstrapped difference
 #' between two curves within a single group
 #'
 #' If only one group was provided in \code{bdotsFit}, we can take the bootstrapped
@@ -95,31 +95,45 @@
 #'
 #' ## fit <- bdotsFit(cohort_unrelated, ...)
 #'
-#' boot1 <- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
-#'                    bdObj = fit,
-#'                    N.iter = 1000,
-#'                    alpha = 0.05,
-#'                    p.adj = "oleson",
-#'                    cores = 4)
+#' boot1 <- bboot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
+#'                bdObj = fit,
+#'                N.iter = 1000,
+#'                alpha = 0.05,
+#'                p.adj = "oleson",
+#'                cores = 4)
 #'
-#' boot2 <- bdotsBoot(formula = Fixations ~ Group(50, 65) + LookType(Cohort),
-#'                    bdObj = fit,
-#'                    N.iter = 1000,
-#'                    alpha = 0.05,
-#'                    p.adj = "oleson",
-#'                    cores = 4)
+#' boot2 <- bboot(formula = Fixations ~ Group(50, 65) + LookType(Cohort),
+#'                bdObj = fit,
+#'                N.iter = 1000,
+#'                alpha = 0.05,
+#'                p.adj = "oleson",
+#'                cores = 4)
 #' }
 #'
 #' @import data.table
 #' @export
-bdotsBoot <- function(formula,
-                      bdObj,
-                      Niter = 1000,
-                      alpha = 0.05,
-                      padj = "oleson",
-                      permutation = FALSE, skipDist = FALSE,
-                      cores = 0, ...) {
+bboot <- function(formula,
+                  bdObj,
+                  Niter = 1000,
+                  alpha = 0.05,
+                  padj = "oleson",
+                  permutation = TRUE,
+                  permAddVar = TRUE,
+                  cores = 0, ...) {
 
+
+  ## These are secret shortcuts used for methods paper but not intended
+  ## for distribution or general use
+
+  ## singleMeans - 'original' bdots implementation, that which we are showing is faulty
+  ## skipDist - only useful for permutation method, skips construction of bootstrapped distribution
+
+  dd <- list(...) # Evaluate arguments in dots
+  singleMeans <- ifelse(is.null(dd[["singleMeans"]]), FALSE, dd[["singleMeans"]])
+  skipDist <- ifelse(!is.null(dd[["skipDist"]]) & permutation, dd[["skipDist"]], FALSE)
+
+
+  ## Rest of the function as normal
   if (cores < 1) cores <- detectCores()/2
 
   if (any(bdObj[['fitCode']] == 6)) {
@@ -138,34 +152,32 @@ bdotsBoot <- function(formula,
   ## Next, we want to get a bootstrapped distribution for each of the groups
   splitGroups <- split(bdObj, by = c(innerDiff, outerDiff)) # ok even if null
 
+  ## This cannot stay here forever, its only here until methods published
+  ## Basically only keep !singleMeans
+  #browser()
 
-  ## This cannot stay here forever, its a super secret shortcut for just right now
   if (skipDist) {
     # just skip doing this
     curveList <- NULL
     ip <- NULL
+  } else if (singleMeans) {
+    ## THIS IS RUNNING UNDER SINGLE MEANS ASSUMPTION
+    # pulled from old bdots in curveBooter_SINGLEMEAN.R
+    curveList <- curveBooter_sm(bdObj,
+                             outerDiff = outerDiff,
+                             innerDiff = innerDiff,
+                             N.iter = Niter,
+                             curveFun = curveFun)
+    ip <- curveList[['diff']][['paired']]
   } else {
-    # do the normal thing
-    ## Make this parallel (maybe later)
-    if (Sys.info()['sysname'] == "Darwin") {
-      cl <- makePSOCKcluster(cores, setup_strategy = "sequential")
-    } else {
-      cl <- makePSOCKcluster(cores)
-    }
-    invisible(clusterEvalQ(cl, {library(bdots)}))
-    # this needs to happen anyways, this is bootstrapped distributions
-    ## WE NEED TO INDICATE IF PAIRED HERE
-    groupDists <- parLapply(cl, splitGroups, getBootDist, b = Niter)
-
-    stopCluster(cl)
+    ## This is the standard thing to happen, delete everything else in this if condition
+    ##  parallel moved inside of this function
+    groupDists <- createGroupDists(splitGroups, prs, b = Niter, cores)
 
     ## This is where we construct inner/outer groups
-    # (ideally matching old bdots, at least for now)
     curveList <- createCurveList(groupDists, prs, splitGroups) # this is whats creates diff
     ip <- curveList[['diff']][['paired']]
   }
-
-
 
   # Determine first if we are doing difference of differences
   dod <- ifelse(is.null(innerDiff), FALSE, TRUE)
@@ -178,9 +190,9 @@ bdotsBoot <- function(formula,
 
   ## And here we determine significant regions
   if (permutation) {
-    message("WARNING: permutation testing is work in progress and limited in scope")
     # do permutation
-    res <- permTest(splitGroups, prs, alpha = alpha, P = Niter) # in permutation.R
+    res <- permTest(splitGroups, prs, alpha = alpha, P = Niter, cores = cores,
+                    pAddVar = permAddVar) # in permutation.R
     obsT <- res[['obst']]
     nullT <- res[['nullt']]
 

@@ -187,7 +187,7 @@ polynomial <- function(dat, y, time, degree, raw = TRUE, params = NULL, ...) {
     return(NULL)
   }
 
-  time_names <- paste0("I(Time^", seq(degree + 1L) - 1L , ")")
+  time_names <- paste0("(Time^", seq(degree + 1L) - 1L , ")")
 
   ff <- paste(names(params), time_names, sep = "*", collapse = "+")
   ff <- str2lang(ff)
@@ -221,9 +221,8 @@ linear <- function(dat, y, time, params = NULL, ...) {
     if (var(y) == 0) {
       return(NULL)
     }
-    bb <- min(y)
-    mm <- (max(y) - bb) / max(time)
-
+    mm <- (max(y) - min(y)) / max(time)
+    bb <- mean(y) - mm * mean(time)
     return(c(intercept = bb, slope = mm))
   }
 
@@ -288,63 +287,191 @@ expCurve <- function(dat, y, time, params = NULL, ...) {
 }
 
 
-#' ## -----------
+#' Logistic saccade curve function for nlme
 #'
-#' #' Logistic curve function for nlme
-#' #'
-#' #' DELETE THIS FUNCTION BEFORE GIT PUSH
-#' #'
-#' #' @param dat subject data to be used
-#' #' @param y outcome variable
-#' #' @param time time variable
-#' #' @param params \code{NULL} unless user wants to specify starting parameters for gnls
-#' #' @param ... just in case
-#' #'
-#' #' @details \code{y ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (time)) / (peak - mini)))}
-#' #' @export
-#' logistic2 <- function(dat, y, time, params = NULL, ...) {
+#' And even cooler logistic fitting function, will think of a better name later
 #'
-#'   logisticPars <- function(dat, y, time, ...) {
-#'     dat[, looks := mean(looks), by = starttime]
-#'     dat <- unique(dat)
-#'     time <- dat[[time]]
-#'     y <- dat[[y]]
+#' @param dat subject data to be used
+#' @param y outcome variable
+#' @param time time variable
+#' @param params \code{NULL} unless user wants to specify starting parameters for gnls
+#' @param startSamp how many samples from distribution should we use to investigate
+#' @param ... just in case
 #'
-#'     ## Remove cases with zero variance
-#'     if (var(y) == 0) {
-#'       return(NULL)
-#'     }
+#' @details \code{y ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (time)) / (peak - mini)))}
+#' @export
+logistic_sac <- function(dat, y, time, params = NULL, startSamp = 8,...) {
+
+  logisticPars <- function(dat, y, time, startSamp, ...) {
+    time <- dat[[time]]
+    y <- dat[[y]]
+
+    ## Remove cases with zero variance
+    if (var(y) == 0) {
+      return(NULL)
+    }
+
+    ## Sensible distribution of starting pars
+    spars <- structure(list(fn = c(1L, 1L, 1L, 1L),
+                            param = c("mini", "peak", "slope", "cross"),
+                            mean = c(0.115, 0.885, 0.0016, 765), sd = c(0.12, 0.12, 0.00075, 85), min = c(0, 0.5, 0.0009, 300),
+                            max = c(0.3, 1, 0.01, 1100)), row.names = c(NA, -4L), class = c("data.table", "data.frame"))
+
+    ## function def
+    fn <- function(p, t) {
+      b0 <- p[1] # base
+      b1 <- p[2] # max
+      sl <- p[3] # slope
+      xo <- p[4] # crossover
+      b0 + (b1-b0) / (1 + exp(4*sl*((xo-t)/(b1-b0))))
+    }
+
+    tryPars <- vector("list", length = startSamp)
+
+    ## Get starting pars
+    for (i in seq_len(startSamp)) {
+      maxFix <- 2
+      while (maxFix > 1 | maxFix < 0.6) { # added minimum independent of mbob
+        tryPars[[i]] <- Inf
+        while (any(spars[, tryPars[[i]] <= min | tryPars[[i]] >= max ])) {
+          tryPars[[i]] <- spars[, rnorm(length(tryPars[[i]]))*sd + mean]
+        }
+        maxFix <- max(fn(tryPars[[i]], time))
+      }
+    }
+
+    ## Find which is better fit
+    r2 <- vector("numeric", length = startSamp)
+    for (i in seq_len(startSamp)) {
+      yhat <- fn(tryPars[[i]], time)
+      r2[i] <- mean((y-yhat)^2)
+    }
+
+    finalPars <- tryPars[[which.min(r2)]]
+    names(finalPars) <- c("mini", "peak", "slope", "cross")
+
+    return(finalPars)
+  }
+
+  if (is.null(params)) {
+    params <- logisticPars(dat, y, time, startSamp)
+  } else {
+    if (length(params) != 4) stop("logistic requires 4 parameters be specified for refitting")
+    if (!all(names(params) %in% c("mini", "peak", "slope", "cross"))) {
+      stop("logistic parameters for refitting must be correctly labeled")
+    }
+  }
+  ## Return NA list if var(y) is 0
+  if (is.null(params)) {
+    return(NULL)
+  }
+  y <- str2lang(y)
+  time <- str2lang(time)
+  ff <- bquote(.(y) ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (.(time))) / (peak - mini))))
+  attr(ff, "parnames") <- names(params)
+  return(list(formula = ff, params = params))
+}
+
+
+
+
+
+#' Double Gauss curve function for nlme
 #'
-#'     mini <- min(y)
-#'     peak <- max(y)
-#'     r <- (peak - mini)
-#'     cross <- time[which.min(abs(0.5*r - y))]
+#' Double Gauss function used in fitting nlme curve for observations but now even
+#' better since it samples across a sensible distribution for starting parameters
 #'
-#'     # slope
-#'     q75 <- .75 * r + mini
-#'     q25 <- .25 * r + mini
-#'     time75 <- time[which.min(abs(q75 - y))]
-#'     time25 <- time[which.min(abs(q25 - y))]
-#'     slope <- (q75 - q25) / (time75 - time25)
+#' @param dat subject data to be used
+#' @param y outcome variable, character vector
+#' @param time time variable, character vector
+#' @param params \code{NULL} unless user wants to specify starting parameters for gnls
+#' @param startSamp how many samples from distribution should we use to investigate
+#' @param ... just in case
 #'
-#'     return(c(mini = mini, peak = peak, slope = slope, cross = cross))
-#'   }
+#' @details User should only have to worry about setting concavity
+#' of this function
 #'
-#'   if (is.null(params)) {
-#'     params <- logisticPars(dat, y, time)
-#'   } else {
-#'     if (length(params) != 4) stop("logistic requires 4 parameters be specified for refitting")
-#'     if (!all(names(params) %in% c("mini", "peak", "slope", "cross"))) {
-#'       stop("logistic parameters for refitting must be correctly labeled")
-#'     }
-#'   }
-#'   ## Return NA list if var(y) is 0
-#'   if (is.null(params)) {
-#'     return(NULL)
-#'   }
-#'   y <- str2lang(y)
-#'   time <- str2lang(time)
-#'   ff <- bquote(.(y) ~ mini + (peak - mini) / (1 + exp(4 * slope * (cross - (.(time))) / (peak - mini))))
-#'   attr(ff, "parnames") <- names(params)
-#'   return(list(formula = ff, params = params))
-#' }
+#' \code{y ~ (time < mu) * (exp(-1 * (time - mu) ^ 2
+#' / (2 * sig1 ^ 2)) * (ht - base1) + base1)
+#' + (mu <= time) * (exp(-1 * (time - mu) ^ 2
+#'                          / (2 * sig2 ^ 2)) * (ht - base2) + base2)}
+#' @export
+doubleGauss_sac <- function(dat, y, time, params = NULL, startSamp = 8, ...) {
+
+  dgaussPars <- function(dat, y, time, startSamp = 8) {
+    time <- dat[[time]]
+    y <- dat[[y]]
+
+    ## Remove cases with zero variance
+    if (var(y) == 0) {
+      return(NULL)
+    }
+
+    spars <- structure(list(fn = c(2L, 2L, 2L, 2L, 2L, 2L),
+                            param = c("mu",  "ht", "sig1", "sig2", "base1", "base2"),
+                            mean = c(630, 0.18, 130, 250, 0.05, 0.05),
+                            sd = c(77, 0.05, 30, 120, 0.015, 0.015),
+                            min = c(300, 0.05, 50, 50, 0, 0),
+                            max = c(1300, 0.35, 250, 400, 0.15, 0.15)),
+                       row.names = c(NA, -6L), class = c("data.table","data.frame"))
+
+    ## function def
+    fn <- function(p, t) {
+      mu <- p[1]
+      ht <- p[2]
+      s1 <- p[3]
+      s2 <- p[4]
+      b1 <- p[5]
+      b2 <- p[6]
+      lhs <- (t < mu) * ((ht-b1) * exp((t - mu)^2/(-2*s1^2)) + b1)
+      rhs <- (t >= mu) * ((ht-b2) * exp((t - mu)^2/(-2*s2^2)) + b2)
+      lhs+rhs
+    }
+
+    tryPars <- vector("list", length = startSamp)
+
+    for (i in seq_len(startSamp)) {
+      maxFix <- 2
+      while (maxFix > 1) {
+        tryPars[[i]] <- Inf
+        while (any(spars[, tryPars[[i]] <= min | tryPars[[i]] >= max ])) {
+          tryPars[[i]] <- spars[, rnorm(length(tryPars[[i]]))*sd + mean]
+        }
+        maxFix <- max(fn(tryPars[[i]], time))
+      }
+    }
+
+    r2 <- vector("numeric", length = startSamp)
+    for (i in seq_len(startSamp)) {
+      yhat <- fn(tryPars[[i]], time)
+      r2[i] <- mean((y-yhat)^2)
+    }
+
+    finalPars <- tryPars[[which.min(r2)]]
+    names(finalPars) <- c("mu", "ht", "sig1", "sig2", "base1", "base2")
+
+    return(finalPars)
+  }
+
+  if (is.null(params)) {
+    params <- dgaussPars(dat, y, time, startSamp)
+  } else {
+    if (length(params) != 6) stop("doubleGauss requires 6 parameters be specified for refitting")
+    if (!all(names(params) %in% c("mu", "ht", "sig1", "sig2", "base1", "base2"))) {
+      stop("doubleGauss parameters for refitting must be correctly labeled")
+    }
+  }
+  ## Return NA list if var(y) is 0
+  if (is.null(params)) {
+    return(NULL)
+  }
+
+  y <- str2lang(y)
+  time <- str2lang(time)
+  ff <- bquote(.(y) ~ (.(time) < mu) * (exp(-1 * (.(time) - mu) ^ 2
+                                            / (2 * sig1 ^ 2)) * (ht - base1) + base1)
+               + (mu <= .(time)) * (exp(-1 * (.(time) - mu) ^ 2
+                                        / (2 * sig2 ^ 2)) * (ht - base2) + base2))
+  attr(ff, "parnames") <- names(params)
+  return(list(formula = ff, params = params))
+}

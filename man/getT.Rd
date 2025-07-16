@@ -4,7 +4,7 @@
 \alias{getT}
 \title{Generate t-distribution for permutation}
 \usage{
-getT(x, idx, group, whole = FALSE)
+getT(x, idx, group, whole = FALSE, addVar = TRUE, ip = FALSE)
 }
 \arguments{
 \item{x}{bdObj}
@@ -14,6 +14,10 @@ getT(x, idx, group, whole = FALSE)
 \item{group}{group that we are permuting against}
 
 \item{whole}{return vector of T stats or just the max}
+
+\item{addVar}{Boolean indicating if we should add variability from nlme}
+
+\item{ip}{boolean indicating if paired}
 }
 \description{
 Creates vector of t-statistics for given permutation returning

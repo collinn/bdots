@@ -1,8 +1,8 @@
 ---
-title: "correlations"
+title: "Correlation Function"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Correlations}
+  %\VignetteIndexEntry{Correlation Function}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r, include=FALSE}
 library(bdots)
+library(data.table)
 # Make smaller for cran
 cohort_unrelated$Subject <- as.numeric(cohort_unrelated$Subject)
 cohort_unrelated <- as.data.table(cohort_unrelated)
@@ -21,9 +22,9 @@ cohort_unrelated <- cohort_unrelated[Subject < 10, ]
 
 ## Correlations in `bdots`
 
-This vignette is created to illustrate the use of the `bdotsCorr` function, which finds
+This vignette is created to illustrate the use of the `bcorr` function, which finds
 the correlation between a fixed value in our dataset and the collection of fitted curves
-at each time points for each of the groups fit in `bdotsFit`.
+at each time points for each of the groups fit in `bfit`.
 
 First, let's take an existing dataset and add a fixed value for each of the subjects
 
@@ -43,16 +44,16 @@ Now, we go about creating our fitted object as usual
 
 ```{r}
 ## Create regular fit in bdots
-fit <- bdotsFit(data = dat,
-                subject = "Subject",
-                time = "Time",
-                group = c("LookType", "Group"),
-                y = "Fixations", curveType = doubleGauss2(),
-                cores = 2)
+fit <- bfit(data = dat,
+            subject = "Subject",
+            time = "Time",
+            group = c("LookType", "Group"),
+            y = "Fixations", curveFun = doubleGauss2(),
+            cores = 2)
 ```
-Using this fit object, we now introduce the `bdotsCorr` function, taking four arguments:
+Using this fit object, we now introduce the `bcor` function, taking four arguments:
 
-1. `bdObj`, any object returned from a `bdotsFit` call
+1. `bdObj`, any object returned from a `bfit` call
 2. `val`, a length one character vector of the value with which we want to correlate. `val` 
 should be a column in our original dataset, and it should be numeric
 3. `ciBands`, a boolean indicating whether or not we want to return 95% confidence intervals. Default is `FALSE`
@@ -60,11 +61,11 @@ should be a column in our original dataset, and it should be numeric
 
 ```{r}
 ## Returns a data.table of class bdotsCorrObj
-corr_ci <- bdotsCorr(fit, val = "val", ciBands = TRUE)
+corr_ci <- bcorr(fit, val = "val", ciBands = TRUE)
 head(corr_ci)
 
 ## Same, without confidence intervals
-corr_noci <- bdotsCorr(fit, val = "val")
+corr_noci <- bcorr(fit, val = "val")
 head(corr_noci)
 ```
 

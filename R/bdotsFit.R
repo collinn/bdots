@@ -8,9 +8,9 @@
 #' @param y Column name containing outcome of interest
 #' @param group Character vector containing column names of groups. Can be
 #' greater than one
-#' @param curveType See details/vignette
+#' @param curveFun Curve function for fitting observed data. See details/vignette
 #' @param cores number of cores. Default is \code{0}, indicating half cores available
-#' @param ar Boolean. Autocorrelation?
+#' @param ar Value indicates estimate for autocorrelation. A value of zero indicates to fit without AR(1) assumption
 #' @param numRefits Integer indicating number of attempts to fit an observation
 #' if the first attempt fails
 #' @param ... Secret
@@ -24,34 +24,34 @@
 #'
 #' @examples
 #' \dontrun{
-#' res <- bdotsFit(data = cohort_unrelated,
-#'                 subject = "Subject",
-#'                 time = "Time",
-#'                 y = "Fixations",
-#'                 group = c("Group", "LookType"),
-#'                 curveType = doubleGauss(concave = TRUE),
-#'                 ar = FALSE,
-#'                 numRefits = 2,
-#'                 cores = 0)
+#' res <- bfit(data = cohort_unrelated,
+#'             subject = "Subject",
+#'             time = "Time",
+#'             y = "Fixations",
+#'             group = c("Group", "LookType"),
+#'             curveFun = doubleGauss(concave = TRUE),
+#'             numRefits = 2,
+#'             cores = 0)
 #' }
 #'
 #' @import data.table
 #' @import parallel
 #' @importFrom utils object.size
 #' @export
-bdotsFit <- function(data, # dataset
-                     subject, # subjects
-                     time, # column for time
-                     y, # response vector
-                     group, # groups for subjects
-                     curveType = doubleGauss(concave = TRUE),
-                     ar = FALSE, # autocorrelation?
-                     numRefits = 0,
-                     cores = 0, # cores to use, 0 == 50% of available
-                     ...) {
+bfit <- function(data, # dataset
+                 subject, # subjects
+                 time, # column for time
+                 y, # response vector
+                 group, # groups for subjects
+                 curveFun,
+                 ar = FALSE, # autocorrelation?
+                 numRefits = 0,
+                 cores = 0, # cores to use, 0 == 50% of available
+                 verbose = FALSE,
+                 ...) {
 
   if (cores < 1) cores <- detectCores()/2
-  curveType <- substitute(curveType)
+  curveType <- substitute(curveFun) # didn't change curveType to curveFun anywhere else
   curveName <- curveType[[1]]
   curveType <- curve2Fun(curveType)
 
@@ -63,24 +63,10 @@ bdotsFit <- function(data, # dataset
     stop(stopMsg)
   }
 
-  # # Should verify that we don't have rho set and cor = FALSE
-  # if (!exists("rho")) {
-  #   rho <- ifelse(cor, 0.9, 0)
-  # } else {
-  #   if (cor & (rho >= 1 | rho < 0)) {
-  #     warning("cor set to TRUE with invalid rho. Setting rho to 0.9")
-  #     rho <- 0.9
-  #   }
-  # }
 
-  ## Determine if autocorrelation
-  if (!ar) { # no autocorrelation
-    rho <- 0
-  } else if (abs(ar) >= 1) { # ar specified as TRUE or invalid number
-    rho <- sign(ar)*0.9 # defaults to 0.9 (like original)
-  } else { # ar specified between -1 adn 2
-    rho <- ar
-  }
+
+  rho <- ifelse(ar, 0.9, 0)
+
 
   ## Factors are bad, m'kay?
   dat <- setDT(data)
@@ -97,7 +83,6 @@ bdotsFit <- function(data, # dataset
     stop(paste("Cannot have '.' in group values. Consider replacing with '_'\n Replace values in columns:", badgrp))
   }
 
-
   timetest <- split(dat, by = group, drop = TRUE)
   timetest <- lapply(timetest, function(x) unique(x[[time]]))
 
@@ -107,10 +92,6 @@ bdotsFit <- function(data, # dataset
 
   timeSame <- identical(Reduce(intersect, timetest, init = timetest[[1]]),
                         Reduce(union, timetest, init = timetest[[1]]))
-  #if (!timeSame) stop("Observed times are different between groups")
-  # if (!timeSame) {
-  #   warning("Observed times are not identical between groups. This will result in weird plotting behavior")
-  # }
 
   splitVars <- c(subject, group)
   newdat <- split(dat, by = splitVars, drop = TRUE)
@@ -156,6 +137,11 @@ bdotsFit <- function(data, # dataset
   groups <- list(groups = group,
                  vals = vals)
 
+  ## This breaks dependency somewhere
+  # if (!ar) {
+  #   fitList$AR1 <- NULL
+  # }
+
   res <- structure(class = c("bdotsObj", "data.table", "data.frame"),
                    .Data = fitList,
                    formula = ff,
@@ -163,6 +149,7 @@ bdotsFit <- function(data, # dataset
                    call = match.call(),
                    time = time_vec, # Now the union of all the times
                    rho = rho,
+                   ar = ar,
                    groups = groups,
                    X = X_env)
 }

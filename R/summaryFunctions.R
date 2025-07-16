@@ -21,6 +21,7 @@ summary.bdotsObj <- function(object, ...) {
   time <- attr(bdObj, "time")
   timeRange <- range(time)
   groups <- attr(bdObj, "groups")
+  ar <- attr(bdObj, "ar")
 
   # cheap workaround to reduce size when split
   X <- attr(bdObj, 'X')$X
@@ -52,7 +53,8 @@ summary.bdotsObj <- function(object, ...) {
                          groups = groups,
                          ntime = length(time),
                          timeRange = timeRange,
-                         summaries = allSummary),
+                         summaries = allSummary,
+                         ar = ar),
             class = "bdotsSummary",
             call = bdCall)
 
@@ -71,7 +73,7 @@ summary.bdotsObj <- function(object, ...) {
 #' @export
 print.bdotsSummary <- function(x, ...) {
   cat("\nbdotsFit Summary\n\n")
-  cat("Curve Type:", x$curveType, "\n")
+  cat("Curve Function:", x$curveType, "\n")
   cat("Formula:", x$formula, "\n")
   cat("Time Range:", paste0("(", paste0(x$timeRange, collapse = ", "), ")"))
   cat(paste0(" [", x$ntime, " points]\n"))
@@ -86,7 +88,7 @@ print.bdotsSummary <- function(x, ...) {
     cat("Parameter Values: \n")
     #cat(names(cnts[[i]][['pars']]), "\n", cnts[[i]][['pars']], "\n")
     print(cnts[[i]][['pars']])
-    printFitCount(cnts[[i]])
+    printFitCount(cnts[[i]], x$ar)
   }
 
   # return invisibly
@@ -94,15 +96,25 @@ print.bdotsSummary <- function(x, ...) {
 }
 
 
-printFitCount <- function(x) {
+printFitCount <- function(x, ar) {
   x <- x[['fitCount']]
-  printLine <- c(paste("AR1,       0.95 <= R2        --", x[1], "\n"),
-                 paste("AR1,       0.80 < R2 <= 0.95 --", x[2], "\n"),
-                 paste("AR1,       R2 < 0.8          --", x[3], "\n"),
-                 paste("Non-AR1,   0.95 <= R2        --", x[4], "\n"),
-                 paste("Non-AR1,   0.8 < R2 <= 0.95  --", x[5], "\n"),
-                 paste("Non-AR1,   R2 < 0.8          --", x[6], "\n"),
-                 paste("No Fit                       --", x[7], "\n"))
+
+  if (ar) {
+    printLine <- c(paste("AR1,       0.95 <= R2        --", x[1], "\n"),
+                   paste("AR1,       0.80 < R2 <= 0.95 --", x[2], "\n"),
+                   paste("AR1,       R2 < 0.8          --", x[3], "\n"),
+                   paste("Non-AR1,   0.95 <= R2        --", x[4], "\n"),
+                   paste("Non-AR1,   0.8 < R2 <= 0.95  --", x[5], "\n"),
+                   paste("Non-AR1,   R2 < 0.8          --", x[6], "\n"),
+                   paste("No Fit                       --", x[7], "\n"))
+  } else {
+    printLine <- c(paste("0.95 <= R2        --", x[1], "\n"),
+                   paste("0.80 < R2 <= 0.95 --", x[2], "\n"),
+                   paste("R2 < 0.8          --", x[3], "\n"),
+                   paste("No Fit            --", x[7], "\n"))
+  }
+
+
   cat("########################################\n")
   cat("############### FITS ###################\n")
   cat("########################################\n")
@@ -141,6 +153,19 @@ summary.bdotsBootObj <- function(object, ...) {
 
   padj_method <- match.arg(attr(bdBootObj, "call")[['padj']],
                            c("oleson", stats::p.adjust.methods))
+  if (!is.null(bdCall$permutation)) {
+    if (bdCall$permutation) {
+      padj_method <- "Permutation"
+      alphastar <- "NA"
+      rho <- "NA"
+    }
+  } else {
+    bdCall$permutation <- FALSE
+  }
+
+
+  alpha <- ifelse(is.null(bdCall$alpha), 0.05, bdCall$alpha)
+
 
 
   ## group specific info
@@ -168,7 +193,7 @@ summary.bdotsBootObj <- function(object, ...) {
 
   structure(.Data = list(formula = formula,
                          alphastar = alphastar,
-                         alpha = bdCall$alpha,
+                         alpha = alpha,
                          sigTime = sigTime,
                          rho = rho,
                          dod = dod,
@@ -179,7 +204,8 @@ summary.bdotsBootObj <- function(object, ...) {
                          timeRange = timeRange,
                          ntime = length(time),
                          curveType = curveType,
-                         padj_method = padj_method),
+                         padj_method = padj_method,
+                         permutation = bdCall$permutation),
             class = "bdotsBootSummary",
             call = bdCall)
 
@@ -198,7 +224,7 @@ summary.bdotsBootObj <- function(object, ...) {
 #' @export
 print.bdotsBootSummary <- function(x, ...) {
   cat("\nbdotsBoot Summary\n\n")
-  cat("Curve Type:", x$curveType, "\n")
+  cat("Curve Function:", x$curveType, "\n")
   cat("Formula:", x$formula, "\n")
   cat("Time Range:", paste0("(", paste0(x$timeRange, collapse = ", "), ")"))
   cat(paste0(" [", x$ntime, " points]\n\n"))
@@ -210,14 +236,18 @@ print.bdotsBootSummary <- function(x, ...) {
     cat("Outer Difference:", x[['diffs']][['outerDiff']], "\n")
     cat("Inner Difference:", x[['diffs']][['innerDiff']], "\n")
   } else {
-    cat("Difference:", x[['diffs']][['outerDiff']], "\n")
+    cat("Difference:", x[['diffs']][['outerDiff']], "--", x[['curveGroup']][[1]], "\n")
   }
+
   cat("\n")
   cat("Autocorrelation Estimate:", x$rho, "\n")
-  cat("Alpha adjust method:", x$padj_method, "\n")
+  cat("FWER adjust method:", x$padj_method, "\n")
   cat("Alpha:", x$alpha, "\n")
-  cat("Adjusted alpha:", x[['alphastar']], "\n")
-  cat("Significant Intervals at adjusted alpha:\n")
+
+  if (!x$permutation) {
+    cat("Adjusted alpha:", x[['alphastar']], "\n")
+  }
+  cat("Significant Intervals:\n")
   print(x[['sigTime']])
 
   ## Return the summary invisibly

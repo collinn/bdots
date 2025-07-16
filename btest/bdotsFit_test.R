@@ -8,6 +8,17 @@ library(parallel)
 library(nlme)
 library(mvtnorm)
 
+res.l <- bdotsFit(data = cohort_unrelated,
+                  subject = "Subject",
+                  time = "Time",
+                  y = "Fixations",
+                  group = c("Group", "LookType"),
+                  curveFun = doubleGauss2(concave = TRUE),
+                  ar = FALSE,
+                  numRefits = 2,
+                  cores = 8,
+                  verbose = FALSE)
+
 
 res.l <- bdotsFit(data = cohort_unrelated,
                 subject = "Subject",
@@ -25,11 +36,14 @@ res2 <- bdotsFit(data = cohort_unrelated,
                 time = "Time",
                 y = "Fixations",
                 group = c("Group", "LookType"),
-                curveType = doubleGauss2(concave = TRUE),
-                cor = TRUE,
+                curveFun = doubleGauss(concave = TRUE),
+                ar = FALSE,
                 numRefits = 2,
                 cores = 8,
                 verbose = FALSE)
+
+
+
 
 res3 <- bdotsFit(data = cohort_unrelated,
                  subject = "Subject",
@@ -43,6 +57,7 @@ res3 <- bdotsFit(data = cohort_unrelated,
                  verbose = FALSE)
 
 bdotsRefit(res.l, fitCode = 5)
+bdotsRefit(res.l)
 #res2 <- res[Subject %in% c(1, 2, 3, 5, 7:11, 14:21, 23:26)]
 res2 <- bdRemove(res.l, fitCode = 4L)
 
@@ -95,26 +110,26 @@ boot.test2 <- bdotsBoot(formula = diffs(y, Group(50, 65)) ~ LookType(Cohort, Unr
 load("~/packages/bdots/data/ci.rda")
 ci <- as.data.table(ci)
 ci <- ci[LookType == "Target", ]
-res.l <- bdotsFit(data = ci,
-                              subject = "Subject",
-                              time = "Time",
-                              y = "Fixations",
-                              group = "protocol",
-                              curveType = logistic(),
-                              cor = TRUE,
-                              numRefits = 2)
+res <- bdotsFit(data = ci,
+                subject = "Subject",
+                time = "Time",
+                y = "Fixations",
+                group = "protocol",
+                curveFun = logistic(),
+                ar = FALSE,
+                numRefits = 2)
 
 # tt <- bdotsRefit(res.l, fitCode = 0)
 # tt2 <- bdotsRefit(tt, fitCode = 0)
 
 boot <- bdotsBoot(formula = y ~ protocol(CI, NH),
-                  bdObj = res.l,
+                  bdObj = res,
                   Niter = 250,
                   alpha = 0.05,
                   padj = "oleson",
                   cores = 7)
 boot2 <- bdotsBoot(formula = y ~ protocol(CI, NH),
-                   bdObj = res.l,
+                   bdObj = res,
                    Niter = 250,
                    alpha = 0.05,
                    padj = "oleson",

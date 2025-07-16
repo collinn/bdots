@@ -1,3 +1,12 @@
+# bdots 6-10-2025 (v 2.0)
+- Change of name and some arguments to all major functions for brevity and clarification (see vignettes)
+- Bootstrapping algorithm changed with major implications for prior users (https://arxiv.org/abs/2503.17495)
+- Fixed errors in refitting process
+- Move data.table from Imports to Depends
+- Permutation testing now available as alternative to bootstrap and alpha adjustment
+- Refitting can be done with indices or logical expressions instead of fitCodes
+
+
 # bdots 11-10-2022
 - Subset data in vignettes for computational time constraints in cran submission
 

@@ -92,39 +92,61 @@ split.bdotsObj <- function(x, f, drop = FALSE, by,...) {
   structure(.Data = res, class = c("bdObjList"))
 }
 
-## I need to make sure these make sense
-# specifically, I need the documentation to render for either when ?rbindlist called
 
-## Don't export for now because fuck S3 generic matching
-rbindlist <- function(x, ...) {
-  UseMethod("rbindlist")
-}
 
-#' @importFrom data.table rbindlist
-rbindlist.default <- function(x, ...) {
-  data.table::rbindlist(x, ...)
-}
+## Generic, needs documented but plan on deleting
+# rbindlist <- function(l, ...) UseMethod("rbindlist")
 
-#' @importFrom data.table rbindlist
-rbindlist.list <- function(x, ...) {
-  data.table::rbindlist(x, ...)
-}
+# #' ## Don't export for now because fuck S3 generic matching
+# #'
+# #' @importFrom data.table rbindlist
+# #' @export
+# rbindlist.default <- function(l, ...) {
+#   data.table::rbindlist(l, ...)
+# }
+
+
+# #' @importFrom data.table rbindlist
+# #' @export
+# rbindlist.list <- function(l, ...) {
+#  data.table::rbindlist(l, ...)
+# }
 
 ## Not 100% sure I should include this
-#' rbindlist for bdotsObjects
+# #' rbindlist for bdotsObjects
+# #'
+# #' Similar to data.table::rbindlist, but preserves botsObjects attributes
+# #'
+# #' @param l bdotsObject
+# #' @param ... for compatability with data.table
+# #'
+# #' @export
+# rbindlist.bdObjList <- function(l, ...) {
+#  oldAttr <- attributes(l[[1]])
+#  #class(x) <- "list"
+#  l <- data.table::rbindlist(l, ...)
+#  attributes(l) <- oldAttr
+#  l
+# }
+
+
+#' Rbindlist for bdots objects
 #'
-#' Similar to data.table::rbindlist, but preserves botsObjects attributes
+#' rbindlist for bdots objects that saves attributes
 #'
-#' @param x bdotsObject
-#' @param ... for compatability with data.table
+#' @param l bdotsObject
+#' @param ... for compatability with data.table::rbindlist
 #'
+#' @details As data.table is no longer imported, we need a separate function to prevent
+#' masking of the generic if data.table loaded after bdots
 #'
-rbindlist.bdObjList <- function(x, ...) {
-  oldAttr <- attributes(x[[1]])
-  class(x) <- "list"
-  x <- rbindlist(x, ...)
-  attributes(x) <- oldAttr
-  x
+#' @export
+brbindlist <- function(l, ...) {
+  oldAttr <- attributes(l[[1]])
+  #class(x) <- "list"
+  l <- data.table::rbindlist(l, ...)
+  attributes(l) <- oldAttr
+  l
 }
 
 
