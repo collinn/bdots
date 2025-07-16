@@ -13,7 +13,6 @@
 #' @param ar Value indicates estimate for autocorrelation. A value of zero indicates to fit without AR(1) assumption
 #' @param numRefits Integer indicating number of attempts to fit an observation
 #' if the first attempt fails
-#' @param verbose currently not used
 #' @param ... Secret
 #'
 #' @return Object of class 'bdotsObj', inherits from data.table
@@ -64,18 +63,10 @@ bfit <- function(data, # dataset
     stop(stopMsg)
   }
 
-  ## Cor no longer arg so this should be cleaned up, as in
-  # there is no way for them to deliver a rho argument
-  # if (!exists("rho")) {
-  #   rho <- ifelse(ar, 0.9, 0)
-  # } else {
-  #   if (ar & (rho >= 1 | rho < 0)) {
-  #     warning("cor set to TRUE with invalid rho. Setting rho to 0.9")
-  #     rho <- 0.9
-  #   }
-  # }
+
 
   rho <- ifelse(ar, 0.9, 0)
+
 
   ## Factors are bad, m'kay?
   dat <- setDT(data)
@@ -101,7 +92,6 @@ bfit <- function(data, # dataset
 
   timeSame <- identical(Reduce(intersect, timetest, init = timetest[[1]]),
                         Reduce(union, timetest, init = timetest[[1]]))
-
 
   splitVars <- c(subject, group)
   newdat <- split(dat, by = splitVars, drop = TRUE)
