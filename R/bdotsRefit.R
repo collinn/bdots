@@ -137,7 +137,7 @@ brefit <- function(bdObj, fitCode = 1L, subset = NULL, quickRefit = FALSE,
   }
 
   ## Update original bdObj with changes
-  new_bd <- rbindlist(new_bd)
+  new_bd <- brbindlist(new_bd)
   for (i in seq_len(nrow(new_bd))) {
     bdObj[idx[i], ] <- new_bd[i, ]
   }
@@ -368,7 +368,7 @@ bdUpdate <- function(bdo, numRefits) {
     both_bdo <- structure(.Data = list(bdo, new_bdo),
                           class = "bdObjList")
 
-    both_bdo <- rbindlist.bdObjList(both_bdo)
+    both_bdo <- brbindlist(both_bdo)
     plot(both_bdo, gridSize = "refit")
 
     cat("Refit Info:\n")
@@ -711,7 +711,7 @@ bdUpdate_noAR <- function(bdo, numRefits) {
     both_bdo <- structure(.Data = list(bdo, new_bdo),
                           class = "bdObjList")
 
-    both_bdo <- rbindlist.bdObjList(both_bdo)
+    both_bdo <- brbindlist(both_bdo)
     plot(both_bdo, gridSize = "refit")
 
     cat("Refit Info:\n")

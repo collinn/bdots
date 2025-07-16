@@ -132,7 +132,7 @@ split.bdotsObj <- function(x, f, drop = FALSE, by,...) {
 
 #' Rbindlist for bdots objects
 #'
-#' rbindlist for bdots objects
+#' rbindlist for bdots objects that saves attributes
 #'
 #' @param l bdotsObject
 #' @param ... for compatability with data.table::rbindlist

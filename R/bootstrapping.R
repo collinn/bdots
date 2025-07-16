@@ -193,7 +193,7 @@ isDODpaired <- function(x, prs) {
   id <- prs[["innerDiff"]]
   od <- prs[["outerDiff"]]
 
-  xx <- rbindlist(x)
+  xx <- brbindlist(x)
 
   ## Check outer (this is single test, all against all)
   xo <- split(xx, by = od)

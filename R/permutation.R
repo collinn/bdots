@@ -35,7 +35,7 @@ permTest <- function(x, prs, alpha, P, cores = detectCores()-1L, pAddVar = TRUE)
   ## Need these for all
   pgroups <- prs$outerDiff
   #x <- bdots:::rbindlist.bdObjList(x)
-  x <- rbindlist(x)
+  x <- brbindlist(x)
   n <- nrow(x)
 
   ## Get the t stats for observed
